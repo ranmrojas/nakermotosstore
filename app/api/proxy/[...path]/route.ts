@@ -4,18 +4,30 @@ import { API_CONFIG, AUTH_CONFIG } from '@/lib/config';
 export async function GET(request: NextRequest) {
   try {
     const requestUrl = new URL(request.url);
-    const numeroCategoria = requestUrl.searchParams.get('numeroCategoria') || '15';
+    const path = requestUrl.pathname.replace('/api/proxy/', '');
+    const numeroCategoria = requestUrl.searchParams.get('numeroCategoria') || '';
+
+    // Obtener la fecha y hora actual
+    const now = new Date();
+    const dias = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
+    const diaActual = dias[now.getDay()];
+    const horaActual = now.toLocaleTimeString('es-CO', { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit',
+      hour12: false 
+    });
 
     // Parámetros base que siempre deben estar presentes
     const baseParams = {
       traerDetalle: '0',
-      id_sucursal: '1',
-      id_categoria: '6',
-      dia_actual: 'L',
-      hora_actual: '14:43:57',
+      id_sucursal: '1', // Este es fijo
+      id_categoria: numeroCategoria, // Usamos el ID de categoría proporcionado
+      dia_actual: diaActual,
+      hora_actual: horaActual,
       numeroCategoria: numeroCategoria,
       validar_inventario: '1',
-      limite: '40'
+      limite: '60'
     };
 
     // Obtener los parámetros actuales de la URL
@@ -26,9 +38,10 @@ export async function GET(request: NextRequest) {
     
     // Construir la URL final
     const searchParams = new URLSearchParams(finalParams);
-    const apiUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PRODUCTS}?${searchParams}`;
+    const apiUrl = `${API_CONFIG.BASE_URL}/${path}?${searchParams}`;
 
     console.log('URL de la petición:', apiUrl);
+    console.log('Parámetros enviados:', finalParams);
 
     // Configurar los headers usando los valores predefinidos
     const headers = {
