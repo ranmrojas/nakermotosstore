@@ -1,7 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { API_CONFIG } from '@/lib/config';
+
+interface Marca {
+  id_marca?: number;
+  nombre?: string;
+}
+
+interface Categoria {
+  id_categoria?: number;
+  nombre?: string;
+}
 
 interface Product {
   id_producto: number;
@@ -10,13 +20,12 @@ interface Product {
   nombre: string;
   precio_venta: number;
   existencias: number;
-  marca: any;
-  categoria: any;
+  marca?: Marca;
+  categoria?: Categoria;
   nombre_marca?: string;
   nombre_categoria?: string;
   ext1: string | null;
   ext2: string | null;
-  [key: string]: any;
 }
 
 export default function TestCategory() {
@@ -27,7 +36,7 @@ export default function TestCategory() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -54,11 +63,11 @@ export default function TestCategory() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [categoryId]);
 
   useEffect(() => {
     fetchProducts();
-  }, [categoryId]);
+  }, [fetchProducts]);
 
   const handleRowClick = (product: Product) => {
     console.log('Producto seleccionado:', product);
