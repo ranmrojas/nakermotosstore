@@ -7,12 +7,12 @@ const nextConfig: NextConfig = {
       // Redirigir /tienda a la página principal de la tienda
       {
         source: '/tienda',
-        destination: '/api/store/tienda/teinda/',
+        destination: '/api/store/tienda/1/',
       },
       // Redirigir /tienda/cualquier-cosa a las subpáginas correspondientes
       {
-        source: '/1/:path*',
-        destination: '/api/store/tienda/tienda/:path*',
+        source: '/tienda/:path*',
+        destination: '/api/store/tienda/pedidos/:path*',
       },
       // Mantener la ruta tienda-proxy para compatibilidad
       {

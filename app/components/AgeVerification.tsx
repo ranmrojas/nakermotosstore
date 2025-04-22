@@ -19,9 +19,9 @@ export default function AgeVerification() {
         sameSite: 'strict'
       });
       await new Promise(resolve => setTimeout(resolve, 1000));
-      router.push('/1/tienda');
+      router.push('/tienda/pedidos');
     } else {
-      window.location.href = 'https://www.google.com';
+      window.location.href = '/ageverification';
     }
   };
 
