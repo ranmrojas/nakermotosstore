@@ -1,6 +1,7 @@
 import { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+ 
   async rewrites() {
     return [
       // Redirigir /tienda a la página principal de la tienda
