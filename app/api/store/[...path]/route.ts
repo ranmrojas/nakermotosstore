@@ -66,4 +66,4 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
       headers: { 'Content-Type': 'text/plain' }
     });
   }
-}
+} 
