@@ -1,5 +1,5 @@
 'use client';
-import ProductManagerList from '@/app/components/ProductManagerList';
+import ProductManagerList from '@/app/components/productos/ProductManagerList';
 import { useState } from 'react';
 
 export default function ProductManagerPage() {

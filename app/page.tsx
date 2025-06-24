@@ -13,7 +13,7 @@ export default function Home() {
       if (!isVerified) {
         router.push('/ageverification');
       } else {
-        router.push('/tienda/pedidos');
+        router.push('/products');
       }
     };
 

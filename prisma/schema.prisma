@@ -16,8 +16,22 @@ datasource db {
 }
 
 model Categoria {
-  id          Int      @id @default(autoincrement())
-  nombre      String   @unique
+  id          Int         @id @default(autoincrement())
+  nombre      String      @unique
   descripcion String?
-  createdAt   DateTime @default(now())
+  activa      Boolean     @default(true)  // Controla si la categoría se muestra o no
+  fechaCreacion DateTime  @default(now())
+  fechaActualizacion DateTime @updatedAt
+  
+  // Auto-referencia para jerarquía padre-hijo
+  categoriaPadreId Int?   // ID de la categoría padre (null si es categoría raíz)
+  categoriaPadre   Categoria? @relation("JerarquiaCategoria", fields: [categoriaPadreId], references: [id], onDelete: SetNull)
+  subcategorias    Categoria[] @relation("JerarquiaCategoria")
+  
+  // Índices para mejorar performance
+  @@index([categoriaPadreId])
+  @@index([nombre])
+  @@index([activa])
 }
+
+
