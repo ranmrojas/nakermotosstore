@@ -1,6 +1,10 @@
 import { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  // Configuración para permitir imágenes de dominios externos
+  images: {
+    domains: ['tienddi.co'], // Agregamos el dominio de la tienda para las imágenes
+  },
  
   async rewrites() {
     return [
