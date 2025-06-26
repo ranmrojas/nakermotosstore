@@ -128,6 +128,7 @@ export default function ProductGrid({
             <div
               key={product.id_producto}
               className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col items-center p-1 sm:p-2 h-full min-h-[180px] hover:shadow-md transition-shadow cursor-pointer"
+              style={{ paddingBottom: 0 }}
               onClick={() => openModal(product)}
             >
               <div className="flex flex-col items-center w-full h-full">
@@ -151,6 +152,12 @@ export default function ProductGrid({
                       }
                     }}
                   />
+                  {/* Tag de OFERTA cuando hay descuento */}
+                  {product.precio_venta_online !== null && product.precio_venta_online < product.precio_venta && (
+                    <div className="absolute top-1 left-1 z-10 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-sm">
+                      OFERTA
+                    </div>
+                  )}
                   {/* Icono de compartir sobre la imagen */}
                   <button
                     className="absolute top-1 right-1 z-10 p-1 bg-white/80 dark:bg-gray-900/80 rounded-full hover:bg-amber-100 dark:hover:bg-amber-900 transition-colors"
@@ -174,18 +181,20 @@ export default function ProductGrid({
                     <span className="absolute top-2 right-8 z-20 text-xs text-amber-600 dark:text-amber-400 bg-white/90 dark:bg-gray-900/90 px-2 py-0.5 rounded shadow">¡Copiado!</span>
                   )}
                 </div>
-                <div className="flex-1 w-full flex flex-col justify-between items-center p-2">
+                <div className="flex-1 w-full flex flex-col justify-between items-center p-2 pb-1">
                   <h3 className="text-xs font-medium text-center text-gray-900 dark:text-white line-clamp-2 w-full mb-1 min-h-[2.2em]">
                     {product.nombre}
                   </h3>
-                  <div className="flex items-center justify-between w-full mt-auto">
-                    <div className="flex flex-col">
-                      <span className="text-amber-700 dark:text-amber-400 font-bold text-sm">
-                        ${((product.precio_venta_online || product.precio_venta) ?? 0).toLocaleString('es-CO')}
+                  <div className="flex items-center justify-between w-full mt-auto mb-0">
+                    <div className="flex flex-col mb-0 pb-0">
+                      <span className={`${product.precio_venta_online !== null && product.precio_venta_online < product.precio_venta ? 'text-green-600 dark:text-green-400 text-base font-bold' : 'text-amber-700 dark:text-amber-400 font-bold text-sm'}`}>
+                        ${(product.precio_venta_online !== null 
+                          ? product.precio_venta_online 
+                          : product.precio_venta)?.toLocaleString('es-CO')}
                       </span>
-                      {product.sku && (
-                        <span className="text-gray-400 dark:text-gray-500 text-[10px]">
-                          sku: {product.sku}
+                      {product.precio_venta_online !== null && product.precio_venta_online < product.precio_venta && (
+                        <span className="text-red-400 dark:text-red-300 text-xs line-through font-medium" style={{ fontSize: '0.8rem', marginTop: '-2px' }}>
+                          ${product.precio_venta?.toLocaleString('es-CO')}
                         </span>
                       )}
                     </div>
@@ -196,10 +205,12 @@ export default function ProductGrid({
                           e.stopPropagation();
                           const message = `Hola, quiero pedir:
 1 ${product.nombre}
-Valor: $${((product.precio_venta_online || product.precio_venta) ?? 0).toLocaleString('es-CO')}
-sku: ${product.sku || '-'}
+Valor: $${(product.precio_venta_online !== null 
+            ? product.precio_venta_online 
+            : product.precio_venta)?.toLocaleString('es-CO')}
+sku: ${product.sku || '000'}
 
-¿Me confirma el valor de domicilio?`;
+¿Cuál sería el valor del domicilio?`;
                           window.open(`https://wa.me/573043668910?text=${encodeURIComponent(message)}`, '_blank');
                         }}
                         className="ml-2 w-8 h-8 flex items-center justify-center bg-amber-600 dark:bg-amber-500 text-white rounded-full hover:bg-amber-700 dark:hover:bg-amber-600 transition-colors"
@@ -217,10 +228,10 @@ sku: ${product.sku || '-'}
                       </span>
                     ) : null}
                   </div>
-                  {product.precio_venta_online !== null && product.precio_venta_online !== product.precio_venta && (
-                    <p className="text-gray-400 dark:text-gray-500 text-xs line-through mt-1">
-                      ${product.precio_venta?.toLocaleString('es-CO')}
-                    </p>
+                  {product.sku && (
+                    <div className="w-full text-right text-gray-400 dark:text-gray-500 text-xs leading-none" style={{marginTop: "2px", marginBottom: 0, paddingBottom: 0}}>
+                      sku: {product.sku}
+                    </div>
                   )}
                 </div>
               </div>
@@ -231,8 +242,15 @@ sku: ${product.sku || '-'}
       
       {/* Modal del producto */}
       {isModalOpen && selectedProduct && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 bg-white/70 dark:bg-gray-800/70 flex items-start justify-center z-50 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              closeModal();
+            }
+          }}
+        >
+          <div className="bg-white dark:bg-gray-900 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto mt-12 shadow-2xl border border-gray-200 dark:border-gray-700">
             {/* Header del modal */}
             <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -251,12 +269,12 @@ sku: ${product.sku || '-'}
             {/* Contenido del modal */}
             <div className="p-4">
               {/* Imagen del producto */}
-              <div className="relative w-full aspect-square mb-4 rounded-lg overflow-hidden">
+              <div className="relative w-full aspect-square mb-4 rounded-lg overflow-hidden" style={{ maxHeight: '220px' }}>
                 <Image
                   src={selectedProduct.id_imagen ? getImageUrl(selectedProduct.id_imagen, selectedProduct.ext1) : '/file.svg'}
                   alt={selectedProduct.nombre}
                   fill
-                  className="object-cover"
+                  className="object-contain"
                   unoptimized={true}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
@@ -271,6 +289,29 @@ sku: ${product.sku || '-'}
                     }
                   }}
                 />
+                {/* Icono flotante de compartir */}
+                <button
+                  className="absolute top-2 right-2 z-10 p-1 bg-white/80 dark:bg-gray-900/80 rounded-full hover:bg-amber-100 dark:hover:bg-amber-900 transition-colors"
+                  title="Compartir"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/tienda/producto/${selectedProduct.id_producto}`);
+                    alert('¡Enlace copiado al portapapeles!');
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <circle cx="18" cy="5" r="2" />
+                    <circle cx="6" cy="12" r="2" />
+                    <circle cx="18" cy="19" r="2" />
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke="currentColor" strokeWidth="1.5" />
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke="currentColor" strokeWidth="1.5" />
+                  </svg>
+                </button>
+                {/* Tag de OFERTA en el modal cuando hay descuento */}
+                {selectedProduct.precio_venta_online !== null && selectedProduct.precio_venta_online < selectedProduct.precio_venta && (
+                  <div className="absolute top-2 left-2 z-10 bg-red-600 text-white text-sm font-bold px-3 py-1 rounded shadow-sm">
+                    OFERTA
+                  </div>
+                )}
               </div>
               
               {/* Información del producto */}
@@ -278,79 +319,44 @@ sku: ${product.sku || '-'}
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                   {selectedProduct.nombre}
                 </h3>
+                {selectedProduct.nota && (
+                  <div className="mt-1 mb-2 p-2 bg-amber-50 dark:bg-amber-900/30 rounded text-amber-800 dark:text-amber-200 text-sm font-medium">
+                    {selectedProduct.nota}
+                  </div>
+                )}
                 
                 <div className="flex justify-between items-center">
-                  <span className="text-2xl font-bold text-amber-700 dark:text-amber-400">
-                    ${((selectedProduct.precio_venta_online || selectedProduct.precio_venta) ?? 0).toLocaleString('es-CO')}
+                  <span className={`text-2xl font-bold ${selectedProduct.precio_venta_online !== null && selectedProduct.precio_venta_online < selectedProduct.precio_venta ? 'text-green-600 dark:text-green-400 text-3xl' : ''}`} style={{ color: selectedProduct.precio_venta_online !== null && selectedProduct.precio_venta_online < selectedProduct.precio_venta ? '' : '#ff8c00' }}>
+                    ${(selectedProduct.precio_venta_online !== null 
+                      ? selectedProduct.precio_venta_online 
+                      : selectedProduct.precio_venta)?.toLocaleString('es-CO')}
                   </span>
-                  {selectedProduct.existencias > 0 ? (
-                    <button
-                      onClick={() => {
-                        const message = `Hola, quiero pedir:
-1 ${selectedProduct.nombre}
-Valor: $${((selectedProduct.precio_venta_online || selectedProduct.precio_venta) ?? 0).toLocaleString('es-CO')}
-sku: ${selectedProduct.sku || '-'}
-
-¿Me confirma el valor de domicilio?`;
-                        window.open(`https://wa.me/573043668910?text=${encodeURIComponent(message)}`, '_blank');
-                      }}
-                      className="px-4 py-2 bg-amber-600 dark:bg-amber-500 text-white rounded-lg hover:bg-amber-700 dark:hover:bg-amber-600 transition-colors flex items-center gap-2"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      Pedir por WhatsApp
-                    </button>
-                  ) : (
-                    <span className="px-3 py-2 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 text-sm rounded-lg font-medium">
-                      Agotado
+                  {selectedProduct.precio_venta_online !== null && selectedProduct.precio_venta_online < selectedProduct.precio_venta && (
+                    <span className="text-red-400 dark:text-red-300 text-base line-through font-medium ml-2">
+                      ${selectedProduct.precio_venta?.toLocaleString('es-CO')}
                     </span>
                   )}
                 </div>
                 
-                {/* Información adicional */}
-                <div className="space-y-2 text-sm">
+                {/* Información adicional en una sola línea, bien distribuida */}
+                <div className="flex flex-row items-center justify-between gap-2 mt-2 w-full flex-wrap">
                   {selectedProduct.sku && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">SKU:</span>
-                      <span className="text-gray-900 dark:text-white font-medium">{selectedProduct.sku}</span>
-                    </div>
-                  )}
-                  
-                  {selectedProduct.nombre_categoria && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Categoría:</span>
-                      <span className="text-gray-900 dark:text-white font-medium">{selectedProduct.nombre_categoria}</span>
-                    </div>
-                  )}
-                  
-                  {selectedProduct.nombre_marca && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Marca:</span>
-                      <span className="text-gray-900 dark:text-white font-medium">{selectedProduct.nombre_marca}</span>
-                    </div>
-                  )}
-                  
-                  {selectedProduct.alias && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Alias:</span>
-                      <span className="text-gray-900 dark:text-white font-medium">{selectedProduct.alias}</span>
-                    </div>
-                  )}
-                  
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Existencias:</span>
-                    <span className={`font-medium ${selectedProduct.existencias > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                      {selectedProduct.existencias}
+                    <span className="text-gray-600 dark:text-gray-400 text-xs font-medium whitespace-nowrap">
+                      SKU: <span className="text-gray-900 dark:text-white">{selectedProduct.sku}</span>
                     </span>
-                  </div>
-                  
-                  {selectedProduct.nota && (
-                    <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <span className="text-gray-600 dark:text-gray-400 text-sm font-medium">Nota:</span>
-                      <p className="text-gray-900 dark:text-white text-sm mt-1">{selectedProduct.nota}</p>
-                    </div>
                   )}
+                  <div className="flex flex-row gap-2 ml-auto">
+                    {selectedProduct.nombre_categoria && (
+                      <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs rounded-full font-semibold whitespace-nowrap">
+                        {selectedProduct.nombre_categoria}
+                      </span>
+                    )}
+                    {selectedProduct.nombre_marca && (
+                      <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs rounded-full font-semibold whitespace-nowrap">
+                        {selectedProduct.nombre_marca}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
