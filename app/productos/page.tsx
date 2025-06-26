@@ -1,5 +1,5 @@
 'use client';
-import ProductGridWithSidebar from '@/app/components/productos/ProductGridWithSidebar';
+import ProductGridWithSidebar from '@/app/componentes/productos/ProductGridWithSidebar';
 
 export default function ProductosPage() {
   return (

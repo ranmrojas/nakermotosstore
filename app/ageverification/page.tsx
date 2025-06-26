@@ -1,6 +1,6 @@
 'use client';
 
-import AgeVerification from '../components/AgeVerification';
+import AgeVerification from '../componentes/AgeVerification';
 
 export default function AgeVerificationPage() {
   return <AgeVerification />;

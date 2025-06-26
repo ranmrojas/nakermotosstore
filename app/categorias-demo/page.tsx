@@ -1,4 +1,4 @@
-import SidebarCategorias from '../components/productos/SidebarCategories';
+import SidebarCategorias from '../componentes/productos/SidebarCategories';
 
 export default function CategoriasDemoPage() {
   return <SidebarCategorias />;

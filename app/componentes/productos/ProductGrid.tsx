@@ -62,21 +62,32 @@ export default function ProductGrid({
   
   // Función para cargar productos
   const loadProducts = async (catId: number | null) => {
-    if (catId === null) return;
+    if (catId === null) {
+      console.log('ProductGrid - loadProducts: catId es null, no se cargarán productos');
+      return;
+    }
     
+    console.log(`ProductGrid - Cargando productos para categoría ID: ${catId}`);
     setLoading(true);
     setError(null);
     
     try {
-      const data = await getProducts(catId.toString(), limit);
+      // Asegurarse de que catId sea un string para la URL
+      const categoryIdStr = catId.toString();
+      console.log(`ProductGrid - URL API: /api/extract/products?id_categoria=${categoryIdStr}&limite=${limit}`);
+      
+      const data = await getProducts(categoryIdStr, limit);
+      console.log(`ProductGrid - Productos recibidos: ${data.length}`);
       
       // Filtrar solo productos disponibles para mostrar en la tienda
       const availableProducts = data.filter(
         product => isAvailable(product.existencias, product.vende_sin_existencia)
       );
       
+      console.log(`ProductGrid - Productos disponibles: ${availableProducts.length}`);
       setProducts(availableProducts);
     } catch (err) {
+      console.error('ProductGrid - Error al cargar productos:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido');
       setProducts([]);
     } finally {
@@ -86,8 +97,25 @@ export default function ProductGrid({
 
   // Cargar productos cuando cambie la categoría seleccionada
   useEffect(() => {
-    loadProducts(selectedCategoryId);
-  }, [selectedCategoryId, limit]);
+    console.log('ProductGrid - Categoría seleccionada cambió a:', selectedCategoryId);
+    
+    // Si tenemos un categoryId directo como prop, usarlo primero
+    if (categoryId !== null && categoryId !== undefined) {
+      console.log('ProductGrid - Usando categoryId de props:', categoryId);
+      loadProducts(typeof categoryId === 'string' ? parseInt(categoryId) : categoryId as number);
+    }
+    // Si no, usar el selectedCategoryId del estado interno
+    else if (selectedCategoryId !== null) {
+      console.log('ProductGrid - Usando selectedCategoryId del estado:', selectedCategoryId);
+      loadProducts(selectedCategoryId);
+    }
+    // Si no hay ninguna categoría seleccionada, mostrar mensaje
+    else {
+      console.log('ProductGrid - No hay categoría seleccionada');
+      setLoading(false);
+      setProducts([]);
+    }
+  }, [categoryId, selectedCategoryId, limit]);
 
   // Manejar cambio de categoría
   const handleCategoryChange = (newCategoryId: number) => {

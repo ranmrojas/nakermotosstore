@@ -109,7 +109,14 @@ export default function SidebarCategories({
 
   // Manejar selección de categoría
   const handleSelect = (id: number | null) => {
-    if (onCategorySelect) onCategorySelect(id);
+    console.log('Categoría seleccionada en SidebarCategories:', id);
+    // Asegurarse de que el ID sea válido antes de enviarlo al componente padre
+    if (id !== null) {
+      // Llamar a la función del componente padre con el ID de la categoría
+      onCategorySelect?.(id);
+    } else {
+      console.warn('Se intentó seleccionar una categoría con ID nulo');
+    }
   };
 
   // Manejar expansión/colapso de una categoría
