@@ -3,50 +3,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { getProducts, Product, getProductImageUrl } from '@/app/services/productService';
-import { useCategorias } from '../../../hooks/useCategorias';
 import Link from 'next/link';
 
 interface ProductGridProps {
   categoryId?: string | number | null;
   limit?: number;
   showAddToCart?: boolean;
-  showCategorySelector?: boolean;
-  defaultCategoryId?: number | null;
 }
 
 export default function ProductGrid({ 
   categoryId = null, 
-  limit = 1000, // Valor alto para mostrar todos los productos de la categoría
-  showAddToCart = true,
-  showCategorySelector = false,
-  defaultCategoryId = null
+  limit = 1000,
+  showAddToCart = true
 }: ProductGridProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
-
-  // Hook de categorías
-  const { categorias, getCategoriaById, loading: categoriasLoading } = useCategorias();
-
-  // Cuando las categorías se cargan, seleccionar la primera si no hay una seleccionada
-  useEffect(() => {
-    if (!categoriasLoading && categorias.length > 0 && selectedCategoryId === null) {
-      // Si hay una categoría especificada como prop, usarla
-      if (categoryId !== null) {
-        setSelectedCategoryId(typeof categoryId === 'string' ? parseInt(categoryId) : categoryId as number);
-      } 
-      // Si hay un defaultCategoryId, usarlo
-      else if (defaultCategoryId !== null) {
-        setSelectedCategoryId(defaultCategoryId);
-      }
-      // Si no, usar la primera categoría disponible
-      else {
-        setSelectedCategoryId(categorias[0].id);
-      }
-    }
-  }, [categorias, categoriasLoading, categoryId, defaultCategoryId, selectedCategoryId]);
 
   // URL para imágenes utilizando el servicio centralizado
   const getImageUrl = (id: number, ext: string) => {
@@ -58,37 +31,23 @@ export default function ProductGrid({
     return existencias > 0 || vende_sin_existencia === 1;
   };
 
-  // Obtener categoría seleccionada
-  const selectedCategoria = selectedCategoryId !== null ? getCategoriaById(selectedCategoryId) : undefined;
-  
   // Función para cargar productos
   const loadProducts = useCallback(async (catId: number | null) => {
     if (catId === null) {
-      console.log('ProductGrid - loadProducts: catId es null, no se cargarán productos');
+      setProducts([]);
+      setLoading(false);
       return;
     }
-    
-    console.log(`ProductGrid - Cargando productos para categoría ID: ${catId}`);
     setLoading(true);
     setError(null);
-    
     try {
-      // Asegurarse de que catId sea un string para la URL
       const categoryIdStr = catId.toString();
-      console.log(`ProductGrid - URL API: /api/extract/products?id_categoria=${categoryIdStr}&limite=${limit}`);
-      
       const data = await getProducts(categoryIdStr, limit);
-      console.log(`ProductGrid - Productos recibidos: ${data.length}`);
-      
-      // Filtrar solo productos disponibles para mostrar en la tienda
       const availableProducts = data.filter(
         product => isAvailable(product.existencias, product.vende_sin_existencia)
       );
-      
-      console.log(`ProductGrid - Productos disponibles: ${availableProducts.length}`);
       setProducts(availableProducts);
     } catch (err) {
-      console.error('ProductGrid - Error al cargar productos:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido');
       setProducts([]);
     } finally {
@@ -96,40 +55,15 @@ export default function ProductGrid({
     }
   }, [limit]);
 
-  // Cargar productos cuando cambie la categoría seleccionada
+  // Cargar productos cuando cambie la categoría
   useEffect(() => {
-    console.log('ProductGrid - Categoría seleccionada cambió a:', selectedCategoryId);
-    
-    // Si tenemos un categoryId directo como prop, usarlo primero
     if (categoryId !== null && categoryId !== undefined) {
-      console.log('ProductGrid - Usando categoryId de props:', categoryId);
       loadProducts(typeof categoryId === 'string' ? parseInt(categoryId) : categoryId as number);
-    }
-    // Si no, usar el selectedCategoryId del estado interno
-    else if (selectedCategoryId !== null) {
-      console.log('ProductGrid - Usando selectedCategoryId del estado:', selectedCategoryId);
-      loadProducts(selectedCategoryId);
-    }
-    // Si no hay ninguna categoría seleccionada, mostrar mensaje
-    else {
-      console.log('ProductGrid - No hay categoría seleccionada');
+    } else {
       setLoading(false);
       setProducts([]);
     }
-  }, [categoryId, selectedCategoryId, loadProducts]);
-
-  // Manejar cambio de categoría
-  const handleCategoryChange = (newCategoryId: number) => {
-    setSelectedCategoryId(newCategoryId);
-  };
-
-  if (categoriasLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-800 dark:border-amber-400"></div>
-      </div>
-    );
-  }
+  }, [categoryId, loadProducts]);
 
   if (loading) {
     return (
@@ -145,13 +79,8 @@ export default function ProductGrid({
         <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
         <button 
           onClick={() => {
-            if (selectedCategoryId !== null) {
-              loadProducts(selectedCategoryId);
-            } else if (categorias.length > 0) {
-              // Si no hay categoría seleccionada, usar la primera disponible
-              const firstCategoryId = categorias[0].id;
-              setSelectedCategoryId(firstCategoryId);
-              loadProducts(firstCategoryId);
+            if (categoryId !== null) {
+              loadProducts(typeof categoryId === 'string' ? parseInt(categoryId) : categoryId as number);
             }
           }}
           className="px-4 py-2 bg-amber-800 dark:bg-amber-600 text-white rounded-lg hover:bg-amber-900 dark:hover:bg-amber-700"
@@ -164,54 +93,19 @@ export default function ProductGrid({
 
   return (
     <div>
-      {/* Selector de categorías (opcional) */}
-      {showCategorySelector && categorias.length > 0 && (
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              {selectedCategoria ? selectedCategoria.nombre : 'Productos'}
-            </h2>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              {products.length} productos disponibles
-            </div>
-          </div>
-          
-          {/* Selector de categorías - Menú desplegable */}
-          <div className="flex items-center space-x-4">
-            <label htmlFor="category-select" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Filtrar por categoría:
-            </label>
-            <div className="relative">
-              <select
-                id="category-select"
-                value={selectedCategoryId !== null ? selectedCategoryId : ''}
-                onChange={(e) => handleCategoryChange(Number(e.target.value))}
-                className="block w-64 px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-400 focus:border-amber-500 dark:focus:border-amber-400 text-sm text-gray-900 dark:text-white"
-              >
-                {categorias.map((categoria) => (
-                  <option key={categoria.id} value={categoria.id}>
-                    {categoria.nombre}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                <svg className="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Grid de productos */}
       {products.length === 0 ? (
         <div className="text-center py-10">
-          <p className="text-gray-600 dark:text-gray-400">
-            {selectedCategoria 
-              ? `No hay productos disponibles en ${selectedCategoria.nombre}`
-              : 'No hay productos disponibles en esta categoría'
-            }
+          <div className="text-gray-400 dark:text-gray-500 mb-4">
+            <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 text-lg">
+            No hay productos disponibles en esta categoría
+          </p>
+          <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">
+            Intenta seleccionar otra categoría
           </p>
         </div>
       ) : (
@@ -219,7 +113,7 @@ export default function ProductGrid({
           {products.map((product) => (
             <div
               key={product.id_producto}
-              className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col items-center p-1 sm:p-2 h-full min-h-[180px]"
+              className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col items-center p-1 sm:p-2 h-full min-h-[180px] hover:shadow-md transition-shadow"
             >
               <Link href={`/tienda/producto/${product.id_producto}`} className="flex flex-col items-center w-full h-full">
                 <div className="relative w-full aspect-square">
@@ -265,11 +159,11 @@ export default function ProductGrid({
                     <span className="absolute top-2 right-8 z-20 text-xs text-amber-600 dark:text-amber-400 bg-white/90 dark:bg-gray-900/90 px-2 py-0.5 rounded shadow">¡Copiado!</span>
                   )}
                 </div>
-                <div className="flex-1 w-full flex flex-col justify-between items-center">
-                  <h3 className="text-xs font-medium text-center text-gray-900 dark:text-white line-clamp-2 w-full mb-0.5 min-h-[2.2em]">
+                <div className="flex-1 w-full flex flex-col justify-between items-center p-2">
+                  <h3 className="text-xs font-medium text-center text-gray-900 dark:text-white line-clamp-2 w-full mb-1 min-h-[2.2em]">
                     {product.nombre}
                   </h3>
-                  <div className="flex items-center justify-between w-full mt-0.5">
+                  <div className="flex items-center justify-between w-full mt-auto">
                     <span className="text-amber-700 dark:text-amber-400 font-bold text-sm">
                       ${((product.precio_venta_online || product.precio_venta) ?? 0).toLocaleString('es-CO')}
                     </span>
@@ -290,7 +184,7 @@ export default function ProductGrid({
                     )}
                   </div>
                   {product.precio_venta_online !== null && product.precio_venta_online !== product.precio_venta && (
-                    <p className="text-gray-400 dark:text-gray-500 text-xs line-through mt-0.5">
+                    <p className="text-gray-400 dark:text-gray-500 text-xs line-through mt-1">
                       ${product.precio_venta?.toLocaleString('es-CO')}
                     </p>
                   )}
