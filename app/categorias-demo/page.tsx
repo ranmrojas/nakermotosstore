@@ -1,5 +1,5 @@
-import CategoriasDemo from '../components/productos/CategoriasDemo';
+import SidebarCategorias from '../components/productos/SidebarCategories';
 
 export default function CategoriasDemoPage() {
-  return <CategoriasDemo />;
+  return <SidebarCategorias />;
 } 

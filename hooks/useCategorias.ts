@@ -7,10 +7,12 @@ interface Categoria {
   nombre: string;
   descripcion?: string;
   activa: boolean;
-  esPadre: boolean;
-  tieneSubcategorias: boolean;
+  fechaCreacion?: string;
+  fechaActualizacion?: string;
   categoriaPadreId?: number;
-  subcategorias: Categoria[];
+  esPadre?: boolean;
+  tieneSubcategorias?: boolean;
+  subcategorias?: Categoria[];
 }
 
 interface UseCategoriasReturn {

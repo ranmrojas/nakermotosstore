@@ -39,8 +39,8 @@ export class SyncService {
     try {
       console.log('🔄 Iniciando sincronización de categorías...');
       
-      // Obtener datos del API
-      const response = await fetch('/api/categorias/hierarchy?soloActivas=true');
+      // Obtener datos del API - usamos la versión plana en lugar de hierarchy para obtener todas las categorías
+      const response = await fetch('/api/categorias?soloActivas=true');
       
       if (!response.ok) {
         throw new Error(`Error del API: ${response.status}`);
@@ -52,8 +52,20 @@ export class SyncService {
         throw new Error(result.error || 'Error en la respuesta del API');
       }
 
+      // Verificar que tenemos datos
+      if (!result.data || !Array.isArray(result.data) || result.data.length === 0) {
+        throw new Error('No se recibieron datos de categorías del API');
+      }
+
+      console.log(`📊 Recibidas ${result.data.length} categorías del API`);
+      console.log(`📋 Ejemplo de categoría recibida:`, JSON.stringify(result.data[0], null, 2));
+      
       // Guardar categorías en IndexedDB
       await indexedDBService.saveCategorias(result.data);
+      
+      // Verificar que se guardaron correctamente
+      const categoriasGuardadas = await indexedDBService.getCategorias();
+      console.log(`💾 Guardadas ${categoriasGuardadas.length} categorías en IndexedDB`);
       
       // Actualizar metadata
       const now = Date.now();

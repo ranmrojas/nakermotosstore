@@ -12,6 +12,7 @@
     "insertdata": "node scripts/insertData.js"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@prisma/client": "^6.10.1",
     "@types/js-cookie": "^3.0.6",
     "axios": "^1.8.4",

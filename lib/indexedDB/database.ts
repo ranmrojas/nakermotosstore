@@ -1,5 +1,5 @@
 // Configuración de la base de datos IndexedDB
-const DB_NAME = 'proxylzfDB';
+const DB_NAME = 'lzfDB';
 const DB_VERSION = 1;
 const CATEGORIAS_STORE = 'categorias';
 const METADATA_STORE = 'metadata';
@@ -65,27 +65,80 @@ export class IndexedDBService {
       const store = transaction.objectStore(CATEGORIAS_STORE);
 
       // Limpiar datos existentes
-      store.clear();
+      const clearRequest = store.clear();
+      
+      clearRequest.onsuccess = () => {
+        console.log('🧹 Base de datos limpiada correctamente');
+        
+        // Insertar nuevas categorías
+        let completed = 0;
+        let errors = 0;
+        const total = categorias.length;
 
-      // Insertar nuevas categorías
-      let completed = 0;
-      const total = categorias.length;
+        if (total === 0) {
+          console.log('⚠️ No hay categorías para guardar');
+          resolve();
+          return;
+        }
+        
+        console.log(`📥 Guardando ${total} categorías en IndexedDB...`);
 
-      if (total === 0) {
-        resolve();
-        return;
-      }
-
-      categorias.forEach(categoria => {
-        const request = store.add(categoria);
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => {
-          completed++;
-          if (completed === total) {
-            resolve();
+        categorias.forEach((categoria, index) => {
+          // Guardar el objeto completo de categoría tal como viene del API
+          try {
+            // Clonar el objeto para evitar referencias
+            const categoriaToSave = JSON.parse(JSON.stringify(categoria));
+            
+            // Log para depuración
+            if (index === 0 || index === total - 1) {
+              console.log(`📋 Guardando categoría ${index+1}/${total}:`, JSON.stringify(categoriaToSave, null, 2));
+            }
+            
+            const request = store.add(categoriaToSave);
+            
+            request.onerror = (event) => {
+              errors++;
+              console.error(`❌ Error al guardar categoría ${categoriaToSave.id}:`, request.error);
+              completed++;
+              if (completed === total) {
+                if (errors > 0) {
+                  reject(new Error(`Ocurrieron ${errors} errores al guardar categorías`));
+                } else {
+                  resolve();
+                }
+              }
+            };
+            
+            request.onsuccess = () => {
+              completed++;
+              if (completed === total) {
+                console.log(`✅ Guardadas ${total - errors} categorías correctamente`);
+                if (errors > 0) {
+                  reject(new Error(`Ocurrieron ${errors} errores al guardar categorías`));
+                } else {
+                  resolve();
+                }
+              }
+            };
+          } catch (error) {
+            console.error(`❌ Error procesando categoría ${index}:`, error);
+            errors++;
+            completed++;
+            if (completed === total) {
+              if (errors > 0) {
+                reject(new Error(`Ocurrieron ${errors} errores al guardar categorías`));
+              } else {
+                resolve();
+              }
+            }
           }
-        };
-      });
+        });
+      };
+      
+      clearRequest.onerror = () => {
+        console.error('❌ Error al limpiar la base de datos:', clearRequest.error);
+        reject(clearRequest.error);
+      };
     });
   }
 

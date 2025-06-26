@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
 
+
 export default function Home() {
   const router = useRouter();
 
@@ -12,13 +13,18 @@ export default function Home() {
       const isVerified = Cookies.get('age_verified');
       if (!isVerified) {
         router.push('/ageverification');
-      } else {
-        router.push('/products');
       }
     };
 
     checkAge();
   }, [router]);
 
-  return null; // No necesitamos renderizar nada ya que siempre redirigimos
+  return (
+    <div className="flex">
+      <main className="flex-1 p-4">
+        <h1>Bienvenido a la página principal</h1>
+        <p>Selecciona una opción del menú para continuar.</p>
+      </main>
+    </div>
+  );
 }
