@@ -3,18 +3,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { getProducts, Product, getProductImageUrl } from '@/app/services/productService';
-import Link from 'next/link';
 
 interface ProductGridProps {
   categoryId?: string | number | null;
   limit?: number;
   showAddToCart?: boolean;
+  targetProductId?: number | null;
 }
 
 export default function ProductGrid({ 
   categoryId = null, 
   limit = 1000,
-  showAddToCart = true
+  showAddToCart = true,
+  targetProductId = null
 }: ProductGridProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,6 +79,16 @@ export default function ProductGrid({
       setProducts([]);
     }
   }, [categoryId, loadProducts]);
+
+  // Efecto para abrir automáticamente el modal del producto específico cuando se carga
+  useEffect(() => {
+    if (targetProductId && !loading && products.length > 0) {
+      const targetProduct = products.find(p => p.id_producto === targetProductId);
+      if (targetProduct) {
+        openModal(targetProduct);
+      }
+    }
+  }, [targetProductId, products, loading]);
 
   if (loading) {
     return (
@@ -164,9 +175,31 @@ export default function ProductGrid({
                     title="Compartir"
                     onClick={(e) => {
                       e.preventDefault();
-                      navigator.clipboard.writeText(`${window.location.origin}/tienda/producto/${product.id_producto}`);
-                      setCopiedId(product.id_producto);
-                      setTimeout(() => setCopiedId(null), 1200);
+                      e.stopPropagation();
+                      
+                      // Construir URL con categoría e ID de producto
+                      // Asegurar que la categoría sea un valor válido
+                      const catId = categoryId !== null ? categoryId : '';
+                      const productUrl = `${window.location.origin}/productos?categoria=${catId}&producto=${product.id_producto}`;
+                      
+                      if (navigator.share) {
+                        navigator.share({
+                          title: product.nombre,
+                          text: `Mira este producto: ${product.nombre}`,
+                          url: productUrl
+                        })
+                        .catch(() => {
+                          // Si falla el navigator.share, copiar al portapapeles como fallback
+                          navigator.clipboard.writeText(productUrl);
+                          setCopiedId(product.id_producto);
+                          setTimeout(() => setCopiedId(null), 1200);
+                        });
+                      } else {
+                        // Fallback para navegadores que no soportan Web Share API
+                        navigator.clipboard.writeText(productUrl);
+                        setCopiedId(product.id_producto);
+                        setTimeout(() => setCopiedId(null), 1200);
+                      }
                     }}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -185,6 +218,11 @@ export default function ProductGrid({
                   <h3 className="text-xs font-medium text-center text-gray-900 dark:text-white line-clamp-2 w-full mb-1 min-h-[2.2em]">
                     {product.nombre}
                   </h3>
+                  {product.nota && (
+                    <div className="w-full text-center text-gray-500 dark:text-gray-400 text-[10px] line-clamp-2 mb-1 italic">
+                      {product.nota}
+                    </div>
+                  )}
                   <div className="flex items-center justify-between w-full mt-auto mb-0">
                     <div className="flex flex-col mb-0 pb-0">
                       <span className={`${product.precio_venta_online !== null && product.precio_venta_online < product.precio_venta ? 'text-green-600 dark:text-green-400 text-base font-bold' : 'text-amber-700 dark:text-amber-400 font-bold text-sm'}`}>
@@ -294,8 +332,27 @@ sku: ${product.sku || '000'}
                   className="absolute top-2 right-2 z-10 p-1 bg-white/80 dark:bg-gray-900/80 rounded-full hover:bg-amber-100 dark:hover:bg-amber-900 transition-colors"
                   title="Compartir"
                   onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/tienda/producto/${selectedProduct.id_producto}`);
-                    alert('¡Enlace copiado al portapapeles!');
+                    // Construir URL con categoría e ID de producto
+                    // Asegurar que la categoría sea un valor válido
+                    const catId = categoryId !== null ? categoryId : '';
+                    const productUrl = `${window.location.origin}/productos?categoria=${catId}&producto=${selectedProduct.id_producto}`;
+                    
+                    if (navigator.share) {
+                      navigator.share({
+                        title: selectedProduct.nombre,
+                        text: `Mira este producto: ${selectedProduct.nombre}`,
+                        url: productUrl
+                      })
+                      .catch(() => {
+                        // Si falla el navigator.share, copiar al portapapeles como fallback
+                        navigator.clipboard.writeText(productUrl);
+                        alert('¡Enlace copiado al portapapeles!');
+                      });
+                    } else {
+                      // Fallback para navegadores que no soportan Web Share API
+                      navigator.clipboard.writeText(productUrl);
+                      alert('¡Enlace copiado al portapapeles!');
+                    }
                   }}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

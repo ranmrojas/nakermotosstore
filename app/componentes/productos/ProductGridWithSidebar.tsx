@@ -8,6 +8,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface ProductGridWithSidebarProps {
   defaultCategoryId?: number | null;
+  targetProductId?: number | null;
   showAddToCart?: boolean;
 }
 
@@ -19,12 +20,15 @@ export interface ProductGridWithSidebarRef {
 
 const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGridWithSidebarProps>(({ 
   defaultCategoryId = null,
+  targetProductId = null,
   showAddToCart = true
 }, ref) => {
   // Estado para manejar la categoría seleccionada
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(defaultCategoryId);
   // Estado para controlar si el sidebar está abierto
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Estado para almacenar el ID del producto que se debe mostrar
+  const [activeProductId, setActiveProductId] = useState<number | null>(targetProductId);
   
   // Obtener categorías usando el hook
   const { categorias, loading: categoriasLoading } = useCategorias();
@@ -117,6 +121,7 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
               categoryId={selectedCategoryId}
               limit={1000}
               showAddToCart={showAddToCart}
+              targetProductId={activeProductId}
             />
           </div>
         ) : (
