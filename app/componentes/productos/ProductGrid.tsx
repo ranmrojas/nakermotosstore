@@ -20,6 +20,8 @@ export default function ProductGrid({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // URL para imágenes utilizando el servicio centralizado
   const getImageUrl = (id: number, ext: string) => {
@@ -29,6 +31,18 @@ export default function ProductGrid({
   // Verificar disponibilidad
   const isAvailable = (existencias: number, vende_sin_existencia: number) => {
     return existencias > 0 || vende_sin_existencia === 1;
+  };
+
+  // Función para abrir el modal
+  const openModal = (product: Product) => {
+    setSelectedProduct(product);
+    setIsModalOpen(true);
+  };
+
+  // Función para cerrar el modal
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedProduct(null);
   };
 
   // Función para cargar productos
@@ -113,9 +127,10 @@ export default function ProductGrid({
           {products.map((product) => (
             <div
               key={product.id_producto}
-              className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col items-center p-1 sm:p-2 h-full min-h-[180px] hover:shadow-md transition-shadow"
+              className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col items-center p-1 sm:p-2 h-full min-h-[180px] hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => openModal(product)}
             >
-              <Link href={`/tienda/producto/${product.id_producto}`} className="flex flex-col items-center w-full h-full">
+              <div className="flex flex-col items-center w-full h-full">
                 <div className="relative w-full aspect-square">
                   <Image
                     src={product.id_imagen ? getImageUrl(product.id_imagen, product.ext1) : '/file.svg'}
@@ -164,24 +179,43 @@ export default function ProductGrid({
                     {product.nombre}
                   </h3>
                   <div className="flex items-center justify-between w-full mt-auto">
-                    <span className="text-amber-700 dark:text-amber-400 font-bold text-sm">
-                      ${((product.precio_venta_online || product.precio_venta) ?? 0).toLocaleString('es-CO')}
-                    </span>
-                    {showAddToCart && (
+                    <div className="flex flex-col">
+                      <span className="text-amber-700 dark:text-amber-400 font-bold text-sm">
+                        ${((product.precio_venta_online || product.precio_venta) ?? 0).toLocaleString('es-CO')}
+                      </span>
+                      {product.sku && (
+                        <span className="text-gray-400 dark:text-gray-500 text-[10px]">
+                          sku: {product.sku}
+                        </span>
+                      )}
+                    </div>
+                    {showAddToCart && product.existencias > 0 ? (
                       <button
-                        className="ml-2 w-6 h-6 flex items-center justify-center bg-amber-600 dark:bg-amber-500 text-white rounded hover:bg-amber-700 dark:hover:bg-amber-600 transition-colors"
-                        aria-label={`Añadir ${product.nombre} al carrito`}
                         onClick={(e) => {
                           e.preventDefault();
-                          alert(`Producto ${product.nombre} añadido al carrito`);
+                          e.stopPropagation();
+                          const message = `Hola, quiero pedir:
+1 ${product.nombre}
+Valor: $${((product.precio_venta_online || product.precio_venta) ?? 0).toLocaleString('es-CO')}
+sku: ${product.sku || '-'}
+
+¿Me confirma el valor de domicilio?`;
+                          window.open(`https://wa.me/573043668910?text=${encodeURIComponent(message)}`, '_blank');
                         }}
+                        className="ml-2 w-8 h-8 flex items-center justify-center bg-amber-600 dark:bg-amber-500 text-white rounded-full hover:bg-amber-700 dark:hover:bg-amber-600 transition-colors"
+                        aria-label={`Pedir ${product.nombre} por WhatsApp`}
                       >
-                        {/* Icono de carrito moderno */}
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        {/* Icono de suma moderno */}
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2" fill="currentColor" className="text-amber-600 dark:bg-amber-500" />
+                          <path d="M12 8v8M8 12h8" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
                         </svg>
                       </button>
-                    )}
+                    ) : product.existencias <= 0 ? (
+                      <span className="ml-2 px-2 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 text-xs rounded-full font-medium">
+                        Agotado
+                      </span>
+                    ) : null}
                   </div>
                   {product.precio_venta_online !== null && product.precio_venta_online !== product.precio_venta && (
                     <p className="text-gray-400 dark:text-gray-500 text-xs line-through mt-1">
@@ -189,9 +223,138 @@ export default function ProductGrid({
                     </p>
                   )}
                 </div>
-              </Link>
+              </div>
             </div>
           ))}
+        </div>
+      )}
+      
+      {/* Modal del producto */}
+      {isModalOpen && selectedProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {/* Header del modal */}
+            <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Detalles del producto
+              </h2>
+              <button
+                onClick={closeModal}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            {/* Contenido del modal */}
+            <div className="p-4">
+              {/* Imagen del producto */}
+              <div className="relative w-full aspect-square mb-4 rounded-lg overflow-hidden">
+                <Image
+                  src={selectedProduct.id_imagen ? getImageUrl(selectedProduct.id_imagen, selectedProduct.ext1) : '/file.svg'}
+                  alt={selectedProduct.nombre}
+                  fill
+                  className="object-cover"
+                  unoptimized={true}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    if (selectedProduct.ext2 && selectedProduct.ext2 !== selectedProduct.ext1) {
+                      target.src = getImageUrl(selectedProduct.id_imagen, selectedProduct.ext2);
+                      target.onerror = () => {
+                        target.src = '/file.svg';
+                        target.onerror = null;
+                      };
+                    } else {
+                      target.src = '/file.svg';
+                    }
+                  }}
+                />
+              </div>
+              
+              {/* Información del producto */}
+              <div className="space-y-3">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                  {selectedProduct.nombre}
+                </h3>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-2xl font-bold text-amber-700 dark:text-amber-400">
+                    ${((selectedProduct.precio_venta_online || selectedProduct.precio_venta) ?? 0).toLocaleString('es-CO')}
+                  </span>
+                  {selectedProduct.existencias > 0 ? (
+                    <button
+                      onClick={() => {
+                        const message = `Hola, quiero pedir:
+1 ${selectedProduct.nombre}
+Valor: $${((selectedProduct.precio_venta_online || selectedProduct.precio_venta) ?? 0).toLocaleString('es-CO')}
+sku: ${selectedProduct.sku || '-'}
+
+¿Me confirma el valor de domicilio?`;
+                        window.open(`https://wa.me/573043668910?text=${encodeURIComponent(message)}`, '_blank');
+                      }}
+                      className="px-4 py-2 bg-amber-600 dark:bg-amber-500 text-white rounded-lg hover:bg-amber-700 dark:hover:bg-amber-600 transition-colors flex items-center gap-2"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      Pedir por WhatsApp
+                    </button>
+                  ) : (
+                    <span className="px-3 py-2 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 text-sm rounded-lg font-medium">
+                      Agotado
+                    </span>
+                  )}
+                </div>
+                
+                {/* Información adicional */}
+                <div className="space-y-2 text-sm">
+                  {selectedProduct.sku && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">SKU:</span>
+                      <span className="text-gray-900 dark:text-white font-medium">{selectedProduct.sku}</span>
+                    </div>
+                  )}
+                  
+                  {selectedProduct.nombre_categoria && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Categoría:</span>
+                      <span className="text-gray-900 dark:text-white font-medium">{selectedProduct.nombre_categoria}</span>
+                    </div>
+                  )}
+                  
+                  {selectedProduct.nombre_marca && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Marca:</span>
+                      <span className="text-gray-900 dark:text-white font-medium">{selectedProduct.nombre_marca}</span>
+                    </div>
+                  )}
+                  
+                  {selectedProduct.alias && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Alias:</span>
+                      <span className="text-gray-900 dark:text-white font-medium">{selectedProduct.alias}</span>
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Existencias:</span>
+                    <span className={`font-medium ${selectedProduct.existencias > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                      {selectedProduct.existencias}
+                    </span>
+                  </div>
+                  
+                  {selectedProduct.nota && (
+                    <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <span className="text-gray-600 dark:text-gray-400 text-sm font-medium">Nota:</span>
+                      <p className="text-gray-900 dark:text-white text-sm mt-1">{selectedProduct.nota}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
