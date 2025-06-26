@@ -79,7 +79,7 @@ export default function ProductGridWithSidebar({
       <div className="flex-1">
         {selectedCategoryId !== null ? (
           <>
-            <div className="mb-2 text-sm text-gray-500">
+            <div className="mb-2 text-sm text-gray-500 dark:text-gray-400">
               Mostrando productos de la categoría ID: {selectedCategoryId}
             </div>
             <ProductGrid 
@@ -90,7 +90,7 @@ export default function ProductGridWithSidebar({
             />
           </>
         ) : (
-          <div className="p-4 bg-gray-50 rounded text-center">
+          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded text-center text-gray-600 dark:text-gray-400">
             Selecciona una categoría para ver los productos
           </div>
         )}

@@ -132,23 +132,23 @@ export default function SidebarCategories({
   const isCategoryExpanded = (id: number) => expandedCategories.includes(id);
 
   return (
-    <aside className="w-full bg-white rounded-lg shadow-sm border border-gray-200 p-3">
-      <h2 className="text-md font-bold text-blue-900 mb-2">Categorías</h2>
+    <aside className="w-full bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
+      <h2 className="text-md font-bold text-blue-900 dark:text-blue-400 mb-2">Categorías</h2>
       <ul className="space-y-1 overflow-y-auto max-h-[70vh]">
         {/* Opción Todos */}
         <li>
           <button
-            className={`flex items-center w-full px-2 py-1.5 rounded hover:bg-blue-50 transition text-left font-medium ${
-              selectedCategoryId === null ? "text-blue-700 bg-blue-50/60" : "text-gray-900"
+            className={`flex items-center w-full px-2 py-1.5 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition text-left font-medium ${
+              selectedCategoryId === null ? "text-blue-700 dark:text-blue-400 bg-blue-50/60 dark:bg-blue-900/30" : "text-gray-900 dark:text-white"
             }`}
             onClick={() => handleSelect(null)}
           >
-            <HomeIcon className="h-4 w-4 mr-1 text-blue-700 flex-shrink-0" />
+            <HomeIcon className="h-4 w-4 mr-1 text-blue-700 dark:text-blue-400 flex-shrink-0" />
             <span className="truncate">Todos los productos</span>
           </button>
         </li>
 
-        <li className="border-t border-gray-100 pt-1 mt-1">
+        <li className="border-t border-gray-100 dark:border-gray-700 pt-1 mt-1">
           {/* Lista de todas las categorías */}
           <ul className="space-y-0.5">
             {categoriasPorJerarquia.length > 0 ? (
@@ -159,8 +159,8 @@ export default function SidebarCategories({
                   <div className="flex flex-col">
                     <div className="flex items-center group">
                       <button
-                        className={`flex-1 flex items-center px-2 py-1.5 rounded hover:bg-blue-50 transition text-left text-sm ${
-                          selectedCategoryId === categoria.id ? "text-blue-700 font-medium bg-blue-50/60" : "text-gray-900"
+                        className={`flex-1 flex items-center px-2 py-1.5 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition text-left text-sm ${
+                          selectedCategoryId === categoria.id ? "text-blue-700 dark:text-blue-400 font-medium bg-blue-50/60 dark:bg-blue-900/30" : "text-gray-900 dark:text-white"
                         }`}
                         onClick={() => handleSelect(categoria.id)}
                       >
@@ -175,7 +175,7 @@ export default function SidebarCategories({
                             e.stopPropagation();
                             handleToggleExpand(categoria.id);
                           }}
-                          className="p-1.5 rounded-full hover:bg-gray-100 group-hover:text-blue-700 text-gray-400"
+                          className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 group-hover:text-blue-700 dark:group-hover:text-blue-400 text-gray-400 dark:text-gray-500"
                         >
                           <ChevronRightIcon
                             className={`h-3.5 w-3.5 transition-transform ${
@@ -190,12 +190,12 @@ export default function SidebarCategories({
                     {categoria.subcategorias && 
                      categoria.subcategorias.length > 0 && 
                      isCategoryExpanded(categoria.id) && (
-                      <ul className="pl-4 mt-0.5 space-y-0.5 border-l border-gray-100">
+                      <ul className="pl-4 mt-0.5 space-y-0.5 border-l border-gray-100 dark:border-gray-700">
                         {categoria.subcategorias.map(subcategoria => (
                           <li key={subcategoria.id}>
                             <button
-                              className={`flex items-center w-full px-2 py-1 rounded hover:bg-blue-50 transition text-left text-xs ${
-                                selectedCategoryId === subcategoria.id ? "text-blue-700 font-medium bg-blue-50/60" : "text-gray-700"
+                              className={`flex items-center w-full px-2 py-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition text-left text-xs ${
+                                selectedCategoryId === subcategoria.id ? "text-blue-700 dark:text-blue-400 font-medium bg-blue-50/60 dark:bg-blue-900/30" : "text-gray-700 dark:text-gray-300"
                               }`}
                               onClick={() => handleSelect(subcategoria.id)}
                             >
@@ -213,8 +213,8 @@ export default function SidebarCategories({
               categoriasActivas.map((categoria) => (
                 <li key={categoria.id}>
                   <button
-                    className={`flex items-center w-full px-2 py-1.5 rounded hover:bg-blue-50 transition text-left text-sm ${
-                      selectedCategoryId === categoria.id ? "text-blue-700 font-medium bg-blue-50/60" : "text-gray-900"
+                    className={`flex items-center w-full px-2 py-1.5 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition text-left text-sm ${
+                      selectedCategoryId === categoria.id ? "text-blue-700 dark:text-blue-400 font-medium bg-blue-50/60 dark:bg-blue-900/30" : "text-gray-900 dark:text-white"
                     }`}
                     onClick={() => handleSelect(categoria.id)}
                   >
@@ -229,8 +229,8 @@ export default function SidebarCategories({
       
       {/* Estado de carga */}
       {loading && (
-        <div className="mt-2 text-xs text-gray-500 flex items-center space-x-2 py-1 px-2 bg-gray-50 rounded">
-          <svg className="animate-spin h-3 w-3 text-blue-700" fill="none" viewBox="0 0 24 24">
+        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center space-x-2 py-1 px-2 bg-gray-50 dark:bg-gray-700 rounded">
+          <svg className="animate-spin h-3 w-3 text-blue-700 dark:text-blue-400" fill="none" viewBox="0 0 24 24">
             <circle
               className="opacity-25"
               cx="12"
@@ -251,7 +251,7 @@ export default function SidebarCategories({
       
       {/* Mensaje si no hay categorías */}
       {!loading && categoriasPorJerarquia && categoriasPorJerarquia.length === 0 && categoriasActivas.length === 0 && (
-        <div className="text-xs text-gray-500 py-2 px-2 text-center">
+        <div className="text-xs text-gray-500 dark:text-gray-400 py-2 px-2 text-center">
           No hay categorías disponibles
         </div>
       )}
