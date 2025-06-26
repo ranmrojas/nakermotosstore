@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { getProducts, Product, getProductImageUrl } from '@/app/services/productService';
 import { useCategorias } from '../../../hooks/useCategorias';
@@ -62,7 +62,7 @@ export default function ProductGrid({
   const selectedCategoria = selectedCategoryId !== null ? getCategoriaById(selectedCategoryId) : undefined;
   
   // Función para cargar productos
-  const loadProducts = async (catId: number | null) => {
+  const loadProducts = useCallback(async (catId: number | null) => {
     if (catId === null) {
       console.log('ProductGrid - loadProducts: catId es null, no se cargarán productos');
       return;
@@ -94,7 +94,7 @@ export default function ProductGrid({
     } finally {
       setLoading(false);
     }
-  };
+  }, [limit, getProducts, isAvailable]);
 
   // Cargar productos cuando cambie la categoría seleccionada
   useEffect(() => {
@@ -116,7 +116,7 @@ export default function ProductGrid({
       setLoading(false);
       setProducts([]);
     }
-  }, [categoryId, selectedCategoryId, limit]);
+  }, [categoryId, selectedCategoryId, limit, loadProducts]);
 
   // Manejar cambio de categoría
   const handleCategoryChange = (newCategoryId: number) => {

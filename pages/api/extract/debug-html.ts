@@ -36,7 +36,7 @@ export default async function handler(
       /<div[^>]*class="[^"]*articulo[^"]*"[^>]*>/gi
     ];
     
-    const foundPatterns = productPatterns.map((pattern, index) => {
+    const foundPatterns = productPatterns.map((pattern) => {
       const matches = html.match(pattern);
       return {
         pattern: pattern.source,

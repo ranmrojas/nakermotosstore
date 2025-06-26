@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '../../../lib/generated/prisma';
+import { PrismaClient, Prisma } from '../../../lib/generated/prisma';
 
 const prisma = new PrismaClient();
 
@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       } = req.query;
 
       // Construir filtros
-      const where: any = {};
+      const where: Prisma.CategoriaWhereInput = {};
       
       if (activa !== undefined) {
         where.activa = activa === 'true';
@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Configurar includes
-      const include: any = {};
+      const include: Prisma.CategoriaInclude = {};
       if (incluirSubcategorias === 'true') {
         include.subcategorias = {
           where: activa !== undefined ? { activa: activa === 'true' } : {}

@@ -4,6 +4,18 @@ const DB_VERSION = 1;
 const CATEGORIAS_STORE = 'categorias';
 const METADATA_STORE = 'metadata';
 
+interface Categoria {
+  id: number;
+  nombre: string;
+  categoriaPadreId?: number;
+  activa: boolean;
+  [key: string]: unknown;
+}
+
+interface MetadataValue {
+  [key: string]: unknown;
+}
+
 export class IndexedDBService {
   private db: IDBDatabase | null = null;
 
@@ -31,7 +43,7 @@ export class IndexedDBService {
 
         // Crear store de metadata
         if (!db.objectStoreNames.contains(METADATA_STORE)) {
-          const metadataStore = db.createObjectStore(METADATA_STORE, { keyPath: 'key' });
+          db.createObjectStore(METADATA_STORE, { keyPath: 'key' });
         }
       };
     });
@@ -45,7 +57,7 @@ export class IndexedDBService {
   }
 
   // Obtener todas las categorías
-  async getCategorias(): Promise<any[]> {
+  async getCategorias(): Promise<Categoria[]> {
     this.ensureDB();
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction([CATEGORIAS_STORE], 'readonly');
@@ -58,7 +70,7 @@ export class IndexedDBService {
   }
 
   // Guardar categorías
-  async saveCategorias(categorias: any[]): Promise<void> {
+  async saveCategorias(categorias: Categoria[]): Promise<void> {
     this.ensureDB();
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction([CATEGORIAS_STORE], 'readwrite');
@@ -96,7 +108,7 @@ export class IndexedDBService {
             
             const request = store.add(categoriaToSave);
             
-            request.onerror = (event) => {
+            request.onerror = () => {
               errors++;
               console.error(`❌ Error al guardar categoría ${categoriaToSave.id}:`, request.error);
               completed++;
@@ -143,7 +155,7 @@ export class IndexedDBService {
   }
 
   // Obtener metadata
-  async getMetadata(key: string): Promise<any> {
+  async getMetadata(key: string): Promise<MetadataValue | undefined> {
     this.ensureDB();
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction([METADATA_STORE], 'readonly');
@@ -156,7 +168,7 @@ export class IndexedDBService {
   }
 
   // Guardar metadata
-  async saveMetadata(key: string, value: any): Promise<void> {
+  async saveMetadata(key: string, value: MetadataValue): Promise<void> {
     this.ensureDB();
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction([METADATA_STORE], 'readwrite');

@@ -5,6 +5,27 @@ const SYNC_INTERVAL = 24 * 60 * 60 * 1000; // 24 horas en milisegundos
 const LAST_SYNC_KEY = 'lastCategoriasSync';
 const CATEGORIAS_VERSION_KEY = 'categoriasVersion';
 
+interface Categoria {
+  id: number;
+  nombre: string;
+  categoriaPadreId?: number;
+  activa: boolean;
+  [key: string]: unknown;
+}
+
+interface SyncResult {
+  success: boolean;
+  data?: Categoria[];
+  error?: string;
+}
+
+interface SyncStats {
+  lastSync: Date | null;
+  needsSync: boolean;
+  timeUntilNextSync: number | null;
+  categoriasCount: number;
+}
+
 export class SyncService {
   // Verificar si necesita sincronización
   async needsSync(): Promise<boolean> {
@@ -15,7 +36,8 @@ export class SyncService {
         return true; // Primera vez, necesita sincronizar
       }
 
-      const timeSinceLastSync = Date.now() - lastSync;
+      const timestamp = (lastSync as { timestamp: number }).timestamp;
+      const timeSinceLastSync = Date.now() - timestamp;
       return timeSinceLastSync >= SYNC_INTERVAL;
     } catch (error) {
       console.error('Error verificando sincronización:', error);
@@ -27,7 +49,10 @@ export class SyncService {
   async getLastSyncTime(): Promise<Date | null> {
     try {
       const lastSync = await indexedDBService.getMetadata(LAST_SYNC_KEY);
-      return lastSync ? new Date(lastSync) : null;
+      if (!lastSync) return null;
+      
+      const timestamp = (lastSync as { timestamp: number }).timestamp;
+      return new Date(timestamp);
     } catch (error) {
       console.error('Error obteniendo última sincronización:', error);
       return null;
@@ -35,7 +60,7 @@ export class SyncService {
   }
 
   // Sincronizar categorías desde el API
-  async syncCategorias(): Promise<{ success: boolean; data?: any[]; error?: string }> {
+  async syncCategorias(): Promise<SyncResult> {
     try {
       console.log('🔄 Iniciando sincronización de categorías...');
       
@@ -61,7 +86,7 @@ export class SyncService {
       console.log(`📋 Ejemplo de categoría recibida:`, JSON.stringify(result.data[0], null, 2));
       
       // Guardar categorías en IndexedDB
-      await indexedDBService.saveCategorias(result.data);
+      await indexedDBService.saveCategorias(result.data as Categoria[]);
       
       // Verificar que se guardaron correctamente
       const categoriasGuardadas = await indexedDBService.getCategorias();
@@ -69,14 +94,14 @@ export class SyncService {
       
       // Actualizar metadata
       const now = Date.now();
-      await indexedDBService.saveMetadata(LAST_SYNC_KEY, now);
-      await indexedDBService.saveMetadata(CATEGORIAS_VERSION_KEY, result.data.length);
+      await indexedDBService.saveMetadata(LAST_SYNC_KEY, { timestamp: now });
+      await indexedDBService.saveMetadata(CATEGORIAS_VERSION_KEY, { count: result.data.length });
 
       console.log('✅ Sincronización completada exitosamente');
       
       return {
         success: true,
-        data: result.data
+        data: result.data as Categoria[]
       };
 
     } catch (error) {
@@ -89,18 +114,13 @@ export class SyncService {
   }
 
   // Sincronización forzada (manual)
-  async forceSync(): Promise<{ success: boolean; data?: any[]; error?: string }> {
+  async forceSync(): Promise<SyncResult> {
     console.log('🔄 Sincronización forzada...');
     return await this.syncCategorias();
   }
 
   // Obtener estadísticas de sincronización
-  async getSyncStats(): Promise<{
-    lastSync: Date | null;
-    needsSync: boolean;
-    timeUntilNextSync: number | null;
-    categoriasCount: number;
-  }> {
+  async getSyncStats(): Promise<SyncStats> {
     try {
       const lastSync = await this.getLastSyncTime();
       const needsSync = await this.needsSync();

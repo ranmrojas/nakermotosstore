@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '../../../lib/generated/prisma';
+import { PrismaClient, Prisma } from '../../../lib/generated/prisma';
 
 const prisma = new PrismaClient();
 
@@ -111,7 +111,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Preparar datos para actualización
-      const datosActualizacion: any = {};
+      const datosActualizacion: Prisma.CategoriaUpdateInput = {};
       
       if (nombre !== undefined) {
         datosActualizacion.nombre = nombre.trim();
@@ -126,7 +126,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       
       if (categoriaPadreId !== undefined) {
-        datosActualizacion.categoriaPadreId = categoriaPadreId;
+        datosActualizacion.categoriaPadre = { connect: { id: parseInt(categoriaPadreId) } };
       }
 
       const categoriaActualizada = await prisma.categoria.update({

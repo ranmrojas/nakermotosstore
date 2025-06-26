@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { getProducts, Product, getProductImageUrl } from '@/app/services/productService';
 import { useCategorias } from '../../../hooks/useCategorias';
@@ -16,7 +16,6 @@ export default function ProductManagerList({
   categoryId = '46', 
   limit = 50,
   showCategorySelector = false,
-  defaultCategoryId = 46
 }: ProductManagerListProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +36,7 @@ export default function ProductManagerList({
   const selectedCategoria = getCategoriaById(selectedCategoryId);
 
   // Función para cargar productos
-  const loadProducts = async (catId: number) => {
+  const loadProducts = useCallback(async (catId: number) => {
     setLoading(true);
     setError(null);
     
@@ -50,14 +49,14 @@ export default function ProductManagerList({
     } finally {
       setLoading(false);
     }
-  };
+  }, [limit, getProducts]);
 
   // Cargar productos cuando cambie la categoría seleccionada
   useEffect(() => {
     if (selectedCategoryId) {
       loadProducts(selectedCategoryId);
     }
-  }, [selectedCategoryId, limit]);
+  }, [selectedCategoryId, limit, loadProducts]);
 
   // Manejar cambio de categoría
   const handleCategoryChange = (newCategoryId: number) => {

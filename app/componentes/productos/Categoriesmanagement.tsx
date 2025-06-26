@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useCategorias } from '../../../hooks/useCategorias';
-import { indexedDBService } from '../../../lib/indexedDB/database';
-import { syncService } from '../../../lib/indexedDB/syncService';
 import { 
   PencilIcon, 
   TrashIcon, 
@@ -39,7 +37,6 @@ export default function CategoriesManagement() {
     loading,
     error,
     syncing,
-    refetch,
     forceSync,
     reset,
     getCategoriaById,
