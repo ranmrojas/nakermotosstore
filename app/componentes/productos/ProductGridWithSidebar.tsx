@@ -27,8 +27,6 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(defaultCategoryId);
   // Estado para controlar si el sidebar está abierto
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  // Estado para almacenar el ID del producto que se debe mostrar
-  const [activeProductId, setActiveProductId] = useState<number | null>(targetProductId);
   
   // Obtener categorías usando el hook
   const { categorias, loading: categoriasLoading } = useCategorias();
@@ -121,7 +119,7 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
               categoryId={selectedCategoryId}
               limit={1000}
               showAddToCart={showAddToCart}
-              targetProductId={activeProductId}
+              targetProductId={targetProductId}
             />
           </div>
         ) : (
