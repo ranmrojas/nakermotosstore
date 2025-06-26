@@ -68,7 +68,7 @@ export const useCategorias = (): UseCategoriasReturn => {
       
       setStats(prev => ({
         ...prev,
-        totalCategorias: categoriasPadre.length,
+        totalCategorias: data.length,
         totalSubcategorias: subcategorias.length,
         categoriasActivas: activas.length
       }));
@@ -97,7 +97,7 @@ export const useCategorias = (): UseCategoriasReturn => {
         
         setStats(prev => ({
           ...prev,
-          totalCategorias: categoriasPadre.length,
+          totalCategorias: result.data!.length,
           totalSubcategorias: subcategorias.length,
           categoriasActivas: activas.length
         }));

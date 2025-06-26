@@ -63,6 +63,7 @@ export default function CategoriesManagement() {
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [filterActivas, setFilterActivas] = useState<boolean | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showSubcategoriasModal, setShowSubcategoriasModal] = useState<Categoria | null>(null);
 
   // Limpiar mensajes de éxito
   useEffect(() => {
@@ -106,6 +107,16 @@ export default function CategoriesManagement() {
   const handleCloseForm = () => {
     setShowForm(false);
     clearForm();
+  };
+
+  // Abrir modal de subcategorías
+  const handleShowSubcategorias = (categoria: Categoria) => {
+    setShowSubcategoriasModal(categoria);
+  };
+
+  // Cerrar modal de subcategorías
+  const handleCloseSubcategoriasModal = () => {
+    setShowSubcategoriasModal(null);
   };
 
   // Validar formulario
@@ -234,7 +245,8 @@ export default function CategoriesManagement() {
   // Filtrar categorías
   const filteredCategorias = categorias.filter(categoria => {
     const matchesSearch = categoria.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (categoria.descripcion && categoria.descripcion.toLowerCase().includes(searchTerm.toLowerCase()));
+                         (categoria.descripcion && categoria.descripcion.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         categoria.id.toString().includes(searchTerm);
     
     const matchesFilter = filterActivas === null || categoria.activa === filterActivas;
     
@@ -279,23 +291,23 @@ export default function CategoriesManagement() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 p-4 max-w-full">
       {/* Header con estadísticas */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/20 p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Gestión de Categorías</h2>
-          <div className="flex space-x-2">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg dark:shadow-gray-900/20 p-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Gestión de Categorías</h2>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <button
               onClick={forceSync}
               disabled={syncing}
-              className="bg-blue-600 dark:bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 flex items-center space-x-2"
+              className="bg-blue-600 dark:bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 flex items-center justify-center space-x-2 text-sm"
             >
               <ArrowPathIcon className="h-4 w-4" />
               <span>{syncing ? 'Sincronizando...' : 'Sincronizar'}</span>
             </button>
             <button
               onClick={handleCreate}
-              className="bg-green-600 dark:bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-700 dark:hover:bg-green-600 flex items-center space-x-2"
+              className="bg-green-600 dark:bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 flex items-center justify-center space-x-2 text-sm"
             >
               <PlusIcon className="h-4 w-4" />
               <span>Nueva Categoría</span>
@@ -304,45 +316,45 @@ export default function CategoriesManagement() {
         </div>
 
         {/* Estadísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.totalCategorias}</div>
-            <div className="text-sm text-blue-600 dark:text-blue-400">Categorías Padre</div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+          <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
+            <div className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">{stats.categoriasActivas}</div>
+            <div className="text-xs sm:text-sm text-green-600 dark:text-green-400">Activas</div>
           </div>
-          <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.totalSubcategorias}</div>
-            <div className="text-sm text-green-600 dark:text-green-400">Subcategorías</div>
+          <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
+            <div className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400">{stats.totalCategorias - stats.categoriasActivas}</div>
+            <div className="text-xs sm:text-sm text-red-600 dark:text-red-400">Inactivas</div>
           </div>
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
-            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.categoriasActivas}</div>
-            <div className="text-sm text-yellow-600 dark:text-yellow-400">Activas</div>
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
+            <div className="text-xl sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.totalSubcategorias}</div>
+            <div className="text-xs sm:text-sm text-yellow-600 dark:text-yellow-400">Subcategorías</div>
           </div>
-          <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
-            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+          <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg border border-purple-200 dark:border-purple-800">
+            <div className="text-lg sm:text-xl font-bold text-purple-600 dark:text-purple-400">
               {stats.lastSync ? new Date(stats.lastSync).toLocaleDateString() : 'Nunca'}
             </div>
-            <div className="text-sm text-purple-600 dark:text-purple-400">Última Sincronización</div>
+            <div className="text-xs sm:text-sm text-purple-600 dark:text-purple-400">Última Sincronización</div>
           </div>
         </div>
 
         {/* Filtros y búsqueda */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="flex-1">
+        <div className="flex flex-col gap-3">
+          <div className="w-full">
             <input
               type="text"
-              placeholder="Buscar categorías..."
+              placeholder="Buscar categorías por ID, nombre o descripción..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-base"
             />
           </div>
-          <div className="flex space-x-2">
+          <div className="w-full">
             <select
               value={filterActivas === null ? 'all' : filterActivas.toString()}
               onChange={(e) => setFilterActivas(e.target.value === 'all' ? null : e.target.value === 'true')}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-base"
             >
-              <option value="all">Todas</option>
+              <option value="all">Todas las categorías</option>
               <option value="true">Solo Activas</option>
               <option value="false">Solo Inactivas</option>
             </select>
@@ -352,8 +364,8 @@ export default function CategoriesManagement() {
 
       {/* Mensaje de éxito */}
       {successMessage && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-          <div className="flex">
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 mx-4">
+          <div className="flex items-center">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-green-400 dark:text-green-300" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -367,39 +379,39 @@ export default function CategoriesManagement() {
       )}
 
       {/* Lista de categorías */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/20 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg dark:shadow-gray-900/20 overflow-hidden mx-4">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-2 sm:px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Acciones
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-2 sm:px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  ID
+                </th>
+                <th className="px-2 sm:px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Nombre
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-2 sm:px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Padre
+                </th>
+                <th className="hidden sm:table-cell px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Descripción
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Categoría Padre
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-2 sm:px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Estado
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Subcategorías
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {filteredCategorias.map((categoria) => (
                 <tr key={categoria.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex space-x-2">
+                  <td className="px-2 sm:px-3 py-2 whitespace-nowrap">
+                    <div className="flex space-x-1 sm:space-x-2">
                       <button
                         onClick={() => handleEdit(categoria)}
-                        className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 p-1 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                        className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 p-1.5 sm:p-1 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20"
                         title="Editar categoría"
                       >
                         <PencilIcon className="h-4 w-4" />
@@ -407,42 +419,62 @@ export default function CategoriesManagement() {
                       <button
                         onClick={() => handleToggleActive(categoria)}
                         disabled={operationLoading}
-                        className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300 p-1 rounded-md hover:bg-yellow-50 dark:hover:bg-yellow-900/20 disabled:opacity-50"
+                        className={`p-1.5 sm:p-1 rounded-md hover:bg-opacity-20 disabled:opacity-50 ${
+                          categoria.activa 
+                            ? 'text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20' 
+                            : 'text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20'
+                        }`}
                         title={categoria.activa ? 'Desactivar categoría' : 'Activar categoría'}
                       >
                         {categoria.activa ? (
-                          <EyeSlashIcon className="h-4 w-4" />
-                        ) : (
                           <EyeIcon className="h-4 w-4" />
+                        ) : (
+                          <EyeSlashIcon className="h-4 w-4" />
                         )}
                       </button>
                       <button
                         onClick={() => setShowDeleteConfirm(categoria.id)}
                         disabled={getSubcategorias(categoria.id).length > 0}
-                        className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 p-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 p-1.5 sm:p-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         title={getSubcategorias(categoria.id).length > 0 ? 'No se puede eliminar una categoría con subcategorías' : 'Eliminar categoría'}
                       >
                         <TrashIcon className="h-4 w-4" />
                       </button>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">{categoria.nombre}</div>
+                  <td className="px-2 sm:px-3 py-2 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">{categoria.id}</div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-2 sm:px-3 py-2 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">{categoria.nombre}</div>
+                    <div className="sm:hidden text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {categoria.descripcion ? categoria.descripcion.substring(0, 30) + (categoria.descripcion.length > 30 ? '...' : '') : 'Sin descripción'}
+                    </div>
+                  </td>
+                  <td className="px-2 sm:px-3 py-2 whitespace-nowrap">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      {categoria.categoriaPadreId 
+                        ? `${getCategoriaById(categoria.categoriaPadreId)?.nombre || 'N/A'} (ID: ${categoria.categoriaPadreId})`
+                        : getSubcategorias(categoria.id).length > 0 ? (
+                          <button
+                            onClick={() => handleShowSubcategorias(categoria)}
+                            className="font-bold text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 hover:underline text-xs sm:text-sm"
+                            title={`Ver ${getSubcategorias(categoria.id).length} subcategorías`}
+                          >
+                            Padre ({getSubcategorias(categoria.id).length})
+                          </button>
+                        ) : (
+                          'Padre'
+                        )
+                      }
+                    </div>
+                  </td>
+                  <td className="hidden sm:table-cell px-3 py-2">
                     <div className="text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
                       {categoria.descripcion || 'Sin descripción'}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {categoria.categoriaPadreId 
-                        ? getCategoriaById(categoria.categoriaPadreId)?.nombre || 'N/A'
-                        : 'Categoría Padre'
-                      }
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-2 sm:px-3 py-2 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                       categoria.activa 
                         ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' 
@@ -450,11 +482,6 @@ export default function CategoriesManagement() {
                     }`}>
                       {categoria.activa ? 'Activa' : 'Inactiva'}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {getSubcategorias(categoria.id).length} subcategorías
-                    </div>
                   </td>
                 </tr>
               ))}
@@ -471,26 +498,26 @@ export default function CategoriesManagement() {
 
       {/* Modal de confirmación de eliminación */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-gray-600 dark:bg-gray-900 bg-opacity-50 dark:bg-opacity-75 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-            <div className="mt-3 text-center">
+        <div className="fixed inset-0 bg-gray-600 dark:bg-gray-900 bg-opacity-50 dark:bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
+            <div className="p-6 text-center">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                 Confirmar eliminación
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
                 ¿Estás seguro de que quieres eliminar esta categoría? Esta acción no se puede deshacer.
               </p>
-              <div className="flex justify-center space-x-4">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => setShowDeleteConfirm(null)}
-                  className="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500"
+                  className="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-3 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 font-medium"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={() => handleDelete(showDeleteConfirm)}
                   disabled={operationLoading}
-                  className="bg-red-600 dark:bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-700 dark:hover:bg-red-600 disabled:opacity-50"
+                  className="flex-1 bg-red-600 dark:bg-red-500 text-white px-4 py-3 rounded-lg hover:bg-red-700 dark:hover:bg-red-600 disabled:opacity-50 font-medium"
                 >
                   {operationLoading ? 'Eliminando...' : 'Eliminar'}
                 </button>
@@ -502,9 +529,9 @@ export default function CategoriesManagement() {
 
       {/* Modal de formulario */}
       {showForm && (
-        <div className="fixed inset-0 bg-gray-600 dark:bg-gray-900 bg-opacity-50 dark:bg-opacity-75 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-10 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-            <div className="mt-3">
+        <div className="fixed inset-0 bg-gray-600 dark:bg-gray-900 bg-opacity-50 dark:bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
+            <div className="p-6">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                 {editingCategoria ? 'Editar Categoría' : 'Nueva Categoría'}
               </h3>
@@ -512,14 +539,14 @@ export default function CategoriesManagement() {
               <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-4">
                 {/* Nombre */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Nombre *
                   </label>
                   <input
                     type="text"
                     value={formData.nombre}
                     onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-base ${
                       formErrors.nombre ? 'border-red-500 dark:border-red-400' : 'border-gray-300 dark:border-gray-600'
                     }`}
                     placeholder="Nombre de la categoría"
@@ -531,13 +558,13 @@ export default function CategoriesManagement() {
 
                 {/* Descripción */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Descripción
                   </label>
                   <textarea
                     value={formData.descripcion}
                     onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-base ${
                       formErrors.descripcion ? 'border-red-500 dark:border-red-400' : 'border-gray-300 dark:border-gray-600'
                     }`}
                     rows={3}
@@ -550,7 +577,7 @@ export default function CategoriesManagement() {
 
                 {/* Categoría Padre */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Categoría Padre
                   </label>
                   <select
@@ -559,7 +586,7 @@ export default function CategoriesManagement() {
                       ...formData, 
                       categoriaPadreId: e.target.value ? parseInt(e.target.value) : undefined 
                     })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-base"
                   >
                     <option value="">Sin categoría padre</option>
                     {categoriasPadre
@@ -579,38 +606,136 @@ export default function CategoriesManagement() {
                     id="activa"
                     checked={formData.activa}
                     onChange={(e) => setFormData({ ...formData, activa: e.target.checked })}
-                    className="h-4 w-4 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
+                    className="h-5 w-5 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
                   />
-                  <label htmlFor="activa" className="ml-2 block text-sm text-gray-900 dark:text-white">
+                  <label htmlFor="activa" className="ml-3 block text-sm text-gray-900 dark:text-white">
                     Categoría activa
                   </label>
                 </div>
 
                 {/* Error general */}
                 {formErrors.general && (
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                     <p className="text-sm text-red-600 dark:text-red-400">{formErrors.general}</p>
                   </div>
                 )}
 
                 {/* Botones */}
-                <div className="flex justify-end space-x-3 pt-4">
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
                   <button
                     type="button"
                     onClick={handleCloseForm}
-                    className="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500"
+                    className="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-3 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 font-medium"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={operationLoading}
-                    className="bg-blue-600 dark:bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50"
+                    className="flex-1 bg-blue-600 dark:bg-blue-500 text-white px-4 py-3 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 font-medium"
                   >
                     {operationLoading ? 'Guardando...' : (editingCategoria ? 'Actualizar' : 'Crear')}
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de subcategorías */}
+      {showSubcategoriasModal && (
+        <div className="fixed inset-0 bg-gray-600 dark:bg-gray-900 bg-opacity-50 dark:bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-4xl bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  Subcategorías de: {showSubcategoriasModal.nombre}
+                </h3>
+                <button
+                  onClick={handleCloseSubcategoriasModal}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-2 sm:px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Acciones
+                      </th>
+                      <th className="px-2 sm:px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        ID
+                      </th>
+                      <th className="px-2 sm:px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Nombre
+                      </th>
+                      <th className="px-2 sm:px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Estado
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {getSubcategorias(showSubcategoriasModal.id).map((subcategoria) => (
+                      <tr key={subcategoria.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td className="px-2 sm:px-3 py-2 whitespace-nowrap">
+                          <button
+                            onClick={() => handleToggleActive(subcategoria)}
+                            disabled={operationLoading}
+                            className={`p-1.5 sm:p-1 rounded-md hover:bg-opacity-20 disabled:opacity-50 ${
+                              subcategoria.activa 
+                                ? 'text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20' 
+                                : 'text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20'
+                            }`}
+                            title={subcategoria.activa ? 'Desactivar subcategoría' : 'Activar subcategoría'}
+                          >
+                            {subcategoria.activa ? (
+                              <EyeIcon className="h-4 w-4" />
+                            ) : (
+                              <EyeSlashIcon className="h-4 w-4" />
+                            )}
+                          </button>
+                        </td>
+                        <td className="px-2 sm:px-3 py-2 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">{subcategoria.id}</div>
+                        </td>
+                        <td className="px-2 sm:px-3 py-2 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">{subcategoria.nombre}</div>
+                        </td>
+                        <td className="px-2 sm:px-3 py-2 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            subcategoria.activa 
+                              ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' 
+                              : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+                          }`}>
+                            {subcategoria.activa ? 'Activa' : 'Inactiva'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              {getSubcategorias(showSubcategoriasModal.id).length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 dark:text-gray-400">No hay subcategorías para mostrar</p>
+                </div>
+              )}
+              
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={handleCloseSubcategoriasModal}
+                  className="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-3 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 font-medium"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
           </div>
         </div>
