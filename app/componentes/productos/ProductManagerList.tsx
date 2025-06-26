@@ -49,7 +49,7 @@ export default function ProductManagerList({
     } finally {
       setLoading(false);
     }
-  }, [limit, getProducts]);
+  }, [limit]);
 
   // Cargar productos cuando cambie la categoría seleccionada
   useEffect(() => {

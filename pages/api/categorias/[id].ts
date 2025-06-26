@@ -84,32 +84,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
 
-      // Si se especifica una nueva categoría padre, verificar que existe
-      if (categoriaPadreId !== undefined) {
-        if (categoriaPadreId === null) {
-          // Se está convirtiendo en categoría padre
-        } else {
-          const categoriaPadre = await prisma.categoria.findUnique({
-            where: { id: parseInt(categoriaPadreId) }
-          });
-
-          if (!categoriaPadre) {
-            return res.status(400).json({
-              success: false,
-              error: 'La categoría padre especificada no existe'
-            });
-          }
-
-          // Evitar referencias circulares
-          if (parseInt(categoriaPadreId) === categoriaId) {
-            return res.status(400).json({
-              success: false,
-              error: 'Una categoría no puede ser padre de sí misma'
-            });
-          }
-        }
-      }
-
       // Preparar datos para actualización
       const datosActualizacion: Prisma.CategoriaUpdateInput = {};
       
@@ -125,8 +99,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         datosActualizacion.activa = activa;
       }
       
+      // Si se especifica una nueva categoría padre, verificar que existe
       if (categoriaPadreId !== undefined) {
-        datosActualizacion.categoriaPadre = { connect: { id: parseInt(categoriaPadreId) } };
+        if (categoriaPadreId === null) {
+          // Se está convirtiendo en categoría raíz (sin padre)
+          datosActualizacion.categoriaPadre = { disconnect: true };
+        } else {
+          const categoriaPadre = await prisma.categoria.findUnique({
+            where: { id: parseInt(categoriaPadreId.toString()) }
+          });
+
+          if (!categoriaPadre) {
+            return res.status(400).json({
+              success: false,
+              error: 'La categoría padre especificada no existe'
+            });
+          }
+
+          // Evitar referencias circulares
+          if (parseInt(categoriaPadreId.toString()) === categoriaId) {
+            return res.status(400).json({
+              success: false,
+              error: 'Una categoría no puede ser padre de sí misma'
+            });
+          }
+
+          datosActualizacion.categoriaPadre = { connect: { id: parseInt(categoriaPadreId.toString()) } };
+        }
       }
 
       const categoriaActualizada = await prisma.categoria.update({

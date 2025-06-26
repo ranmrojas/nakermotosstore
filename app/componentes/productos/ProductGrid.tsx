@@ -94,7 +94,7 @@ export default function ProductGrid({
     } finally {
       setLoading(false);
     }
-  }, [limit, getProducts, isAvailable]);
+  }, [limit]);
 
   // Cargar productos cuando cambie la categoría seleccionada
   useEffect(() => {
@@ -116,7 +116,7 @@ export default function ProductGrid({
       setLoading(false);
       setProducts([]);
     }
-  }, [categoryId, selectedCategoryId, limit, loadProducts]);
+  }, [categoryId, selectedCategoryId, loadProducts]);
 
   // Manejar cambio de categoría
   const handleCategoryChange = (newCategoryId: number) => {
