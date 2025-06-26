@@ -7,13 +7,11 @@ import { useCategorias } from '../../../hooks/useCategorias';
 
 interface ProductGridWithSidebarProps {
   defaultCategoryId?: number | null;
-  limit?: number;
   showAddToCart?: boolean;
 }
 
 export default function ProductGridWithSidebar({ 
   defaultCategoryId = null,
-  limit = 24,
   showAddToCart = true
 }: ProductGridWithSidebarProps) {
   // Estado para manejar la categoría seleccionada
@@ -86,7 +84,7 @@ export default function ProductGridWithSidebar({
             </div>
             <ProductGrid 
               categoryId={selectedCategoryId}
-              limit={limit}
+              limit={1000} /* Valor alto para asegurar que se muestren todos los productos */
               showAddToCart={showAddToCart}
               showCategorySelector={false}
             />

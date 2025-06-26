@@ -15,7 +15,6 @@ export default function ProductosPage() {
 
       <ProductGridWithSidebar 
         defaultCategoryId={null} // Usará automáticamente la primera categoría disponible
-        limit={24}
         showAddToCart={true}
       />
     </div>

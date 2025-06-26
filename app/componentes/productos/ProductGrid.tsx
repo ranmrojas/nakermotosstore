@@ -16,7 +16,7 @@ interface ProductGridProps {
 
 export default function ProductGrid({ 
   categoryId = null, 
-  limit = 20,
+  limit = 1000, // Valor alto para mostrar todos los productos de la categoría
   showAddToCart = true,
   showCategorySelector = false,
   defaultCategoryId = null
