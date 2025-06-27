@@ -21,6 +21,11 @@ Este es un proyecto [Next.js](https://nextjs.org) que implementa un sistema comp
 - **Menú desplegable de categorías**: Filtrado elegante y compacto por categoría seleccionada
 - **Gestión de imágenes**: Fallbacks automáticos y optimización
 - **Interfaz responsive**: Diseño adaptativo para móviles y desktop
+- **Búsqueda avanzada**: Filtros por nombre, marca, SKU, precio y categoría
+- **Tags de categorías**: Acceso rápido a categorías específicas (Licores, Vapeadores, Gaseosa, Cerveza)
+- **Deselección inteligente**: Los tags se deseleccionan automáticamente al escribir en el buscador o al hacer clic en un tag ya seleccionado
+- **Scroll manual optimizado**: Navegación fluida en resultados de búsqueda y sidebar
+- **Página especializada de vapeadores**: Vista dedicada para productos de vape con filtros específicos (Desechables, Baterías, Cápsulas)
 
 ### 🔄 Sincronización Inteligente
 - **IndexedDB unificado**: Almacenamiento local persistente para categorías y productos
@@ -198,7 +203,20 @@ const { categorias, getCategoriaById, loading } = useCategorias();
 - Se ejecuta cada 24 horas automáticamente
 - Detecta cambios en el servidor
 - Actualiza IndexedDB sin interrumpir la experiencia del usuario
-- Maneja errores de conexión gracefully
+
+### 🖱️ Navegación y Scroll Optimizado
+- **Scroll manual en resultados**: Navegación fluida en listas de productos sin scroll automático intrusivo
+- **Sidebar con scroll**: Navegación independiente en categorías con altura fija
+- **Contenedores con altura específica**: Uso de `calc(100vh - 300px)` para resultados y `calc(100vh - 80px)` para sidebar
+- **Sin scroll automático**: Eliminación de scroll automático al seleccionar tags o categorías
+- **Experiencia de usuario mejorada**: Control total del usuario sobre la navegación
+
+### 🚬 Página de Vapeadores (/vape)
+- **Categorías específicas**: Productos de las subcategorías de vapeadores (62, 61, 63)
+- **Filtros especializados**: Tags para Dispositivos Desechables, Baterías y Cápsulas
+- **Búsqueda dedicada**: Buscador específico para productos de vape
+- **Carga automática**: Todos los productos de vape se cargan al iniciar la página
+- **Deselección de filtros**: Los tags se pueden deseleccionar al hacer clic nuevamente
 
 ### Gestión de Estado
 - Estado local optimizado con React hooks

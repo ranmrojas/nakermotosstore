@@ -6,18 +6,43 @@ import { usePathname } from 'next/navigation';
 import {
   HomeIcon,
   ShoppingBagIcon,
-  UserIcon,
-  HeartIcon,
   MagnifyingGlassIcon,
   Bars3Icon
 } from '@heroicons/react/24/outline';
 import {
   HomeIcon as HomeIconSolid,
   ShoppingBagIcon as ShoppingBagIconSolid,
-  UserIcon as UserIconSolid,
-  HeartIcon as HeartIconSolid,
   MagnifyingGlassIcon as MagnifyingGlassIconSolid
 } from '@heroicons/react/24/solid';
+
+// Icono personalizado de nube (vape)
+const VapeIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    {/* Nube principal */}
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+    {/* Pequeñas nubes de vapor */}
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 8a2 2 0 012-2h4a2 2 0 012 2" opacity="0.6" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 6a1 1 0 011-1h2a1 1 0 011 1" opacity="0.4" />
+  </svg>
+);
+
+// Icono personalizado de nube (versión sólida)
+const VapeIconSolid = ({ className = "w-5 h-5" }: { className?: string }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+    {/* Nube principal */}
+    <path d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+    {/* Pequeñas nubes de vapor */}
+    <path d="M8 8a2 2 0 012-2h4a2 2 0 012 2" opacity="0.6" />
+    <path d="M6 6a1 1 0 011-1h2a1 1 0 011 1" opacity="0.4" />
+  </svg>
+);
+
+// Icono personalizado de WhatsApp
+const WhatsAppIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.031-.967-.273-.099-.471-.148-.67.15-.198.297-.767.966-.94 1.164-.173.198-.347.223-.644.075-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.372-.025-.52-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.5-.669-.51-.173-.007-.372-.009-.571-.009-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.099 3.2 5.077 4.363.71.306 1.263.489 1.694.626.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.288.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 3.617h-.001a8.807 8.807 0 01-4.473-1.231l-.321-.191-3.326.889.889-3.24-.209-.332A8.824 8.824 0 013.1 12.045c0-4.86 3.952-8.808 8.824-8.808 2.357 0 4.571.917 6.237 2.584a8.74 8.74 0 012.584 6.224c-.003 4.86-3.951 8.808-8.822 8.808m7.666-16.474A10.92 10.92 0 0011.924 1.1C5.504 1.1.1 6.504.1 12.92c0 2.283.594 4.522 1.722 6.475L.057 23.925a1.003 1.003 0 00.991 1.255c.13 0 .262-.021.388-.065l4.634-1.545a10.888 10.888 0 005.854 1.708h.005c6.419 0 11.824-5.404 11.824-11.82 0-2.828-1.104-5.487-3.108-7.491" />
+  </svg>
+);
 
 interface NavItem {
   name: string;
@@ -41,7 +66,7 @@ interface ButtonNavProps {
 const defaultNavigation: NavItem[] = [
   {
     name: 'Inicio',
-    href: '/',
+    href: '/productos',
     icon: HomeIcon,
     iconSolid: HomeIconSolid,
   },
@@ -58,17 +83,16 @@ const defaultNavigation: NavItem[] = [
     iconSolid: MagnifyingGlassIconSolid,
   },
   {
-    name: 'Favoritos',
-    href: '/favoritos',
-    icon: HeartIcon,
-    iconSolid: HeartIconSolid,
-    badge: 3,
+    name: 'Vape',
+    href: '/vape',
+    icon: VapeIcon,
+    iconSolid: VapeIconSolid,
   },
   {
-    name: 'Perfil',
-    href: '/perfil',
-    icon: UserIcon,
-    iconSolid: UserIconSolid,
+    name: 'WhatsApp',
+    href: 'https://wa.me/573043668910',
+    icon: WhatsAppIcon,
+    iconSolid: WhatsAppIcon,
   },
 ];
 
@@ -157,7 +181,7 @@ export default function ButtonNav({
             ${isActive ? colors.activeBg : colors.hoverBg}`}
           >
             <Bars3Icon 
-              className={`w-4 h-4 transition-all duration-300
+              className={`w-5 h-5 transition-all duration-300
                 ${isActive ? 'scale-110' : 'scale-100 group-hover:scale-105'}`}
             />
             
@@ -196,7 +220,7 @@ export default function ButtonNav({
           ${isActive ? colors.activeBg : colors.hoverBg}`}
         >
           <IconComponent 
-            className={`w-4 h-4 transition-all duration-300
+            className={`w-5 h-5 transition-all duration-300
               ${isActive ? 'scale-110' : 'scale-100 group-hover:scale-105'}`}
           />
           

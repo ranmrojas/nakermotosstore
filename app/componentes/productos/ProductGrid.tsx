@@ -2,27 +2,103 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { getProducts, Product, getProductImageUrl } from '@/app/services/productService';
+import { useProductos } from '../../../hooks/useProductos';
+import { getProductImageUrl } from '@/app/services/productService';
+
+// Definir la interfaz Producto basada en la del hook
+interface Producto {
+  id_producto: number;
+  nombre: string;
+  alias: string;
+  precio_venta: number;
+  precio_venta_online: number | null;
+  precio_promocion_online: number;
+  existencias: number;
+  vende_sin_existencia: number;
+  id_categoria: number;
+  nombre_categoria: string;
+  id_marca: number;
+  nombre_marca: string;
+  id_imagen: number | null;
+  ext1: string | null;
+  ext2: string | null;
+  mostrar_tienda_linea: number;
+  mostrar_catalogo_linea: number;
+  es_servicio: number;
+  fecha_Ini_promocion_online: number | null;
+  fecha_fin_promocion_online: number | null;
+  dias_aplica_promocion_online: string | null;
+  controla_inventario_tienda_linea: number;
+  id_cocina: number | null;
+  tiempo_preparacion: number;
+  tipo_promocion_online: number;
+  id_padre: number | null;
+  sku: string;
+  total_estampilla: number;
+  total_impoconsumo: number;
+  cups: string | null;
+  configuracion_dinamica: string | null;
+  id_sucursal: number;
+  vender_solo_presentacion: number;
+  presentaciones: string | null;
+  id_tipo_medida: number;
+  id_tipo_producto: number;
+  tipo_impuesto: number;
+  id_impuesto: number;
+  valor_impuesto: number;
+  invima: string;
+  cum: string;
+  nota: string;
+  unidad_medida: string;
+  nombre_impuesto: string;
+  dias_aplica_venta_online: string;
+  hora_aplica_venta_online: string;
+  hora_aplica_venta_fin_online: string;
+  hora_Ini_promocion_online: string | null;
+  hora_fecha_fin_promocion_online: string | null;
+  [key: string]: unknown;
+}
+
+interface CategoriaProductos {
+  id: number;
+  nombre: string;
+  productos: Producto[];
+  totalProductos: number;
+  mostrarTodos: boolean;
+}
 
 interface ProductGridProps {
   categoryId?: string | number | null;
-  limit?: number;
+  productos?: Producto[]; // Nueva prop para productos específicos
   showAddToCart?: boolean;
   targetProductId?: number | null;
+  isSearchResults?: boolean; // Nueva prop para indicar si son resultados de búsqueda
+  loadAllCategories?: boolean; // Nueva prop para cargar todas las categorías
+  productsPerCategory?: number; // Nueva prop para límite de productos por categoría
 }
 
 export default function ProductGrid({ 
   categoryId = null, 
-  limit = 1000,
+  productos: productosProp,
   showAddToCart = true,
-  targetProductId = null
+  targetProductId = null,
+  isSearchResults = false,
+  loadAllCategories = false,
+  productsPerCategory = 10
 }: ProductGridProps) {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Producto | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Nuevo estado para categorías múltiples
+  const [categoriasProductos, setCategoriasProductos] = useState<CategoriaProductos[]>([]);
+  const [loadingAllCategories, setLoadingAllCategories] = useState(false);
+
+  // Usar el hook de productos
+  const { getProductosByCategoria, syncing } = useProductos();
 
   // URL para imágenes utilizando el servicio centralizado
   const getImageUrl = (id: number, ext: string) => {
@@ -35,7 +111,7 @@ export default function ProductGrid({
   };
 
   // Función para abrir el modal
-  const openModal = (product: Product) => {
+  const openModal = (product: Producto) => {
     setSelectedProduct(product);
     setIsModalOpen(true);
   };
@@ -46,7 +122,86 @@ export default function ProductGrid({
     setSelectedProduct(null);
   };
 
-  // Función para cargar productos
+  // Función para cargar todas las categorías
+  const loadAllCategoriesData = useCallback(async () => {
+    setLoadingAllCategories(true);
+    try {
+      // Obtener todas las categorías activas
+      const response = await fetch('/api/categorias?activa=true');
+      if (!response.ok) {
+        throw new Error(`Error al obtener categorías: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      // Validar que data sea un array
+      const categorias = Array.isArray(data) ? data : Array.isArray(data.data) ? data.data : [];
+      
+      if (categorias.length === 0) {
+        console.warn('No se encontraron categorías activas');
+        setCategoriasProductos([]);
+        setLoadingAllCategories(false);
+        return;
+      }
+      
+      const categoriasConProductos: CategoriaProductos[] = [];
+      
+      // Orden específico: primero las categorías principales
+      const categoriasPrincipales = [15, 46, 33]; // Cerveza, Vapeadores, Licores
+      const categoriasRestantes = categorias.filter((cat: { id: number }) => !categoriasPrincipales.includes(cat.id));
+      
+      // Cargar primero las categorías principales en el orden especificado
+      for (const categoriaId of categoriasPrincipales) {
+        const categoria = categorias.find((cat: { id: number }) => cat.id === categoriaId);
+        if (categoria) {
+          try {
+            const productos = await getProductosByCategoria(categoriaId);
+            const availableProducts = productos.filter(
+              product => isAvailable(product.existencias, product.vende_sin_existencia)
+            );
+            
+            categoriasConProductos.push({
+              id: categoria.id,
+              nombre: categoria.nombre,
+              productos: availableProducts.slice(0, productsPerCategory),
+              totalProductos: availableProducts.length,
+              mostrarTodos: false
+            });
+          } catch (error) {
+            console.error(`Error cargando categoría ${categoria.nombre}:`, error);
+          }
+        }
+      }
+      
+      // Luego cargar el resto de categorías
+      for (const categoria of categoriasRestantes) {
+        try {
+          const productos = await getProductosByCategoria(categoria.id);
+          const availableProducts = productos.filter(
+            product => isAvailable(product.existencias, product.vende_sin_existencia)
+          );
+          
+          categoriasConProductos.push({
+            id: categoria.id,
+            nombre: categoria.nombre,
+            productos: availableProducts.slice(0, productsPerCategory),
+            totalProductos: availableProducts.length,
+            mostrarTodos: false
+          });
+        } catch (error) {
+          console.error(`Error cargando categoría ${categoria.nombre}:`, error);
+        }
+      }
+      
+      setCategoriasProductos(categoriasConProductos);
+    } catch (error) {
+      console.error('Error cargando todas las categorías:', error);
+      setCategoriasProductos([]);
+    } finally {
+      setLoadingAllCategories(false);
+    }
+  }, [getProductosByCategoria, productsPerCategory]);
+
+  // Función para cargar productos usando el hook
   const loadProducts = useCallback(async (catId: number | null) => {
     if (catId === null) {
       setProducts([]);
@@ -56,29 +211,55 @@ export default function ProductGrid({
     setLoading(true);
     setError(null);
     try {
-      const categoryIdStr = catId.toString();
-      const data = await getProducts(categoryIdStr, limit);
-      const availableProducts = data.filter(
-        product => isAvailable(product.existencias, product.vende_sin_existencia)
-      );
-      setProducts(availableProducts);
+      let allProducts: Producto[] = [];
+      
+      // Si es la categoría 15 (Cerveza), cargar también categorías 46 y 33
+      if (catId === 15) {
+        const categoryIds = [15, 46, 33]; // Cerveza, Vapeadores, Licores
+        for (const categoryId of categoryIds) {
+          const data = await getProductosByCategoria(categoryId);
+          const availableProducts = data.filter(
+            product => isAvailable(product.existencias, product.vende_sin_existencia)
+          );
+          allProducts.push(...availableProducts);
+        }
+      } else {
+        // Para otras categorías, cargar solo la categoría seleccionada
+        const data = await getProductosByCategoria(catId);
+        const availableProducts = data.filter(
+          product => isAvailable(product.existencias, product.vende_sin_existencia)
+        );
+        allProducts = availableProducts;
+      }
+      
+      setProducts(allProducts);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
       setProducts([]);
     } finally {
       setLoading(false);
     }
-  }, [limit]);
+  }, [getProductosByCategoria]);
 
-  // Cargar productos cuando cambie la categoría
+  // Efecto para manejar productos desde props o categoría
   useEffect(() => {
-    if (categoryId !== null && categoryId !== undefined) {
+    if (productosProp) {
+      // Si se pasan productos como prop (resultados de búsqueda)
+      setProducts(productosProp);
+      setLoading(false);
+      setError(null);
+    } else if (loadAllCategories) {
+      // Si se solicita cargar todas las categorías
+      loadAllCategoriesData();
+      setLoading(false);
+    } else if (categoryId !== null && categoryId !== undefined) {
+      // Si se pasa categoryId, cargar productos de esa categoría
       loadProducts(typeof categoryId === 'string' ? parseInt(categoryId) : categoryId as number);
     } else {
       setLoading(false);
       setProducts([]);
     }
-  }, [categoryId, loadProducts]);
+  }, [categoryId, productosProp, loadProducts, loadAllCategories, loadAllCategoriesData]);
 
   // Efecto para abrir automáticamente el modal del producto específico cuando se carga
   useEffect(() => {
@@ -90,10 +271,34 @@ export default function ProductGrid({
     }
   }, [targetProductId, products, loading]);
 
-  if (loading) {
+  // Función para mostrar todos los productos de una categoría
+  const handleShowAllCategory = async (categoriaId: number) => {
+    try {
+      const productos = await getProductosByCategoria(categoriaId);
+      const availableProducts = productos.filter(
+        product => isAvailable(product.existencias, product.vende_sin_existencia)
+      );
+      
+      setCategoriasProductos(prev => prev.map(cat => 
+        cat.id === categoriaId 
+          ? { ...cat, productos: availableProducts, mostrarTodos: true }
+          : cat
+      ));
+    } catch (error) {
+      console.error('Error cargando todos los productos de la categoría:', error);
+    }
+  };
+
+  // Mostrar loading mientras se sincroniza o carga
+  if (loading || syncing || loadingAllCategories) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-800 dark:border-amber-400"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-800 dark:border-amber-400 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">
+            {syncing ? 'Sincronizando productos...' : loadingAllCategories ? 'Cargando todas las categorías...' : 'Cargando productos...'}
+          </p>
+        </div>
       </div>
     );
   }
@@ -118,164 +323,277 @@ export default function ProductGrid({
 
   return (
     <div>
-      {/* Grid de productos */}
-      {products.length === 0 ? (
-        <div className="text-center py-10">
-          <div className="text-gray-400 dark:text-gray-500 mb-4">
-            <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
-          </div>
-          <p className="text-gray-600 dark:text-gray-400 text-lg">
-            No hay productos disponibles en esta categoría
-          </p>
-          <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">
-            Intenta seleccionar otra categoría
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4">
-          {products.map((product) => (
-            <div
-              key={product.id_producto}
-              className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col items-center p-1 sm:p-2 h-full min-h-[180px] hover:shadow-md transition-shadow cursor-pointer"
-              style={{ paddingBottom: 0 }}
-              onClick={() => openModal(product)}
-            >
-              <div className="flex flex-col items-center w-full h-full">
-                <div className="relative w-full aspect-square">
-                  <Image
-                    src={product.id_imagen ? getImageUrl(product.id_imagen, product.ext1) : '/file.svg'}
-                    alt={product.nombre}
-                    fill
-                    className="object-cover w-full h-full rounded-t-lg"
-                    unoptimized={true}
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      if (product.ext2 && product.ext2 !== product.ext1) {
-                        target.src = getImageUrl(product.id_imagen, product.ext2);
-                        target.onerror = () => {
-                          target.src = '/file.svg';
-                          target.onerror = null;
-                        };
-                      } else {
-                        target.src = '/file.svg';
-                      }
-                    }}
-                  />
-                  {/* Tag de OFERTA cuando hay descuento */}
-                  {product.precio_venta_online !== null && product.precio_venta_online < product.precio_venta && (
-                    <div className="absolute top-1 left-1 z-10 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-sm">
-                      OFERTA
-                    </div>
-                  )}
-                  {/* Icono de compartir sobre la imagen */}
-                  <button
-                    className="absolute top-1 right-1 z-10 p-1 bg-white/80 dark:bg-gray-900/80 rounded-full hover:bg-amber-100 dark:hover:bg-amber-900 transition-colors"
-                    title="Compartir"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      
-                      // Construir URL con categoría e ID de producto
-                      // Asegurar que la categoría sea un valor válido
-                      const catId = categoryId !== null ? categoryId : '';
-                      const productUrl = `${window.location.origin}/productos?categoria=${catId}&producto=${product.id_producto}`;
-                      
-                      if (navigator.share) {
-                        navigator.share({
-                          title: product.nombre,
-                          text: `Mira este producto: ${product.nombre}`,
-                          url: productUrl
-                        })
-                        .catch(() => {
-                          // Si falla el navigator.share, copiar al portapapeles como fallback
-                          navigator.clipboard.writeText(productUrl);
-                          setCopiedId(product.id_producto);
-                          setTimeout(() => setCopiedId(null), 1200);
-                        });
-                      } else {
-                        // Fallback para navegadores que no soportan Web Share API
-                        navigator.clipboard.writeText(productUrl);
-                        setCopiedId(product.id_producto);
-                        setTimeout(() => setCopiedId(null), 1200);
-                      }
-                    }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <circle cx="18" cy="5" r="2" />
-                      <circle cx="6" cy="12" r="2" />
-                      <circle cx="18" cy="19" r="2" />
-                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke="currentColor" strokeWidth="1.5" />
-                      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke="currentColor" strokeWidth="1.5" />
-                    </svg>
-                  </button>
-                  {copiedId === product.id_producto && (
-                    <span className="absolute top-2 right-8 z-20 text-xs text-amber-600 dark:text-amber-400 bg-white/90 dark:bg-gray-900/90 px-2 py-0.5 rounded shadow">¡Copiado!</span>
-                  )}
-                </div>
-                <div className="flex-1 w-full flex flex-col justify-between items-center p-2 pb-1">
-                  <h3 className="text-xs font-medium text-center text-gray-900 dark:text-white line-clamp-2 w-full mb-1 min-h-[2.2em]">
-                    {product.nombre}
-                  </h3>
-                  {product.nota && (
-                    <div className="w-full text-center text-gray-500 dark:text-gray-400 text-[10px] line-clamp-2 mb-1 italic">
-                      {product.nota}
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between w-full mt-auto mb-0">
-                    <div className="flex flex-col mb-0 pb-0">
-                      <span className={`${product.precio_venta_online !== null && product.precio_venta_online < product.precio_venta ? 'text-green-600 dark:text-green-400 text-base font-bold' : 'text-amber-700 dark:text-amber-400 font-bold text-sm'}`}>
-                        ${(product.precio_venta_online !== null 
-                          ? product.precio_venta_online 
-                          : product.precio_venta)?.toLocaleString('es-CO')}
-                      </span>
-                      {product.precio_venta_online !== null && product.precio_venta_online < product.precio_venta && (
-                        <span className="text-red-400 dark:text-red-300 text-xs line-through font-medium" style={{ fontSize: '0.8rem', marginTop: '-2px' }}>
-                          ${product.precio_venta?.toLocaleString('es-CO')}
-                        </span>
-                      )}
-                    </div>
-                    {showAddToCart && product.existencias > 0 ? (
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          const message = `Hola, quiero pedir:
-1 ${product.nombre}
-Valor: $${(product.precio_venta_online !== null 
-            ? product.precio_venta_online 
-            : product.precio_venta)?.toLocaleString('es-CO')}
-sku: ${product.sku || '000'}
-
-¿Cuál sería el valor del domicilio?`;
-                          window.open(`https://wa.me/573043668910?text=${encodeURIComponent(message)}`, '_blank');
-                        }}
-                        className="ml-2 w-8 h-8 flex items-center justify-center bg-amber-600 dark:bg-amber-500 text-white rounded-full hover:bg-amber-700 dark:hover:bg-amber-600 transition-colors"
-                        aria-label={`Pedir ${product.nombre} por WhatsApp`}
-                      >
-                        {/* Icono de suma moderno */}
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2" fill="currentColor" className="text-amber-600 dark:bg-amber-500" />
-                          <path d="M12 8v8M8 12h8" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-                        </svg>
-                      </button>
-                    ) : product.existencias <= 0 ? (
-                      <span className="ml-2 px-2 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 text-xs rounded-full font-medium">
-                        Agotado
-                      </span>
-                    ) : null}
-                  </div>
-                  {product.sku && (
-                    <div className="w-full text-right text-gray-400 dark:text-gray-500 text-xs leading-none" style={{marginTop: "2px", marginBottom: 0, paddingBottom: 0}}>
-                      sku: {product.sku}
-                    </div>
-                  )}
-                </div>
+      {/* Mostrar categorías múltiples */}
+      {loadAllCategories && categoriasProductos.length > 0 ? (
+        <div className="space-y-8">
+          {categoriasProductos.map((categoria) => (
+            <div key={categoria.id} className="border-b border-gray-200 dark:border-gray-700 pb-6">
+              {/* Título de la categoría */}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  {categoria.nombre}
+                </h3>
+                <span className="text-sm text-gray-500">
+                  {categoria.productos.length} de {categoria.totalProductos} productos
+                </span>
               </div>
+              
+              {/* Grid de productos de la categoría */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4">
+                {categoria.productos.map((product) => (
+                  <div
+                    key={product.id_producto}
+                    className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col items-center p-1 sm:p-2 h-full min-h-[180px] hover:shadow-md transition-shadow cursor-pointer"
+                    style={{ paddingBottom: 0 }}
+                    onClick={() => openModal(product)}
+                  >
+                    <div className="flex flex-col items-center w-full h-full">
+                      <div className="relative w-full aspect-square">
+                        <Image
+                          src={product.id_imagen && product.ext1 ? getImageUrl(product.id_imagen, product.ext1) : '/file.svg'}
+                          alt={product.nombre}
+                          fill
+                          className="object-cover w-full h-full rounded-t-lg"
+                          unoptimized={true}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            if (product.ext2 && product.ext2 !== product.ext1 && product.id_imagen) {
+                              target.src = getImageUrl(product.id_imagen, product.ext2);
+                              target.onerror = () => {
+                                target.src = '/file.svg';
+                                target.onerror = null;
+                              };
+                            } else {
+                              target.src = '/file.svg';
+                            }
+                          }}
+                        />
+                        {/* Tag de OFERTA cuando hay descuento */}
+                        {product.precio_venta_online !== null && product.precio_venta_online < product.precio_venta && (
+                          <div className="absolute top-1 left-1 z-10 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-sm">
+                            OFERTA
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 w-full flex flex-col justify-between items-center p-2 pb-1">
+                        <h3 className="text-xs font-medium text-center text-gray-900 dark:text-white line-clamp-2 w-full mb-1 min-h-[2.2em]">
+                          {product.nombre}
+                        </h3>
+                        {product.nota && (
+                          <div className="w-full text-center text-gray-500 dark:text-gray-400 text-[10px] line-clamp-2 mb-1 italic">
+                            {product.nota}
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between w-full mt-auto mb-0">
+                          <div className="flex flex-col mb-0 pb-0">
+                            <span className="text-sm font-bold text-gray-900 dark:text-white">
+                              ${product.precio_venta_online !== null ? product.precio_venta_online : product.precio_venta}
+                            </span>
+                            {product.precio_venta_online !== null && product.precio_venta_online < product.precio_venta && (
+                              <span className="text-xs text-gray-500 line-through">
+                                ${product.precio_venta}
+                              </span>
+                            )}
+                          </div>
+                          {showAddToCart && product.existencias > 0 ? (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${(product.precio_venta_online !== null ? product.precio_venta_online : product.precio_venta)?.toLocaleString('es-CO')}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
+                                window.open(`https://wa.me/573043668910?text=${encodeURIComponent(message)}`, '_blank');
+                              }}
+                              className="ml-2 w-8 h-8 flex items-center justify-center bg-amber-600 dark:bg-amber-500 text-white rounded-full hover:bg-amber-700 dark:hover:bg-amber-600 transition-colors"
+                              aria-label={`Pedir ${product.nombre} por WhatsApp`}
+                            >
+                              {/* Icono de suma moderno */}
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2" fill="currentColor" className="text-amber-600 dark:bg-amber-500" />
+                                <path d="M12 8v8M8 12h8" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+                              </svg>
+                            </button>
+                          ) : product.existencias <= 0 ? (
+                            <span className="ml-2 px-2 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 text-xs rounded-full font-medium">
+                              Agotado
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Botón "Mostrar todo" si hay más productos */}
+              {categoria.totalProductos > categoria.productos.length && !categoria.mostrarTodos && (
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={() => handleShowAllCategory(categoria.id)}
+                    className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors text-sm"
+                  >
+                    Mostrar todos los {categoria.totalProductos} productos de {categoria.nombre}
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
+      ) : (
+        <>
+          {/* Grid de productos tradicional */}
+          {products.length === 0 ? (
+            <div className="text-center py-10">
+              <div className="text-gray-400 dark:text-gray-500 mb-4">
+                <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+              </div>
+              <p className="text-gray-600 dark:text-gray-400 text-lg">
+                {isSearchResults ? 'No se encontraron productos que coincidan con tu búsqueda' : 'No hay productos disponibles en esta categoría'}
+              </p>
+            </div>
+          ) : (
+            <div 
+              className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4 ${
+                isSearchResults ? '' : ''
+              }`}
+            >
+              {products.map((product) => (
+                <div
+                  key={product.id_producto}
+                  className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col items-center p-1 sm:p-2 h-full min-h-[180px] hover:shadow-md transition-shadow cursor-pointer"
+                  style={{ paddingBottom: 0 }}
+                  onClick={() => openModal(product)}
+                >
+                  <div className="flex flex-col items-center w-full h-full">
+                    <div className="relative w-full aspect-square">
+                      <Image
+                        src={product.id_imagen && product.ext1 ? getImageUrl(product.id_imagen, product.ext1) : '/file.svg'}
+                        alt={product.nombre}
+                        fill
+                        className="object-cover w-full h-full rounded-t-lg"
+                        unoptimized={true}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          if (product.ext2 && product.ext2 !== product.ext1 && product.id_imagen) {
+                            target.src = getImageUrl(product.id_imagen, product.ext2);
+                            target.onerror = () => {
+                              target.src = '/file.svg';
+                              target.onerror = null;
+                            };
+                          } else {
+                            target.src = '/file.svg';
+                          }
+                        }}
+                      />
+                      {/* Tag de OFERTA cuando hay descuento */}
+                      {product.precio_venta_online !== null && product.precio_venta_online < product.precio_venta && (
+                        <div className="absolute top-1 left-1 z-10 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-sm">
+                          OFERTA
+                        </div>
+                      )}
+                      {/* Icono de compartir sobre la imagen */}
+                      <button
+                        className="absolute top-1 right-1 z-10 p-1 bg-white/80 dark:bg-gray-900/80 rounded-full hover:bg-amber-100 dark:hover:bg-amber-900 transition-colors"
+                        title="Compartir"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          
+                          // Construir URL con categoría e ID de producto
+                          // Asegurar que la categoría sea un valor válido
+                          const catId = categoryId !== null ? categoryId : '';
+                          const productUrl = `${window.location.origin}/productos?categoria=${catId}&producto=${product.id_producto}`;
+                          
+                          if (navigator.share) {
+                            navigator.share({
+                              title: product.nombre,
+                              text: `Mira este producto: ${product.nombre}`,
+                              url: productUrl
+                            })
+                            .catch(() => {
+                              // Si falla el navigator.share, copiar al portapapeles como fallback
+                              navigator.clipboard.writeText(productUrl);
+                              setCopiedId(product.id_producto);
+                              setTimeout(() => setCopiedId(null), 1200);
+                            });
+                          } else {
+                            // Fallback para navegadores que no soportan Web Share API
+                            navigator.clipboard.writeText(productUrl);
+                            setCopiedId(product.id_producto);
+                            setTimeout(() => setCopiedId(null), 1200);
+                          }
+                        }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <circle cx="18" cy="5" r="2" />
+                          <circle cx="6" cy="12" r="2" />
+                          <circle cx="18" cy="19" r="2" />
+                          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke="currentColor" strokeWidth="1.5" />
+                          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke="currentColor" strokeWidth="1.5" />
+                        </svg>
+                      </button>
+                      {copiedId === product.id_producto && (
+                        <span className="absolute top-2 right-8 z-20 text-xs text-amber-600 dark:text-amber-400 bg-white/90 dark:bg-gray-900/90 px-2 py-0.5 rounded shadow">¡Copiado!</span>
+                      )}
+                    </div>
+                    <div className="flex-1 w-full flex flex-col justify-between items-center p-2 pb-1">
+                      <h3 className="text-xs font-medium text-center text-gray-900 dark:text-white line-clamp-2 w-full mb-1 min-h-[2.2em]">
+                        {product.nombre}
+                      </h3>
+                      {product.nota && (
+                        <div className="w-full text-center text-gray-500 dark:text-gray-400 text-[10px] line-clamp-2 mb-1 italic">
+                          {product.nota}
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between w-full mt-auto mb-0">
+                        <div className="flex flex-col mb-0 pb-0">
+                          <span className={`${product.precio_venta_online !== null && product.precio_venta_online < product.precio_venta ? 'text-green-600 dark:text-green-400 text-base font-bold' : 'text-amber-700 dark:text-amber-400 font-bold text-sm'}`}>
+                            ${(product.precio_venta_online !== null 
+                              ? product.precio_venta_online 
+                              : product.precio_venta)?.toLocaleString('es-CO')}
+                          </span>
+                          {product.precio_venta_online !== null && product.precio_venta_online < product.precio_venta && (
+                            <span className="text-red-400 dark:text-red-300 text-xs line-through font-medium" style={{ fontSize: '0.8rem', marginTop: '-2px' }}>
+                              ${product.precio_venta?.toLocaleString('es-CO')}
+                            </span>
+                          )}
+                        </div>
+                        {showAddToCart && product.existencias > 0 ? (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${(product.precio_venta_online !== null ? product.precio_venta_online : product.precio_venta)?.toLocaleString('es-CO')}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
+                              window.open(`https://wa.me/573043668910?text=${encodeURIComponent(message)}`, '_blank');
+                            }}
+                            className="ml-2 w-8 h-8 flex items-center justify-center bg-amber-600 dark:bg-amber-500 text-white rounded-full hover:bg-amber-700 dark:hover:bg-amber-600 transition-colors"
+                            aria-label={`Pedir ${product.nombre} por WhatsApp`}
+                          >
+                            {/* Icono de suma moderno */}
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2" fill="currentColor" className="text-amber-600 dark:bg-amber-500" />
+                              <path d="M12 8v8M8 12h8" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+                            </svg>
+                          </button>
+                        ) : product.existencias <= 0 ? (
+                          <span className="ml-2 px-2 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 text-xs rounded-full font-medium">
+                            Agotado
+                          </span>
+                        ) : null}
+                      </div>
+                      {product.sku && (
+                        <div className="w-full text-right text-gray-400 dark:text-gray-500 text-xs leading-none" style={{marginTop: "2px", marginBottom: 0, paddingBottom: 0}}>
+                          sku: {product.sku}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
       
       {/* Modal del producto */}
@@ -309,14 +627,14 @@ sku: ${product.sku || '000'}
               {/* Imagen del producto */}
               <div className="relative w-full aspect-square mb-4 rounded-lg overflow-hidden" style={{ maxHeight: '220px' }}>
                 <Image
-                  src={selectedProduct.id_imagen ? getImageUrl(selectedProduct.id_imagen, selectedProduct.ext1) : '/file.svg'}
+                  src={selectedProduct.id_imagen && selectedProduct.ext1 ? getImageUrl(selectedProduct.id_imagen, selectedProduct.ext1) : '/file.svg'}
                   alt={selectedProduct.nombre}
                   fill
                   className="object-contain"
                   unoptimized={true}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    if (selectedProduct.ext2 && selectedProduct.ext2 !== selectedProduct.ext1) {
+                    if (selectedProduct.ext2 && selectedProduct.ext2 !== selectedProduct.ext1 && selectedProduct.id_imagen) {
                       target.src = getImageUrl(selectedProduct.id_imagen, selectedProduct.ext2);
                       target.onerror = () => {
                         target.src = '/file.svg';

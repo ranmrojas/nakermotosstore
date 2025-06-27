@@ -120,6 +120,9 @@ export class ProductosSyncService {
   // Sincronizar productos de una categoría específica
   async syncProductosByCategoria(categoriaId: number): Promise<SyncResult> {
     try {
+      // Asegurar que la base de datos esté inicializada
+      await indexedDBService.init();
+      
       console.log(`🔄 Sincronizando productos de categoría ${categoriaId}...`);
       
       const response = await fetch(`/api/extract/products?id_categoria=${categoriaId}`);
@@ -188,6 +191,9 @@ export class ProductosSyncService {
       return;
     }
 
+    // Asegurar que la base de datos esté inicializada
+    await indexedDBService.init();
+
     this.isSyncing = true;
     this.syncProgress = {
       totalCategorias: categorias.length,
@@ -251,6 +257,9 @@ export class ProductosSyncService {
 
   // Sincronización inteligente (solo categorías que necesitan sync)
   async syncProductosInteligente(categorias: { id: number; nombre: string }[]): Promise<void> {
+    // Asegurar que la base de datos esté inicializada
+    await indexedDBService.init();
+    
     const categoriasNecesarias: { id: number; nombre: string }[] = [];
 
     // Verificar qué categorías necesitan sincronización
@@ -289,6 +298,9 @@ export class ProductosSyncService {
     isSyncing: boolean;
   }> {
     try {
+      // Asegurar que la base de datos esté inicializada
+      await indexedDBService.init();
+      
       const lastSync = await indexedDBService.getMetadata(LAST_PRODUCTOS_SYNC_KEY);
       const stats = await indexedDBService.getProductosStats();
       

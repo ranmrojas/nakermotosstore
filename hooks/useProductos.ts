@@ -102,6 +102,9 @@ export const useProductos = (): UseProductosReturn => {
   // Cargar productos desde IndexedDB
   const loadFromIndexedDB = useCallback(async () => {
     try {
+      // Asegurar que la base de datos esté inicializada
+      await indexedDBService.init();
+      
       const data = await indexedDBService.getProductos();
       setProductos(data);
       
@@ -135,7 +138,7 @@ export const useProductos = (): UseProductosReturn => {
         return;
       }
 
-      // Inicializar IndexedDB (si no está inicializada)
+      // Inicializar IndexedDB
       await indexedDBService.init();
 
       // Cargar datos locales
@@ -152,6 +155,9 @@ export const useProductos = (): UseProductosReturn => {
   // Obtener productos de una categoría específica
   const getProductosByCategoria = useCallback(async (categoriaId: number): Promise<Producto[]> => {
     try {
+      // Asegurar que la base de datos esté inicializada
+      await indexedDBService.init();
+      
       // Primero intentar obtener desde IndexedDB
       const productosLocales = await indexedDBService.getProductosByCategoria(categoriaId);
       
@@ -185,6 +191,9 @@ export const useProductos = (): UseProductosReturn => {
   // Búsqueda de productos
   const searchProductos = useCallback(async (query: string): Promise<Producto[]> => {
     try {
+      // Asegurar que la base de datos esté inicializada
+      await indexedDBService.init();
+      
       const resultados = await indexedDBService.searchProductos(query);
       return resultados.filter(p => p.mostrar_tienda_linea === 1);
     } catch (err) {
@@ -196,6 +205,9 @@ export const useProductos = (): UseProductosReturn => {
   // Obtener productos para tienda online
   const getProductosTiendaOnline = useCallback(async (): Promise<Producto[]> => {
     try {
+      // Asegurar que la base de datos esté inicializada
+      await indexedDBService.init();
+      
       return await indexedDBService.getProductosTiendaOnline();
     } catch (err) {
       console.error('Error obteniendo productos de tienda online:', err);
@@ -206,6 +218,9 @@ export const useProductos = (): UseProductosReturn => {
   // Sincronización forzada de una categoría
   const forceSyncCategoria = useCallback(async (categoriaId: number): Promise<void> => {
     try {
+      // Asegurar que la base de datos esté inicializada
+      await indexedDBService.init();
+      
       setSyncing(true);
       setError(null);
       
@@ -228,6 +243,9 @@ export const useProductos = (): UseProductosReturn => {
   // Sincronización forzada de todas las categorías
   const forceSyncAll = useCallback(async (): Promise<void> => {
     try {
+      // Asegurar que la base de datos esté inicializada
+      await indexedDBService.init();
+      
       setSyncing(true);
       setError(null);
       
@@ -293,6 +311,9 @@ export const useProductos = (): UseProductosReturn => {
   useEffect(() => {
     const updateStats = async () => {
       try {
+        // Asegurar que la base de datos esté inicializada
+        await indexedDBService.init();
+        
         const stats = await indexedDBService.getProductosStats();
         const syncStats = await productosSyncService.getSyncStats();
         

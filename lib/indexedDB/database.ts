@@ -321,10 +321,42 @@ export class IndexedDBService {
     const productos = await this.getProductos();
     const searchTerm = query.toLowerCase();
     
-    return productos.filter(producto => 
-      producto.nombre.toLowerCase().includes(searchTerm) ||
-      producto.alias.toLowerCase().includes(searchTerm)
-    );
+    return productos.filter(producto => {
+      // Búsqueda en nombre y alias (existente)
+      const nombreMatch = producto.nombre.toLowerCase().includes(searchTerm);
+      const aliasMatch = producto.alias.toLowerCase().includes(searchTerm);
+      
+      // Búsqueda en marca
+      const marcaMatch = producto.nombre_marca.toLowerCase().includes(searchTerm);
+      
+      // Búsqueda en SKU
+      const skuMatch = producto.sku.toLowerCase().includes(searchTerm);
+      
+      // Búsqueda en nota/descripción
+      const notaMatch = producto.nota.toLowerCase().includes(searchTerm);
+      
+      // Búsqueda en precio (convertir a string para buscar)
+      const precioVenta = producto.precio_venta.toString();
+      const precioOnline = producto.precio_venta_online?.toString() || '';
+      const precioPromocion = producto.precio_promocion_online.toString();
+      
+      const precioVentaMatch = precioVenta.includes(searchTerm);
+      const precioOnlineMatch = precioOnline.includes(searchTerm);
+      const precioPromocionMatch = precioPromocion.includes(searchTerm);
+      
+      // Búsqueda en categoría
+      const categoriaMatch = producto.nombre_categoria.toLowerCase().includes(searchTerm);
+      
+      return nombreMatch || 
+             aliasMatch || 
+             marcaMatch || 
+             skuMatch || 
+             notaMatch || 
+             precioVentaMatch || 
+             precioOnlineMatch || 
+             precioPromocionMatch ||
+             categoriaMatch;
+    });
   }
 
   // Guardar productos de una categoría específica
