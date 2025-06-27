@@ -78,7 +78,7 @@ const defaultNavigation: NavItem[] = [
   },
   {
     name: 'Buscar',
-    href: '/buscar',
+    href: '/busqueda',
     icon: MagnifyingGlassIcon,
     iconSolid: MagnifyingGlassIconSolid,
   },
@@ -264,11 +264,6 @@ export default function ButtonNav({
             ))}
           </div>
         </div>
-        
-        {/* Indicador de home (barra de colores en la parte inferior) */}
-        {showHomeIndicator && (
-          <div className={`h-1 bg-gradient-to-r ${colors.gradient}`} />
-        )}
       </nav>
     </>
   );

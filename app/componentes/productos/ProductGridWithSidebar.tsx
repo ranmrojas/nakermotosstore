@@ -176,6 +176,29 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
     }
   }, [getProductosByCategoria]);
 
+  // Handler para búsqueda por marca desde el modal
+  const handleBrandSearch = useCallback(async (brandName: string) => {
+    try {
+      setIsSearching(true);
+      
+      // Usar el hook de productos para buscar por marca
+      const { searchProductos } = useProductos();
+      const resultados = await searchProductos(brandName);
+      
+      // Filtrar solo productos que coincidan exactamente con la marca
+      const productosFiltrados = resultados.filter((producto: Producto) => 
+        producto.nombre_marca === brandName
+      );
+      
+      setSearchResults(productosFiltrados);
+      setIsSearching(false);
+      
+    } catch (error) {
+      console.error('Error buscando productos por marca:', error);
+      setIsSearching(false);
+    }
+  }, []);
+
   // Obtener el nombre y cantidad de productos de la categoría seleccionada
   const selectedCategory = categorias.find(cat => cat.id === selectedCategoryId);
 
@@ -223,24 +246,25 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
       <div className="flex-1 flex flex-col md:ml-0 overflow-hidden">
         {/* Componente de búsqueda */}
         {showSearch && (
-          <div className="flex-shrink-0 p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex-shrink-0 p-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
             <ProductSearch
               onSearchResults={handleSearchResults}
               onSearchChange={handleSearchChange}
               onCategorySelect={handleCategorySelect}
               placeholder={searchPlaceholder}
               showSortOptions={true}
+              className="!py-1"
             />
           </div>
         )}
 
         {/* Contenido según el estado */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 bg-white">
           {mostrarResultadosBusqueda ? (
             <div data-testid="search-results">
               {/* Resultados de búsqueda */}
               <div className="mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                <h2 className="text-lg font-semibold text-gray-900">
                   {isSearching ? 'Buscando...' : `Resultados de búsqueda (${searchResults.length})`}
                 </h2>
               </div>
@@ -255,7 +279,7 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
               ) : searchResults.length > 0 ? (
                 <div 
                   data-testid="product-grid-results"
-                  className="border border-gray-200 dark:border-gray-700 rounded-lg"
+                  className="border border-gray-200 rounded-lg"
                 >
                   <div className="p-4">
                     <ProductGrid 
@@ -263,20 +287,21 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
                       showAddToCart={showAddToCart}
                       targetProductId={targetProductId}
                       isSearchResults={true}
+                      onBrandTagClick={handleBrandSearch}
                     />
                   </div>
                 </div>
               ) : (
-                <div className="p-8 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
-                  <div className="text-gray-600 dark:text-gray-400 mb-4">
+                <div className="p-8 bg-gray-50 rounded-lg text-center">
+                  <div className="text-gray-600 mb-4">
                     <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
                     No se encontraron productos
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <p className="text-gray-600">
                     Intenta con otros términos de búsqueda o ajusta los filtros
                   </p>
                 </div>
@@ -286,7 +311,7 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
             <div>
               {/* Título sutil con nombre de la categoría y cantidad de productos */}
               <div className="mb-2">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white leading-tight">
+                <h2 className="text-lg font-semibold text-gray-900 leading-tight">
                   {selectedCategoryId === 15 
                     ? 'Todos los Productos' 
                     : selectedCategory ? selectedCategory.nombre : 'Productos'
@@ -309,13 +334,14 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
                 targetProductId={targetProductId}
                 loadAllCategories={selectedCategoryId === 15}
                 productsPerCategory={30}
+                onBrandTagClick={handleBrandSearch}
               />
             </div>
           ) : (
             <div>
               {/* Mostrar skeleton mientras no hay categoría seleccionada */}
               <div className="mb-2">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white leading-tight">
+                <h2 className="text-lg font-semibold text-gray-900 leading-tight">
                   Productos
                 </h2>
                 <span className="text-xs text-gray-400 font-normal">

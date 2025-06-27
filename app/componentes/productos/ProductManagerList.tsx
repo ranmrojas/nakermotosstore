@@ -9,7 +9,6 @@ interface ProductManagerListProps {
   categoryId?: string | number;
   limit?: number;
   showCategorySelector?: boolean;
-  defaultCategoryId?: number;
 }
 
 export default function ProductManagerList({ 
@@ -181,26 +180,28 @@ export default function ProductManagerList({
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
                           {product.id_imagen ? (
-                            <Image
-                              src={getImageUrl(product.id_imagen, product.ext1)}
-                              alt={product.nombre}
-                              width={40}
-                              height={40}
-                              className="h-10 w-10 rounded-lg object-cover"
-                              unoptimized={true}
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                if (product.ext2 && product.ext2 !== product.ext1) {
-                                  target.src = getImageUrl(product.id_imagen, product.ext2);
-                                  target.onerror = () => {
+                            <div className="h-10 w-10 bg-white rounded-lg overflow-hidden">
+                              <Image
+                                src={getImageUrl(product.id_imagen, product.ext1)}
+                                alt={product.nombre}
+                                width={40}
+                                height={40}
+                                className="h-10 w-10 rounded-lg object-cover"
+                                unoptimized={true}
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  if (product.ext2 && product.ext2 !== product.ext1) {
+                                    target.src = getImageUrl(product.id_imagen, product.ext2);
+                                    target.onerror = () => {
+                                      target.src = '/file.svg';
+                                      target.onerror = null;
+                                    };
+                                  } else {
                                     target.src = '/file.svg';
-                                    target.onerror = null;
-                                  };
-                                } else {
-                                  target.src = '/file.svg';
-                                }
-                              }}
-                            />
+                                  }
+                                }}
+                              />
+                            </div>
                           ) : (
                             <div className="h-10 w-10 bg-gray-200 rounded-lg flex items-center justify-center">
                               <Image

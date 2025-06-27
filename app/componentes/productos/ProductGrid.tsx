@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useProductos } from '../../../hooks/useProductos';
 import { getProductImageUrl } from '@/app/services/productService';
 import ProductSkeleton from './ProductSkeleton';
+import { useRouter } from 'next/navigation';
 
 // Definir la interfaz Producto basada en la del hook
 interface Producto {
@@ -90,6 +91,8 @@ interface ProductGridProps {
   isSearchResults?: boolean; // Nueva prop para indicar si son resultados de búsqueda
   loadAllCategories?: boolean; // Nueva prop para cargar todas las categorías
   productsPerCategory?: number; // Nueva prop para límite de productos por categoría
+  onCategoryTagClick?: (categoryId: number) => void; // Handler personalizado para clic en tag de categoría
+  onBrandTagClick?: (brandName: string) => void; // Handler personalizado para clic en tag de marca
 }
 
 export default function ProductGrid({ 
@@ -99,7 +102,9 @@ export default function ProductGrid({
   targetProductId = null,
   isSearchResults = false,
   loadAllCategories = false,
-  productsPerCategory = 10
+  productsPerCategory = 10,
+  onCategoryTagClick,
+  onBrandTagClick
 }: ProductGridProps) {
   const [products, setProducts] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -114,6 +119,7 @@ export default function ProductGrid({
 
   // Usar el hook de productos
   const { getProductosByCategoria, syncing } = useProductos();
+  const router = useRouter();
 
   // URL para imágenes utilizando el servicio centralizado
   const getImageUrl = (id: number, ext: string) => {
@@ -368,10 +374,10 @@ export default function ProductGrid({
       {loadAllCategories && categoriasProductos.length > 0 ? (
         <div className="space-y-8">
           {categoriasProductos.map((categoria) => (
-            <div key={categoria.id} className="border-b border-gray-200 dark:border-gray-700 pb-6">
+            <div key={categoria.id} className="border-b border-gray-200 pb-6">
               {/* Título de la categoría */}
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                <h3 className="text-xl font-semibold text-gray-900">
                   {categoria.nombre}
                 </h3>
                 <span className="text-sm text-gray-500">
@@ -384,12 +390,12 @@ export default function ProductGrid({
                 {categoria.productos.map((product) => (
                   <div
                     key={product.id_producto}
-                    className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col items-center p-1 sm:p-2 h-full min-h-[180px] hover:shadow-md transition-shadow cursor-pointer"
+                    className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col items-center p-1 sm:p-2 h-full min-h-[180px] hover:shadow-md transition-shadow cursor-pointer"
                     style={{ paddingBottom: 0 }}
                     onClick={() => openModal(product)}
                   >
                     <div className="flex flex-col items-center w-full h-full">
-                      <div className="relative w-full aspect-square">
+                      <div className="relative w-full aspect-square bg-white rounded-t-lg">
                         <Image
                           src={product.id_imagen && product.ext1 ? getImageUrl(product.id_imagen, product.ext1) : '/file.svg'}
                           alt={product.nombre}
@@ -417,17 +423,17 @@ export default function ProductGrid({
                         )}
                       </div>
                       <div className="flex-1 w-full flex flex-col justify-between items-center p-2 pb-1">
-                        <h3 className="text-xs font-medium text-center text-gray-900 dark:text-white line-clamp-2 w-full mb-1 min-h-[2.2em]">
+                        <h3 className="text-xs font-medium text-center text-gray-900 line-clamp-2 w-full mb-1 min-h-[2.2em]">
                           {product.nombre}
                         </h3>
                         {product.nota && (
-                          <div className="w-full text-center text-gray-500 dark:text-gray-400 text-[10px] line-clamp-2 mb-1 italic">
+                          <div className="w-full text-center text-gray-500 text-[10px] line-clamp-2 mb-1 italic">
                             {product.nota}
                           </div>
                         )}
                         <div className="flex items-center justify-between w-full mt-auto mb-0">
                           <div className="flex flex-col mb-0 pb-0">
-                            <span className="text-sm font-bold text-gray-900 dark:text-white">
+                            <span className="text-sm font-bold text-gray-900">
                               ${getPrecioCorrecto(product)}
                             </span>
                             {tieneOferta(product) && (
@@ -444,17 +450,17 @@ export default function ProductGrid({
                                 const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${getPrecioCorrecto(product)?.toLocaleString('es-CO')}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
                                 window.open(`https://wa.me/573043668910?text=${encodeURIComponent(message)}`, '_blank');
                               }}
-                              className="ml-2 w-8 h-8 flex items-center justify-center bg-amber-600 dark:bg-amber-500 text-white rounded-full hover:bg-amber-700 dark:hover:bg-amber-600 transition-colors"
+                              className="ml-2 w-8 h-8 flex items-center justify-center bg-amber-600 text-white rounded-full hover:bg-amber-700 transition-colors"
                               aria-label={`Pedir ${product.nombre} por WhatsApp`}
                             >
                               {/* Icono de suma moderno */}
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2" fill="currentColor" className="text-amber-600 dark:bg-amber-500" />
+                                <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2" fill="currentColor" className="text-amber-600" />
                                 <path d="M12 8v8M8 12h8" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
                               </svg>
                             </button>
                           ) : (product.existencias_real ?? 0) <= 0 ? (
-                            <span className="ml-2 px-2 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 text-xs rounded-full font-medium">
+                            <span className="ml-2 px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium">
                               Agotado
                             </span>
                           ) : null}
@@ -484,12 +490,12 @@ export default function ProductGrid({
           {/* Grid de productos tradicional */}
           {products.length === 0 ? (
             <div className="text-center py-10">
-              <div className="text-gray-400 dark:text-gray-500 mb-4">
+              <div className="text-gray-400 mb-4">
                 <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
               </div>
-              <p className="text-gray-600 dark:text-gray-400 text-lg">
+              <p className="text-gray-600 text-lg">
                 {isSearchResults ? 'No se encontraron productos que coincidan con tu búsqueda' : 'No hay productos disponibles en esta categoría'}
               </p>
             </div>
@@ -502,12 +508,12 @@ export default function ProductGrid({
               {products.map((product) => (
                 <div
                   key={product.id_producto}
-                  className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col items-center p-1 sm:p-2 h-full min-h-[180px] hover:shadow-md transition-shadow cursor-pointer"
+                  className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col items-center p-1 sm:p-2 h-full min-h-[180px] hover:shadow-md transition-shadow cursor-pointer"
                   style={{ paddingBottom: 0 }}
                   onClick={() => openModal(product)}
                 >
                   <div className="flex flex-col items-center w-full h-full">
-                    <div className="relative w-full aspect-square">
+                    <div className="relative w-full aspect-square bg-white rounded-t-lg">
                       <Image
                         src={product.id_imagen && product.ext1 ? getImageUrl(product.id_imagen, product.ext1) : '/file.svg'}
                         alt={product.nombre}
@@ -535,7 +541,7 @@ export default function ProductGrid({
                       )}
                       {/* Icono de compartir sobre la imagen */}
                       <button
-                        className="absolute top-1 right-1 z-10 p-1 bg-white/80 dark:bg-gray-900/80 rounded-full hover:bg-amber-100 dark:hover:bg-amber-900 transition-colors"
+                        className="absolute top-1 right-1 z-10 p-1 bg-white/80 rounded-full hover:bg-amber-100 transition-colors"
                         title="Compartir"
                         onClick={(e) => {
                           e.preventDefault();
@@ -566,7 +572,7 @@ export default function ProductGrid({
                           }
                         }}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 hover:text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <circle cx="18" cy="5" r="2" />
                           <circle cx="6" cy="12" r="2" />
                           <circle cx="18" cy="19" r="2" />
@@ -575,25 +581,25 @@ export default function ProductGrid({
                         </svg>
                       </button>
                       {copiedId === product.id_producto && (
-                        <span className="absolute top-2 right-8 z-20 text-xs text-amber-600 dark:text-amber-400 bg-white/90 dark:bg-gray-900/90 px-2 py-0.5 rounded shadow">¡Copiado!</span>
+                        <span className="absolute top-2 right-8 z-20 text-xs text-amber-600 bg-white/90 px-2 py-0.5 rounded shadow">¡Copiado!</span>
                       )}
                     </div>
                     <div className="flex-1 w-full flex flex-col justify-between items-center p-2 pb-1">
-                      <h3 className="text-xs font-medium text-center text-gray-900 dark:text-white line-clamp-2 w-full mb-1 min-h-[2.2em]">
+                      <h3 className="text-xs font-medium text-center text-gray-900 line-clamp-2 w-full mb-1 min-h-[2.2em]">
                         {product.nombre}
                       </h3>
                       {product.nota && (
-                        <div className="w-full text-center text-gray-500 dark:text-gray-400 text-[10px] line-clamp-2 mb-1 italic">
+                        <div className="w-full text-center text-gray-500 text-[10px] line-clamp-2 mb-1 italic">
                           {product.nota}
                         </div>
                       )}
                       <div className="flex items-center justify-between w-full mt-auto mb-0">
                         <div className="flex flex-col mb-0 pb-0">
-                          <span className={`${tieneOferta(product) ? 'text-green-600 dark:text-green-400 text-base font-bold' : 'text-amber-700 dark:text-amber-400 font-bold text-sm'}`}>
+                          <span className={`${tieneOferta(product) ? 'text-green-600 text-base font-bold' : 'text-amber-700 font-bold text-sm'}`}>
                             ${(getPrecioCorrecto(product))?.toLocaleString('es-CO')}
                           </span>
                           {tieneOferta(product) && (
-                            <span className="text-red-400 dark:text-red-300 text-xs line-through font-medium" style={{ fontSize: '0.8rem', marginTop: '-2px' }}>
+                            <span className="text-red-400 text-xs line-through font-medium" style={{ fontSize: '0.8rem', marginTop: '-2px' }}>
                               ${getPrecioBase(product)?.toLocaleString('es-CO')}
                             </span>
                           )}
@@ -606,23 +612,23 @@ export default function ProductGrid({
                               const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${getPrecioCorrecto(product)?.toLocaleString('es-CO')}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
                               window.open(`https://wa.me/573043668910?text=${encodeURIComponent(message)}`, '_blank');
                             }}
-                            className="ml-2 w-8 h-8 flex items-center justify-center bg-amber-600 dark:bg-amber-500 text-white rounded-full hover:bg-amber-700 dark:hover:bg-amber-600 transition-colors"
+                            className="ml-2 w-8 h-8 flex items-center justify-center bg-amber-600 text-white rounded-full hover:bg-amber-700 transition-colors"
                             aria-label={`Pedir ${product.nombre} por WhatsApp`}
                           >
                             {/* Icono de suma moderno */}
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2" fill="currentColor" className="text-amber-600 dark:bg-amber-500" />
+                              <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2" fill="currentColor" className="text-amber-600" />
                               <path d="M12 8v8M8 12h8" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
                             </svg>
                           </button>
                         ) : (product.existencias_real ?? 0) <= 0 ? (
-                          <span className="ml-2 px-2 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 text-xs rounded-full font-medium">
+                          <span className="ml-2 px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium">
                             Agotado
                           </span>
                         ) : null}
                       </div>
                       {product.sku && (
-                        <div className="w-full text-right text-gray-400 dark:text-gray-500 text-xs leading-none" style={{marginTop: "2px", marginBottom: 0, paddingBottom: 0}}>
+                        <div className="w-full text-right text-gray-400 text-xs leading-none" style={{marginTop: "2px", marginBottom: 0, paddingBottom: 0}}>
                           sku: {product.sku}
                         </div>
                       )}
@@ -638,22 +644,22 @@ export default function ProductGrid({
       {/* Modal del producto */}
       {isModalOpen && selectedProduct && (
         <div
-          className="fixed inset-0 bg-white/70 dark:bg-gray-800/70 flex items-start justify-center z-50 p-4"
+          className="fixed inset-0 bg-white/70 flex items-start justify-center z-50 p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               closeModal();
             }
           }}
         >
-          <div className="bg-white dark:bg-gray-900 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto mt-12 shadow-2xl border border-gray-200 dark:border-gray-700">
+          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto mt-12 shadow-2xl border border-gray-200">
             {/* Header del modal */}
-            <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <div className="flex justify-between items-center p-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">
                 Detalles del producto
               </h2>
               <button
                 onClick={closeModal}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                className="text-gray-400 hover:text-gray-600"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -664,7 +670,7 @@ export default function ProductGrid({
             {/* Contenido del modal */}
             <div className="p-4">
               {/* Imagen del producto */}
-              <div className="relative w-full aspect-square mb-4 rounded-lg overflow-hidden" style={{ maxHeight: '220px' }}>
+              <div className="relative w-full aspect-square mb-4 rounded-lg overflow-hidden bg-white" style={{ maxHeight: '220px' }}>
                 <Image
                   src={selectedProduct.id_imagen && selectedProduct.ext1 ? getImageUrl(selectedProduct.id_imagen, selectedProduct.ext1) : '/file.svg'}
                   alt={selectedProduct.nombre}
@@ -686,7 +692,7 @@ export default function ProductGrid({
                 />
                 {/* Icono flotante de compartir */}
                 <button
-                  className="absolute top-2 right-2 z-10 p-1 bg-white/80 dark:bg-gray-900/80 rounded-full hover:bg-amber-100 dark:hover:bg-amber-900 transition-colors"
+                  className="absolute top-2 right-2 z-10 p-1 bg-white/80 rounded-full hover:bg-amber-100 transition-colors"
                   title="Compartir"
                   onClick={() => {
                     // Construir URL con categoría e ID de producto
@@ -712,7 +718,7 @@ export default function ProductGrid({
                     }
                   }}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <circle cx="18" cy="5" r="2" />
                     <circle cx="6" cy="12" r="2" />
                     <circle cx="18" cy="19" r="2" />
@@ -730,21 +736,21 @@ export default function ProductGrid({
               
               {/* Información del producto */}
               <div className="space-y-3">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                <h3 className="text-xl font-bold text-gray-900">
                   {selectedProduct.nombre}
                 </h3>
                 {selectedProduct.nota && (
-                  <div className="mt-1 mb-2 p-2 bg-amber-50 dark:bg-amber-900/30 rounded text-amber-800 dark:text-amber-200 text-sm font-medium">
+                  <div className="mt-1 mb-2 p-2 bg-amber-50 rounded text-amber-800 text-sm font-medium">
                     {selectedProduct.nota}
                   </div>
                 )}
                 
                 <div className="flex justify-between items-center">
-                  <span className={`text-2xl font-bold ${tieneOferta(selectedProduct) ? 'text-green-600 dark:text-green-400 text-3xl' : ''}`} style={{ color: tieneOferta(selectedProduct) ? '' : '#ff8c00' }}>
+                  <span className={`text-2xl font-bold ${tieneOferta(selectedProduct) ? 'text-green-600 text-3xl' : ''}`} style={{ color: tieneOferta(selectedProduct) ? '' : '#ff8c00' }}>
                     ${(getPrecioCorrecto(selectedProduct))?.toLocaleString('es-CO')}
                   </span>
                   {tieneOferta(selectedProduct) && (
-                    <span className="text-red-400 dark:text-red-300 text-base line-through font-medium ml-2">
+                    <span className="text-red-400 text-base line-through font-medium ml-2">
                       ${getPrecioBase(selectedProduct)?.toLocaleString('es-CO')}
                     </span>
                   )}
@@ -753,18 +759,49 @@ export default function ProductGrid({
                 {/* Información adicional en una sola línea, bien distribuida */}
                 <div className="flex flex-row items-center justify-between gap-2 mt-2 w-full flex-wrap">
                   {selectedProduct.sku && (
-                    <span className="text-gray-600 dark:text-gray-400 text-xs font-medium whitespace-nowrap">
-                      SKU: <span className="text-gray-900 dark:text-white">{selectedProduct.sku}</span>
+                    <span className="text-gray-600 text-xs font-medium whitespace-nowrap">
+                      SKU: <span className="text-gray-900">{selectedProduct.sku}</span>
                     </span>
                   )}
                   <div className="flex flex-row gap-2 ml-auto">
                     {selectedProduct.nombre_categoria && (
-                      <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs rounded-full font-semibold whitespace-nowrap">
+                      <span
+                        className="px-3 py-1 bg-orange-500 text-white text-xs rounded-full font-semibold whitespace-nowrap shadow-2xl shadow-orange-300/80 transition-all duration-150 cursor-pointer hover:bg-orange-600 hover:shadow-[0_8px_32px_0_rgba(255,140,0,0.35)] hover:scale-110 active:scale-95"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (selectedProduct.id_categoria) {
+                            if (onCategoryTagClick) {
+                              onCategoryTagClick(selectedProduct.id_categoria);
+                              closeModal();
+                            } else {
+                              router.push(`/productos?categoria=${selectedProduct.id_categoria}`);
+                              closeModal();
+                            }
+                          }
+                        }}
+                      >
                         {selectedProduct.nombre_categoria}
                       </span>
                     )}
                     {selectedProduct.nombre_marca && (
-                      <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs rounded-full font-semibold whitespace-nowrap">
+                      <span
+                        className="px-3 py-1 bg-blue-600 text-white text-xs rounded-full font-semibold whitespace-nowrap shadow-2xl shadow-blue-300/80 transition-all duration-150 cursor-pointer hover:bg-blue-700 hover:shadow-[0_8px_32px_0_rgba(59,130,246,0.35)] hover:scale-110 active:scale-95"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (selectedProduct.nombre_marca) {
+                            if (onBrandTagClick) {
+                              onBrandTagClick(selectedProduct.nombre_marca);
+                              closeModal();
+                            } else {
+                              const marcaParam = encodeURIComponent(selectedProduct.nombre_marca);
+                              router.push(`/productos?marca=${marcaParam}`);
+                              closeModal();
+                            }
+                          }
+                        }}
+                      >
                         {selectedProduct.nombre_marca}
                       </span>
                     )}

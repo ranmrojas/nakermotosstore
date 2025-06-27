@@ -85,26 +85,15 @@ interface UseProductosReturn {
   // Funciones
   getProductosByCategoria: (categoriaId: number) => Promise<ProductoConPreciosReales[]>;
   searchProductos: (query: string) => Promise<ProductoConPreciosReales[]>;
-  getProductosTiendaOnline: () => Promise<ProductoConPreciosReales[]>;
   forceSyncCategoria: (categoriaId: number) => Promise<void>;
   forceSyncAll: () => Promise<void>;
   reset: () => Promise<void>;
-  
-  // NUEVAS FUNCIONES PARA PRECIOS EN TIEMPO REAL
-  actualizarPreciosCategoria: (categoriaId: number) => Promise<void>;
-  actualizarPreciosProducto: (productoId: number, categoriaId: number) => Promise<void>;
-  getPrecioProducto: (productoId: number, categoriaId: number) => Promise<PrecioProducto | null>;
   
   // NUEVAS FUNCIONES PARA SINCRONIZACIÓN AUTOMÁTICA
   startAutoSync: (categorias: { id: number; nombre: string }[]) => void;
   stopAutoSync: () => void;
   smartSync: (categorias: { id: number; nombre: string }[]) => Promise<void>;
   quickSyncCategoria: (categoriaId: number) => Promise<void>;
-  
-  // Utilidades
-  getProductoById: (id: number) => ProductoConPreciosReales | undefined;
-  getProductosConPromocion: () => ProductoConPreciosReales[];
-  getProductosDisponibles: () => ProductoConPreciosReales[];
   
   // Estadísticas
   stats: {
@@ -538,32 +527,6 @@ export const useProductos = (): UseProductosReturn => {
     }
   }, [initialize]);
 
-  // Funciones de utilidad
-  const getProductoById = useCallback((id: number): ProductoConPreciosReales | undefined => {
-    return productos.find(p => p.id_producto === id);
-  }, [productos]);
-
-  const getProductosConPromocion = useCallback((): ProductoConPreciosReales[] => {
-    const now = Date.now();
-    return productos.filter(p => 
-      // Solo verificar fechas de promoción ya que los precios se obtienen del API
-      p.fecha_Ini_promocion_online !== null &&
-      p.fecha_fin_promocion_online !== null &&
-      p.fecha_Ini_promocion_online <= now &&
-      p.fecha_fin_promocion_online >= now &&
-      p.mostrar_tienda_linea === 1 &&
-      // Verificar si tiene precios reales con promoción activa
-      (p.precio_promocion_online_real ? p.precio_promocion_online_real > 0 : false)
-    );
-  }, [productos]);
-
-  const getProductosDisponibles = useCallback((): ProductoConPreciosReales[] => {
-    return productos.filter(p => 
-      ((p.existencias_real ?? 0) > 0 || (p.vende_sin_existencia_real ?? 0) === 1) &&
-      p.mostrar_tienda_linea === 1
-    );
-  }, [productos]);
-
   // Efecto de inicialización
   useEffect(() => {
     initialize();
@@ -667,101 +630,6 @@ export const useProductos = (): UseProductosReturn => {
     }
   }, [loadFromIndexedDB]);
 
-  // NUEVAS FUNCIONES PARA PRECIOS EN TIEMPO REAL
-  const actualizarPreciosCategoria = useCallback(async (categoriaId: number): Promise<void> => {
-    try {
-      setPreciosLoading(true);
-      setError(null);
-      
-      // Obtener precios en tiempo real para la categoría
-      const precios = await preciosService.getPreciosCategoria(categoriaId);
-      
-      // Actualizar productos con precios reales
-      setProductos(prevProductos => {
-        return prevProductos.map(producto => {
-          if (producto.id_categoria === categoriaId) {
-            const precioReal = precios.find(p => p.id_producto === producto.id_producto);
-            if (precioReal) {
-              return {
-                ...producto,
-                precio_venta_real: precioReal.precio_venta,
-                precio_venta_online_real: precioReal.precio_venta_online,
-                precio_promocion_online_real: precioReal.precio_promocion_online,
-                tiene_promocion_activa: PreciosService.tienePromocionActiva(precioReal),
-                precio_final: PreciosService.getPrecioFinal(precioReal),
-                precio_formateado: PreciosService.formatearPrecio(PreciosService.getPrecioFinal(precioReal)),
-                precios_actualizados: true,
-                // CAMPOS DE EXISTENCIAS EN TIEMPO REAL
-                existencias_real: precioReal.existencias,
-                vende_sin_existencia_real: precioReal.vende_sin_existencia,
-                existencias_actualizadas: true
-              };
-            }
-          }
-          return producto;
-        });
-      });
-      
-      console.log(`✅ Precios actualizados para categoría ${categoriaId}`);
-    } catch (err) {
-      console.error('Error actualizando precios de categoría:', err);
-      setError('Error actualizando precios de categoría');
-    } finally {
-      setPreciosLoading(false);
-    }
-  }, []);
-
-  const actualizarPreciosProducto = useCallback(async (productoId: number, categoriaId: number): Promise<void> => {
-    try {
-      setPreciosLoading(true);
-      setError(null);
-      
-      // Obtener precio específico del producto
-      const precioReal = await preciosService.getPrecioProducto(productoId, categoriaId);
-      
-      if (precioReal) {
-        // Actualizar producto específico con precio real
-        setProductos(prevProductos => {
-          return prevProductos.map(producto => {
-            if (producto.id_producto === productoId) {
-              return {
-                ...producto,
-                precio_venta_real: precioReal.precio_venta,
-                precio_venta_online_real: precioReal.precio_venta_online,
-                precio_promocion_online_real: precioReal.precio_promocion_online,
-                tiene_promocion_activa: PreciosService.tienePromocionActiva(precioReal),
-                precio_final: PreciosService.getPrecioFinal(precioReal),
-                precio_formateado: PreciosService.formatearPrecio(PreciosService.getPrecioFinal(precioReal)),
-                precios_actualizados: true,
-                // CAMPOS DE EXISTENCIAS EN TIEMPO REAL
-                existencias_real: precioReal.existencias,
-                vende_sin_existencia_real: precioReal.vende_sin_existencia,
-                existencias_actualizadas: true
-              };
-            }
-            return producto;
-          });
-        });
-        
-        console.log(`✅ Precio actualizado para producto ${productoId}`);
-      }
-    } catch (err) {
-      console.error('Error actualizando precios del producto:', err);
-      setError('Error actualizando precios del producto');
-    } finally {
-      setPreciosLoading(false);
-    }
-  }, []);
-
-  const getPrecioProducto = useCallback(async (productoId: number, categoriaId: number): Promise<PrecioProducto | null> => {
-    try {
-      return await preciosService.getPrecioProducto(productoId, categoriaId);
-    } catch (err) {
-      console.error('Error obteniendo precio del producto:', err);
-      return null;
-    }
-  }, []);
-
   return {
     // Estados
     productos,
@@ -773,26 +641,15 @@ export const useProductos = (): UseProductosReturn => {
     // Funciones
     getProductosByCategoria,
     searchProductos,
-    getProductosTiendaOnline,
     forceSyncCategoria,
     forceSyncAll,
     reset,
-    
-    // NUEVAS FUNCIONES PARA PRECIOS EN TIEMPO REAL
-    actualizarPreciosCategoria,
-    actualizarPreciosProducto,
-    getPrecioProducto,
     
     // NUEVAS FUNCIONES PARA SINCRONIZACIÓN AUTOMÁTICA
     startAutoSync,
     stopAutoSync,
     smartSync,
     quickSyncCategoria,
-    
-    // Utilidades
-    getProductoById,
-    getProductosConPromocion,
-    getProductosDisponibles,
     
     // Estadísticas
     stats

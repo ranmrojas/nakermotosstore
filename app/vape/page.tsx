@@ -82,7 +82,7 @@ export default function VapePage() {
   const [allVapeProducts, setAllVapeProducts] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const { getProductosByCategoria } = useProductos();
+  const { getProductosByCategoria, searchProductos } = useProductos();
 
   // Cargar todos los productos de vapeadores al iniciar
   useEffect(() => {
@@ -150,6 +150,39 @@ export default function VapePage() {
     }
   }, [getProductosByCategoria]);
 
+  // Handler personalizado para clic en tag de categoría en el modal
+  const handleCategoryTagClick = useCallback((categoryId: number) => {
+    // Filtrar productos de vape por la categoría seleccionada
+    const productosFiltrados = allVapeProducts.filter(producto => 
+      producto.id_categoria === categoryId
+    );
+    setSearchResults(productosFiltrados);
+    setIsSearching(false);
+  }, [allVapeProducts]);
+
+  // Handler personalizado para clic en tag de marca en el modal
+  const handleBrandTagClick = useCallback(async (brandName: string) => {
+    try {
+      setIsSearching(true);
+      
+      // Usar el hook de productos para buscar por marca
+      const resultados = await searchProductos(brandName);
+      
+      // Filtrar solo productos de vape que coincidan con la marca
+      const vapeCategories = [46, 61, 62, 63]; // Vapeadores, Desechables, Cápsulas, Baterías
+      const productosFiltrados = resultados.filter(producto => 
+        producto.nombre_marca === brandName && vapeCategories.includes(producto.id_categoria)
+      );
+      
+      setSearchResults(productosFiltrados);
+      setIsSearching(false);
+      
+    } catch (error) {
+      console.error('Error buscando productos por marca:', error);
+      setIsSearching(false);
+    }
+  }, [searchProductos]);
+
   // Función para manejar clic en tag de categoría
   const handleCategoryClick = (categoryType: VapeCategory) => {
     // Si el tag ya está seleccionado, deseleccionarlo
@@ -186,10 +219,10 @@ export default function VapePage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex justify-center items-center h-64 bg-white">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-800 dark:border-amber-400 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-800 mx-auto mb-4"></div>
+          <p className="text-gray-600">
             Cargando productos de vape...
           </p>
         </div>
@@ -198,92 +231,101 @@ export default function VapePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      {/* Header fijo superior */}
-      <div className="fixed top-0 left-0 right-0 z-40 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-        <div className="container mx-auto px-4 py-4">
-          {/* Componente de búsqueda */}
-          <div className="mb-6">
-            <ProductSearch
-              onSearchResults={handleSearchResults}
-              onSearchChange={handleSearchChange}
-              onCategorySelect={handleCategorySelect}
-              placeholder="Buscar vapeadores por nombre, marca, SKU, precio..."
-              showSortOptions={false}
-            />
-          </div>
-
-          {/* Tags de categorías específicas de vape */}
-          <div>
-            <div className="flex items-center gap-2 justify-center">
-              <button
-                onClick={() => handleCategoryClick('desechables')}
-                className={`px-2 py-1 rounded-full text-xs font-medium transition-colors ${
-                  selectedCategory === 'desechables' 
-                    ? 'bg-amber-500 text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-                title={selectedCategory === 'desechables' ? 'Clic para deseleccionar' : 'Clic para filtrar por Dispositivos Desechables'}
-              >
-                Dispositivos Desechables
-              </button>
-              <button
-                onClick={() => handleCategoryClick('capsulas')}
-                className={`px-2 py-1 rounded-full text-xs font-medium transition-colors ${
-                  selectedCategory === 'capsulas' 
-                    ? 'bg-amber-500 text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-                title={selectedCategory === 'capsulas' ? 'Clic para deseleccionar' : 'Clic para filtrar por Cápsulas'}
-              >
-                Cápsulas
-              </button>
-              <button
-                onClick={() => handleCategoryClick('baterias')}
-                className={`px-2 py-1 rounded-full text-xs font-medium transition-colors ${
-                  selectedCategory === 'baterias' 
-                    ? 'bg-amber-500 text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-                title={selectedCategory === 'baterias' ? 'Clic para deseleccionar' : 'Clic para filtrar por Baterías'}
-              >
-                Baterías
-              </button>
+    <div className="min-h-screen bg-white">
+      <div className="container mx-auto px-2 py-2">
+        {/* Header fijo superior */}
+        <div className="fixed top-0 left-0 right-0 z-40 bg-gray-900 border-b border-gray-800">
+          <div className="container mx-auto px-2 py-2">
+            {/* Componente de búsqueda */}
+            <div className="mb-2">
+              <ProductSearch
+                onSearchResults={handleSearchResults}
+                onSearchChange={handleSearchChange}
+                onCategorySelect={handleCategorySelect}
+                placeholder="Buscar vapeadores por nombre, marca, SKU, precio..."
+                showSortOptions={false}
+                className="!py-1"
+              />
+            </div>
+            {/* Tags de categorías específicas de vape */}
+            <div>
+              <div className="flex items-center gap-1 justify-center">
+                <button
+                  onClick={() => handleCategoryClick('desechables')}
+                  className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
+                    selectedCategory === 'desechables' 
+                      ? 'bg-amber-500 text-white' 
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                  style={{fontSize:'0.85rem'}}
+                  title={selectedCategory === 'desechables' ? 'Clic para deseleccionar' : 'Clic para filtrar por Dispositivos Desechables'}
+                >
+                  Dispositivos Desechables
+                </button>
+                <button
+                  onClick={() => handleCategoryClick('capsulas')}
+                  className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
+                    selectedCategory === 'capsulas' 
+                      ? 'bg-amber-500 text-white' 
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                  style={{fontSize:'0.85rem'}}
+                  title={selectedCategory === 'capsulas' ? 'Clic para deseleccionar' : 'Clic para filtrar por Cápsulas'}
+                >
+                  Cápsulas
+                </button>
+                <button
+                  onClick={() => handleCategoryClick('baterias')}
+                  className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
+                    selectedCategory === 'baterias' 
+                      ? 'bg-amber-500 text-white' 
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                  style={{fontSize:'0.85rem'}}
+                  title={selectedCategory === 'baterias' ? 'Clic para deseleccionar' : 'Clic para filtrar por Baterías'}
+                >
+                  Baterías
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Espaciador para evitar que el contenido se oculte detrás del header fijo */}
-      <div className="h-28" />
-
-      {/* Contenido principal */}
-      <div className="pb-0 mb-0">
-        {/* Contenido según el estado */}
-        {mostrarResultadosBusqueda ? (
-          <div>
-            {/* Resultados de búsqueda */}
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {isSearching ? 'Buscando...' : `Resultados de búsqueda`}
-              </h2>
+        {/* Espaciador para evitar que el contenido se oculte detrás del header fijo */}
+        <div className="h-20" />
+        {/* Contenido principal */}
+        <div className="pb-0 mb-0 bg-white">
+          {/* Contenido según el estado */}
+          {mostrarResultadosBusqueda ? (
+            <div>
+              {/* Resultados de búsqueda */}
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  {isSearching ? 'Buscando...' : `Resultados de búsqueda`}
+                </h2>
+              </div>
+              <ProductGrid 
+                productos={searchResults}
+                onCategoryTagClick={handleCategoryTagClick}
+                onBrandTagClick={handleBrandTagClick}
+              />
             </div>
-            <ProductGrid productos={searchResults} />
-          </div>
-        ) : (
-          <div>
-            {/* Mostrar todos los productos de vape por defecto */}
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Productos de Vape
-              </h2>
+          ) : (
+            <div>
+              {/* Mostrar todos los productos de vape por defecto */}
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Productos de Vape
+                </h2>
+              </div>
+              <ProductGrid 
+                productos={allVapeProducts}
+                showAddToCart={true}
+                onCategoryTagClick={handleCategoryTagClick}
+                onBrandTagClick={handleBrandTagClick}
+              />
             </div>
-            <ProductGrid 
-              productos={allVapeProducts}
-              showAddToCart={true}
-            />
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

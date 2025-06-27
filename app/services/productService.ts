@@ -21,14 +21,6 @@ export interface Product {
   alias: string;
 }
 
-export interface Category {
-  id_categoria: number;
-  nombre: string;
-  id_padre: number | null;
-  imagen: string;
-  mostrar_tienda_linea: number;
-}
-
 /**
  * Obtiene los productos de una categoría específica
  */
@@ -53,74 +45,6 @@ export async function getProducts(categoryId: string | number = '23', limit: num
   } catch (error) {
     console.error('Error al obtener productos:', error);
     return [];
-  }
-}
-
-/**
- * Obtiene las categorías disponibles
- */
-export async function getCategories(): Promise<Category[]> {
-  try {
-    const response = await fetch('/api/extract/categories');
-    
-    if (!response.ok) {
-      throw new Error(`Error al cargar categorías: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    
-    // Verificar si tenemos datos válidos
-    if (Array.isArray(data)) {
-      return data;
-    } else if (data && Array.isArray(data.respuesta)) {
-      return data.respuesta;
-    } 
-    
-    return [];
-  } catch (error) {
-    console.error('Error al obtener categorías:', error);
-    return [];
-  }
-}
-
-/**
- * Comprueba la conexión a la API
- */
-export async function testApiConnection(): Promise<{success: boolean, message: string}> {
-  try {
-    const response = await fetch('/api/extract/test-connection');
-    
-    if (!response.ok) {
-      throw new Error(`Error en la conexión: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    
-    return {
-      success: data.success,
-      message: data.message || 'Conexión exitosa'
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : 'Error desconocido'
-    };
-  }
-}
-
-/**
- * Obtiene información de producto por ID
- */
-export async function getProductById(productId: number | string): Promise<Product | null> {
-  try {
-    // Esta es una implementación básica que obtiene todos los productos y filtra
-    // en una implementación real, deberías tener un endpoint específico para obtener un producto por ID
-    const allProducts = await getProducts();
-    const product = allProducts.find(p => p.id_producto === Number(productId));
-    return product || null;
-  } catch (error) {
-    console.error('Error al obtener producto por ID:', error);
-    return null;
   }
 }
 
