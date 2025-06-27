@@ -1,13 +1,16 @@
 'use client';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, Suspense } from 'react';
 import ProductGridWithSidebar, { ProductGridWithSidebarRef } from '@/app/componentes/productos/ProductGridWithSidebar';
 import ButtonNav from '@/app/componentes/ui/ButtonNav';
 import { useCategorias } from '../../hooks/useCategorias';
+import { usePreload } from '../../hooks/usePreload';
 import { productosSyncService } from '../../lib/indexedDB/productosSyncService';
+import ProductSkeleton from '../componentes/productos/ProductSkeleton';
 
 export default function ProductosPage() {
   const sidebarRef = useRef<ProductGridWithSidebarRef>(null);
   const { categorias } = useCategorias();
+  const { isPreloadComplete } = usePreload();
 
   // Función para controlar el sidebar desde el ButtonNav
   const handleToggleSidebar = () => {
@@ -16,9 +19,10 @@ export default function ProductosPage() {
     }
   };
 
-  // Efecto para iniciar descarga silenciosa de todos los productos
+  // Efecto optimizado para descarga silenciosa
   useEffect(() => {
-    if (categorias.length > 0) {
+    // Solo ejecutar si el preload no está completo y hay categorías
+    if (!isPreloadComplete && categorias.length > 0) {
       console.log('🚀 Iniciando descarga silenciosa de todos los productos...');
       
       const iniciarDescargaSilenciosa = async () => {
@@ -39,26 +43,29 @@ export default function ProductosPage() {
         }
       };
 
-      // Ejecutar descarga silenciosa siempre que haya categorías
-      // El servicio maneja internamente si necesita sincronizar o no
+      // Ejecutar descarga silenciosa solo si no se hizo preload
       iniciarDescargaSilenciosa();
+    } else if (isPreloadComplete) {
+      console.log('✅ Datos ya precargados, saltando descarga silenciosa');
     }
-  }, [categorias]);
+  }, [categorias, isPreloadComplete]);
 
   return (
-    <div className="h-screen">
-      <ProductGridWithSidebar 
-        ref={sidebarRef}
-        showAddToCart={true}
-        showSearch={true}
-        searchPlaceholder="Buscar por nombre, marca, SKU, precio..."
-      />
+    <Suspense fallback={<ProductSkeleton count={20} />}>
+      <div className="h-screen">
+        <ProductGridWithSidebar 
+          ref={sidebarRef}
+          showAddToCart={true}
+          showSearch={true}
+          searchPlaceholder="Buscar por nombre, marca, SKU, precio..."
+        />
 
-      {/* ButtonNav con callback para controlar el sidebar */}
-      <ButtonNav 
-        accentColor="amber" 
-        onToggleSidebar={handleToggleSidebar}
-      />
-    </div>
+        {/* ButtonNav con callback para controlar el sidebar */}
+        <ButtonNav 
+          accentColor="amber" 
+          onToggleSidebar={handleToggleSidebar}
+        />
+      </div>
+    </Suspense>
   );
 }

@@ -64,8 +64,8 @@ export class SyncService {
     try {
       console.log('🔄 Iniciando sincronización de categorías...');
       
-      // Obtener datos del API - usamos la versión plana en lugar de hierarchy para obtener todas las categorías
-      const response = await fetch('/api/categorias?soloActivas=true');
+      // Obtener datos del API - usamos el parámetro correcto 'activa' en lugar de 'soloActivas'
+      const response = await fetch('/api/categorias?activa=true');
       
       if (!response.ok) {
         throw new Error(`Error del API: ${response.status}`);
@@ -73,12 +73,15 @@ export class SyncService {
 
       const result = await response.json();
       
+      console.log('📡 Respuesta del API:', result);
+      
       if (!result.success) {
         throw new Error(result.error || 'Error en la respuesta del API');
       }
 
       // Verificar que tenemos datos
       if (!result.data || !Array.isArray(result.data) || result.data.length === 0) {
+        console.error('❌ Datos inválidos recibidos del API:', result);
         throw new Error('No se recibieron datos de categorías del API');
       }
 

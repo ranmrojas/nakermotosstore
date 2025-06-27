@@ -168,7 +168,7 @@ export default function ProductSearch({
     if (marcaParam && !searchQuery) {
       setSearchQuery(marcaParam);
     }
-  }, [searchParams]);
+  }, [searchParams, searchQuery]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;

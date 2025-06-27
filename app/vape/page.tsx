@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import ProductGrid from '../componentes/productos/ProductGrid';
 import ProductSearch from '../componentes/productos/ProductSearch';
 import { useProductos } from '../../hooks/useProductos';
+import { usePreload } from '../../hooks/usePreload';
 
 // Usar la misma interfaz Producto que ProductGrid
 interface Producto {
@@ -83,12 +84,20 @@ export default function VapePage() {
   const [loading, setLoading] = useState(true);
   
   const { getProductosByCategoria, searchProductos } = useProductos();
+  const { isPreloadComplete } = usePreload();
 
-  // Cargar todos los productos de vapeadores al iniciar
+  // Cargar todos los productos de vapeadores al iniciar (optimizado)
   useEffect(() => {
     const loadVapeProducts = async () => {
       setLoading(true);
       try {
+        // Si el preload está completo, los datos ya están disponibles
+        if (isPreloadComplete) {
+          console.log('✅ Datos de vape precargados, cargando desde caché...');
+        } else {
+          console.log('🔄 Cargando productos de vape...');
+        }
+
         // Cargar productos de las categorías hijas: 61, 62, 63
         const vapeCategories = [61, 62, 63]; // Desechables, Cápsulas, Baterías
         const allProducts: Producto[] = [];
@@ -107,7 +116,7 @@ export default function VapePage() {
     };
     
     loadVapeProducts();
-  }, [getProductosByCategoria]);
+  }, [getProductosByCategoria, isPreloadComplete]);
 
   // Manejador para los resultados de búsqueda
   const handleSearchResults = useCallback((productos: Producto[]) => {

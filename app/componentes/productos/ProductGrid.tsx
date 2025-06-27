@@ -118,7 +118,7 @@ export default function ProductGrid({
   const [loadingAllCategories, setLoadingAllCategories] = useState(false);
 
   // Usar el hook de productos
-  const { getProductosByCategoria, syncing } = useProductos();
+  const { getProductosByCategoria } = useProductos();
   const router = useRouter();
 
   // URL para imágenes utilizando el servicio centralizado
@@ -347,7 +347,17 @@ export default function ProductGrid({
 
   // Mostrar loading solo si no hay productos y está cargando inicialmente
   if (loading && products.length === 0 && categoriasProductos.length === 0) {
-    return <ProductSkeleton />;
+    return <ProductSkeleton count={20} />;
+  }
+
+  // Mostrar skeletons mientras se cargan todas las categorías
+  if (loadAllCategories && loadingAllCategories && categoriasProductos.length === 0) {
+    return <ProductSkeleton count={20} />;
+  }
+
+  // Mostrar skeletons si está cargando y no hay productos específicos
+  if (loading && products.length === 0 && !productosProp) {
+    return <ProductSkeleton count={20} />;
   }
 
   if (error) {

@@ -1,6 +1,7 @@
 import { Geist } from "next/font/google";
 import "./globals.css";
 import ButtonNav from "./componentes/ui/ButtonNav";
+import PreloadOptimizer from "./componentes/ui/PreloadOptimizer";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -14,7 +15,9 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={geist.className}>
-        {children}
+        <PreloadOptimizer autoStart={true}>
+          {children}
+        </PreloadOptimizer>
         {/* ButtonNav global para todas las páginas excepto productos */}
         <ButtonNav accentColor="amber" hideOnProducts={true} />
       </body>

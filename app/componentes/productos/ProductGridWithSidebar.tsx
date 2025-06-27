@@ -108,7 +108,7 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
   
   // Obtener categorías usando el hook
   const { categorias, loading: categoriasLoading } = useCategorias();
-  const { getProductosByCategoria } = useProductos();
+  const { getProductosByCategoria, searchProductos } = useProductos();
 
   // Exponer funciones para controlar el sidebar desde el ButtonNav
   useImperativeHandle(ref, () => ({
@@ -181,8 +181,7 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
     try {
       setIsSearching(true);
       
-      // Usar el hook de productos para buscar por marca
-      const { searchProductos } = useProductos();
+      // Usar la función searchProductos que ya está disponible
       const resultados = await searchProductos(brandName);
       
       // Filtrar solo productos que coincidan exactamente con la marca
@@ -197,7 +196,7 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
       console.error('Error buscando productos por marca:', error);
       setIsSearching(false);
     }
-  }, []);
+  }, [searchProductos]);
 
   // Obtener el nombre y cantidad de productos de la categoría seleccionada
   const selectedCategory = categorias.find(cat => cat.id === selectedCategoryId);

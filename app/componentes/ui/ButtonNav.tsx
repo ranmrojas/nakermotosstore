@@ -55,7 +55,6 @@ interface NavItem {
 
 interface ButtonNavProps {
   items?: NavItem[];
-  showHomeIndicator?: boolean;
   accentColor?: string;
   className?: string;
   hideOnProducts?: boolean;
@@ -98,7 +97,6 @@ const defaultNavigation: NavItem[] = [
 
 export default function ButtonNav({ 
   items = defaultNavigation,
-  showHomeIndicator = true,
   accentColor = 'blue',
   className = '',
   hideOnProducts = false,

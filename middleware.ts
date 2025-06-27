@@ -6,13 +6,17 @@ export function middleware(request: NextRequest) {
   const publicRoutes = ['/ageverification'];
   const isPublicRoute = publicRoutes.some(route => request.nextUrl.pathname.startsWith(route));
 
-  // Obtener el estado de verificación
-  const isVerified = request.cookies.get('age_verified');
+  // Rutas de API que permiten acceso sin verificación (para preload)
+  const apiRoutes = ['/api/categorias', '/api/extract/products'];
+  const isApiRoute = apiRoutes.some(route => request.nextUrl.pathname.startsWith(route));
 
-  // Si es una ruta pública, permitir acceso
-  if (isPublicRoute) {
+  // Si es una ruta pública o API, permitir acceso
+  if (isPublicRoute || isApiRoute) {
     return NextResponse.next();
   }
+
+  // Obtener el estado de verificación
+  const isVerified = request.cookies.get('age_verified');
 
   // Si no está verificado y no es una ruta pública, redirigir a verificación
   if (!isVerified) {
@@ -28,12 +32,11 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public files (logo.png, ageverification.jpg, etc)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|logo.png|ageverification.jpg).*)',
+    '/((?!_next/static|_next/image|favicon.ico|logo.png|ageverification.jpg).*)',
   ],
 } 

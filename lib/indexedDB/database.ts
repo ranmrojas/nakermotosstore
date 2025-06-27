@@ -152,6 +152,14 @@ export class IndexedDBService {
       clearRequest.onsuccess = () => {
         console.log('🧹 Base de datos limpiada correctamente');
         
+        // Validar que categorias sea un array
+        if (!Array.isArray(categorias)) {
+          console.error('❌ Error: categorias no es un array:', categorias);
+          console.error('❌ Tipo de categorias:', typeof categorias);
+          reject(new Error(`categorias debe ser un array, recibido: ${typeof categorias}`));
+          return;
+        }
+        
         // Insertar nuevas categorías
         let completed = 0;
         let errors = 0;

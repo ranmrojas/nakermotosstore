@@ -19,7 +19,7 @@ export default function AgeVerification() {
         sameSite: 'strict'
       });
       await new Promise(resolve => setTimeout(resolve, 1000));
-      router.push('/tienda/pedidos');
+      router.push('/productos'); ///tienda/pedidos
     } else {
       window.location.href = '/ageverification';
     }

@@ -1,5 +1,31 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+interface ProductoPrecio {
+  id_producto: number;
+  precio_venta?: number;
+  precio_venta_online?: number | null;
+  precio_promocion_online?: number;
+  fecha_Ini_promocion_online?: number | null;
+  fecha_fin_promocion_online?: number | null;
+  tipo_promocion_online?: number;
+  existencias?: number;
+  vende_sin_existencia?: number;
+  timestamp: number;
+}
+
+interface ProductoConPrecios {
+  id_producto: number;
+  precio_venta?: number;
+  precio_venta_online?: number | null;
+  precio_promocion_online?: number;
+  fecha_Ini_promocion_online?: number | null;
+  fecha_fin_promocion_online?: number | null;
+  tipo_promocion_online?: number;
+  existencias?: number;
+  vende_sin_existencia?: number;
+  timestamp: number;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Parámetros por query string
   const {
@@ -99,7 +125,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       
       if (productos && productos.length > 0) {
-        productosConPrecios = productos.map((producto: any) => ({
+        productosConPrecios = productos.map((producto: ProductoPrecio) => ({
           id_producto: producto.id_producto,
           precio_venta: producto.precio_venta,
           precio_venta_online: producto.precio_venta_online,
@@ -114,10 +140,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         
         console.log(`[prices] Productos con precios y existencias extraídos:`, {
           total: productosConPrecios.length,
-          conPrecioVenta: productosConPrecios.filter((p: any) => p.precio_venta).length,
-          conPrecioOnline: productosConPrecios.filter((p: any) => p.precio_venta_online).length,
-          conPromocion: productosConPrecios.filter((p: any) => p.precio_promocion_online).length,
-          conExistencias: productosConPrecios.filter((p: any) => p.existencias !== undefined).length
+          conPrecioVenta: productosConPrecios.filter((p: ProductoConPrecios) => p.precio_venta).length,
+          conPrecioOnline: productosConPrecios.filter((p: ProductoConPrecios) => p.precio_venta_online).length,
+          conPromocion: productosConPrecios.filter((p: ProductoConPrecios) => p.precio_promocion_online).length,
+          conExistencias: productosConPrecios.filter((p: ProductoConPrecios) => p.existencias !== undefined).length
         });
       }
     }

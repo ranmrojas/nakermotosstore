@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import ProductGrid from '../componentes/productos/ProductGrid';
 import ProductSearch from '../componentes/productos/ProductSearch';
+import ProductSkeleton from '../componentes/productos/ProductSkeleton';
 import { useProductos } from '../../hooks/useProductos';
 import { useCategorias } from '../../hooks/useCategorias';
+import { usePreload } from '../../hooks/usePreload';
 
 // Importar el tipo Categoria del hook
 type Categoria = {
@@ -88,21 +90,19 @@ interface Producto {
   [key: string]: unknown;
 }
 
-type SearchCategory = 'cerveza' | 'aguardiente' | 'gaseosa' | 'gomitas' | 'whisky' | 'none';
-
 export default function BusquedaPage() {
   const [searchResults, setSearchResults] = useState<Producto[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<SearchCategory>('none');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [selectedMarca, setSelectedMarca] = useState<string | null>(null);
   const [defaultProducts, setDefaultProducts] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
   const [marcas, setMarcas] = useState<Array<{id: number, nombre: string}>>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-  const [selectedMarca, setSelectedMarca] = useState<string | null>(null);
   const [categoriasOrdenadas, setCategoriasOrdenadas] = useState<Categoria[]>([]);
   
   const { getProductosByCategoria, searchProductos } = useProductos();
   const { categorias, loading: categoriasLoading } = useCategorias();
+  const { isPreloadComplete } = usePreload();
 
   // Función para ordenar categorías (primeras 4 específicas, resto alfabético)
   const getOrderedCategorias = useCallback(() => {
@@ -164,11 +164,18 @@ export default function BusquedaPage() {
     }
   }, [getProductosByCategoria]);
 
-  // Cargar productos por defecto al iniciar (4 de cada categoría para tener 20 total)
+  // Cargar productos por defecto al iniciar (optimizado)
   useEffect(() => {
     const loadDefaultProducts = async () => {
       setLoading(true);
       try {
+        // Si el preload está completo, los datos ya están disponibles
+        if (isPreloadComplete) {
+          console.log('✅ Datos de búsqueda precargados, cargando desde caché...');
+        } else {
+          console.log('🔄 Cargando productos por defecto...');
+        }
+
         // Categorías para productos por defecto: Cerveza, Aguardiente, Gaseosa, Gomitas, Whisky
         const defaultCategories = [
           { id: 15, name: 'cerveza' },      // Cerveza
@@ -198,9 +205,9 @@ export default function BusquedaPage() {
         setLoading(false);
       }
     };
-    
+
     loadDefaultProducts();
-  }, [getProductosByCategoria]);
+  }, [getProductosByCategoria, isPreloadComplete]);
 
   // Manejador para los resultados de búsqueda
   const handleSearchResults = useCallback((productos: Producto[]) => {
@@ -324,54 +331,72 @@ export default function BusquedaPage() {
     }
   }, [searchProductos]);
 
-  // Función para manejar clic en tag de categoría
-  const handleCategoryClick = (categoryType: SearchCategory) => {
-    // Si el tag ya está seleccionado, deseleccionarlo
-    if (selectedCategory === categoryType) {
-      setSelectedCategory('none');
-      setSearchResults([]);
-      return;
-    }
-    
-    setSelectedCategory(categoryType);
-    
-    // Determinar IDs de categoría según el tipo
-    let categoryIds: number;
-    switch (categoryType) {
-      case 'cerveza':
-        categoryIds = 15;
-        break;
-      case 'aguardiente':
-        categoryIds = 7;
-        break;
-      case 'gaseosa':
-        categoryIds = 8;
-        break;
-      case 'gomitas':
-        categoryIds = 51;
-        break;
-      case 'whisky':
-        categoryIds = 33;
-        break;
-      default:
-        categoryIds = 15; // Cerveza por defecto
-    }
-    
-    // Ejecutar submit con la categoría seleccionada
-    handleCategorySelect(categoryIds);
-  };
-
   // Determinar qué productos mostrar
   const mostrarResultadosBusqueda = searchResults.length > 0 || isSearching;
 
   if (loading || categoriasLoading) {
     return (
-      <div className="flex justify-center items-center h-64 bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-800 mx-auto mb-4"></div>
-          <p className="text-gray-600">
-            Cargando productos...
-          </p>
+      <div className="min-h-screen bg-white">
+        <style jsx>{`
+          .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+          .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
+        
+        {/* Header fijo superior */}
+        <div className="fixed top-0 left-0 right-0 z-40 bg-gray-900 border-b border-gray-800">
+          <div className="container mx-auto px-2 py-2">
+            {/* Componente de búsqueda */}
+            <div className="mb-2">
+              <Suspense fallback={<div className="h-10 bg-gray-700 rounded animate-pulse" />}>
+                <ProductSearch
+                  onSearchResults={handleSearchResults}
+                  onSearchChange={handleSearchChange}
+                  onCategorySelect={handleCategorySelect}
+                  placeholder="Buscar por nombre, marca, SKU, precio..."
+                  showSortOptions={true}
+                  className="!py-1"
+                />
+              </Suspense>
+            </div>
+            {/* Tags de categorías */}
+            <div>
+              <div className="flex items-center gap-1 justify-center">
+                <button className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
+                  Cerveza
+                </button>
+                <button className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
+                  Aguardiente
+                </button>
+                <button className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
+                  Gaseosa
+                </button>
+                <button className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
+                  Gomitas
+                </button>
+                <button className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
+                  Whisky
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Contenido principal con skeletons */}
+        <div className="pt-20">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 leading-tight">
+              Búsqueda de Productos
+            </h2>
+            <span className="text-xs text-gray-400 font-normal">
+              Cargando productos...
+            </span>
+          </div>
+          <ProductSkeleton count={20} />
         </div>
       </div>
     );
@@ -394,14 +419,16 @@ export default function BusquedaPage() {
           <div className="container mx-auto px-2 py-2">
             {/* Componente de búsqueda */}
             <div className="mb-2">
-              <ProductSearch
-                onSearchResults={handleSearchResults}
-                onSearchChange={handleSearchChange}
-                onCategorySelect={handleCategorySelect}
-                placeholder="Buscar productos por nombre, marca, ..."
-                showSortOptions={false}
-                className="!py-1"
-              />
+              <Suspense fallback={<div className="h-10 bg-gray-700 rounded animate-pulse" />}>
+                <ProductSearch
+                  onSearchResults={handleSearchResults}
+                  onSearchChange={handleSearchChange}
+                  onCategorySelect={handleCategorySelect}
+                  placeholder="Buscar productos por nombre, marca, ..."
+                  showSortOptions={false}
+                  className="!py-1"
+                />
+              </Suspense>
             </div>
             
             {/* Línea de categorías con scroll horizontal */}
@@ -452,39 +479,41 @@ export default function BusquedaPage() {
         {/* Espaciador para evitar que el contenido se oculte detrás del header fijo */}
         <div className="h-32" />
         {/* Contenido principal */}
-        <div className="pb-0 mb-0 bg-white">
-          {/* Contenido según el estado */}
-          {mostrarResultadosBusqueda ? (
-            <div>
-              {/* Resultados de búsqueda */}
-              <div className="mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {isSearching ? 'Buscando...' : `Resultados de búsqueda`}
-                </h2>
+        <Suspense fallback={<ProductSkeleton count={20} />}>
+          <div className="pb-0 mb-0 bg-white">
+            {/* Contenido según el estado */}
+            {mostrarResultadosBusqueda ? (
+              <div>
+                {/* Resultados de búsqueda */}
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {isSearching ? 'Buscando...' : `Resultados de búsqueda`}
+                  </h2>
+                </div>
+                <ProductGrid 
+                  productos={searchResults}
+                  onCategoryTagClick={handleCategoryTagClick}
+                  onBrandTagClick={handleBrandTagClick}
+                />
               </div>
-              <ProductGrid 
-                productos={searchResults}
-                onCategoryTagClick={handleCategoryTagClick}
-                onBrandTagClick={handleBrandTagClick}
-              />
-            </div>
-          ) : (
-            <div>
-              {/* Mostrar productos por defecto */}
-              <div className="mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Productos Destacados
-                </h2>
+            ) : (
+              <div>
+                {/* Mostrar productos por defecto */}
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Productos Destacados
+                  </h2>
+                </div>
+                <ProductGrid 
+                  productos={defaultProducts}
+                  showAddToCart={true}
+                  onCategoryTagClick={handleCategoryTagClick}
+                  onBrandTagClick={handleBrandTagClick}
+                />
               </div>
-              <ProductGrid 
-                productos={defaultProducts}
-                showAddToCart={true}
-                onCategoryTagClick={handleCategoryTagClick}
-                onBrandTagClick={handleBrandTagClick}
-              />
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </Suspense>
       </div>
     </div>
   );
