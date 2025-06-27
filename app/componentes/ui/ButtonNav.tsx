@@ -149,11 +149,11 @@ export default function ButtonNav({
       return (
         <button
           onClick={handleMenuClick}
-          className={`flex flex-col items-center justify-center w-full py-0.5 px-1 rounded-xl transition-all duration-300 ease-in-out group relative
+          className={`flex flex-col items-center justify-center w-full py-1 px-1 rounded-xl transition-all duration-300 ease-in-out group relative
             ${isActive ? colors.active : 'text-gray-600 dark:text-gray-400'} ${colors.hover}`}
         >
           {/* Icono */}
-          <div className={`relative p-1 rounded-full transition-all duration-300
+          <div className={`relative p-1.5 rounded-full transition-all duration-300
             ${isActive ? colors.activeBg : colors.hoverBg}`}
           >
             <Bars3Icon 
@@ -175,7 +175,7 @@ export default function ButtonNav({
           </div>
           
           {/* Texto */}
-          <span className={`text-xs font-medium mt-0 transition-all duration-300
+          <span className={`text-xs font-medium mt-0.5 transition-all duration-300
             ${isActive ? colors.active : 'text-gray-600 dark:text-gray-400'} ${colors.hover}`}
           >
             Categorías
@@ -188,11 +188,11 @@ export default function ButtonNav({
     return (
       <Link
         href={item.href}
-        className={`flex flex-col items-center justify-center w-full py-0.5 px-1 rounded-xl transition-all duration-300 ease-in-out group relative
+        className={`flex flex-col items-center justify-center w-full py-1 px-1 rounded-xl transition-all duration-300 ease-in-out group relative
           ${isActive ? colors.active : 'text-gray-600 dark:text-gray-400'} ${colors.hover}`}
       >
         {/* Icono */}
-        <div className={`relative p-1 rounded-full transition-all duration-300
+        <div className={`relative p-1.5 rounded-full transition-all duration-300
           ${isActive ? colors.activeBg : colors.hoverBg}`}
         >
           <IconComponent 
@@ -214,7 +214,7 @@ export default function ButtonNav({
         </div>
         
         {/* Texto */}
-        <span className={`text-xs font-medium mt-0 transition-all duration-300
+        <span className={`text-xs font-medium mt-0.5 transition-all duration-300
           ${isActive ? colors.active : 'text-gray-600 dark:text-gray-400'} ${colors.hover}`}
         >
           {item.name}
@@ -226,13 +226,13 @@ export default function ButtonNav({
   return (
     <>
       {/* Espaciador para evitar que el contenido se oculte detrás del nav */}
-      <div className="h-14 md:hidden" />
+      <div className="h-16 md:hidden" />
       
       {/* Bottom Navigation Bar */}
       <nav className={`fixed bottom-0 left-0 right-0 z-50 md:hidden ${className}`}>
         {/* Fondo con blur y borde superior */}
         <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-t border-gray-200/60 dark:border-gray-700/60 shadow-lg">
-          <div className="flex items-center justify-around px-2 py-1.5">
+          <div className="flex items-center justify-around px-2 py-2">
             {items.map((item) => (
               <div key={item.name}>
                 {renderNavButton(item)}
