@@ -19,8 +19,9 @@ interface Producto {
   precio_venta: number;
   precio_venta_online: number | null;
   precio_promocion_online: number;
-  existencias: number;
-  vende_sin_existencia: number;
+  // CAMPOS DE EXISTENCIAS EXCLUIDOS - Se obtienen del API en tiempo real
+  // existencias: number;
+  // vende_sin_existencia: number;
   id_categoria: number;
   nombre_categoria: string;
   id_marca: number;

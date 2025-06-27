@@ -26,8 +26,13 @@ interface Producto {
   precio_final?: number;
   precio_formateado?: string;
   precios_actualizados?: boolean;
-  existencias: number;
-  vende_sin_existencia: number;
+  // CAMPOS DE EXISTENCIAS EN TIEMPO REAL
+  existencias_real?: number;
+  vende_sin_existencia_real?: number;
+  existencias_actualizadas?: boolean;
+  // Campos de existencias locales (deprecados - usar los reales)
+  existencias?: number;
+  vende_sin_existencia?: number;
   id_categoria: number;
   nombre_categoria: string;
   id_marca: number;
@@ -178,12 +183,12 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
   const mostrarResultadosBusqueda = searchResults.length > 0 || isSearching;
 
   return (
-    <div className="relative" data-testid="product-container">
+    <div className="flex h-screen" data-testid="product-container">
       {/* Sidebar flotante */}
       <div className={`
         fixed top-0 left-0 h-full w-80 bg-white dark:bg-gray-800 shadow-xl z-50 transform transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        md:relative md:translate-x-0 md:w-64 lg:w-72 md:shadow-none md:z-auto md:mr-6
+        md:relative md:translate-x-0 md:w-64 lg:w-72 md:shadow-none md:z-auto md:flex-shrink-0
       `}>
         <div className="flex flex-col h-full">
           {/* Header del sidebar */}
@@ -215,10 +220,10 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
       </div>
 
       {/* Contenido principal */}
-      <div className="md:ml-0">
+      <div className="flex-1 flex flex-col md:ml-0 overflow-hidden">
         {/* Componente de búsqueda */}
         {showSearch && (
-          <div className="mb-6">
+          <div className="flex-shrink-0 p-4 border-b border-gray-200 dark:border-gray-700">
             <ProductSearch
               onSearchResults={handleSearchResults}
               onSearchChange={handleSearchChange}
@@ -230,99 +235,97 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
         )}
 
         {/* Contenido según el estado */}
-        {mostrarResultadosBusqueda ? (
-          <div data-testid="search-results">
-            {/* Resultados de búsqueda */}
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {isSearching ? 'Buscando...' : `Resultados de búsqueda (${searchResults.length})`}
-              </h2>
-            </div>
-            
-            {isSearching ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mx-auto mb-2"></div>
-                  <p className="text-gray-600">Buscando productos...</p>
-                </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          {mostrarResultadosBusqueda ? (
+            <div data-testid="search-results">
+              {/* Resultados de búsqueda */}
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {isSearching ? 'Buscando...' : `Resultados de búsqueda (${searchResults.length})`}
+                </h2>
               </div>
-            ) : searchResults.length > 0 ? (
-              <div 
-                data-testid="product-grid-results"
-                className="border border-gray-200 dark:border-gray-700 rounded-lg"
-                style={{ 
-                  height: 'calc(100vh - 300px)',
-                  overflow: 'auto'
-                }}
-              >
-                <div className="p-4">
-                  <ProductGrid 
-                    productos={searchResults}
-                    showAddToCart={showAddToCart}
-                    targetProductId={targetProductId}
-                    isSearchResults={true}
-                  />
+              
+              {isSearching ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mx-auto mb-2"></div>
+                    <p className="text-gray-600">Buscando productos...</p>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="p-8 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
-                <div className="text-gray-600 dark:text-gray-400 mb-4">
-                  <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
+              ) : searchResults.length > 0 ? (
+                <div 
+                  data-testid="product-grid-results"
+                  className="border border-gray-200 dark:border-gray-700 rounded-lg"
+                >
+                  <div className="p-4">
+                    <ProductGrid 
+                      productos={searchResults}
+                      showAddToCart={showAddToCart}
+                      targetProductId={targetProductId}
+                      isSearchResults={true}
+                    />
+                  </div>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  No se encontraron productos
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Intenta con otros términos de búsqueda o ajusta los filtros
-                </p>
+              ) : (
+                <div className="p-8 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
+                  <div className="text-gray-600 dark:text-gray-400 mb-4">
+                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    No se encontraron productos
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Intenta con otros términos de búsqueda o ajusta los filtros
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : selectedCategoryId !== null ? (
+            <div>
+              {/* Título sutil con nombre de la categoría y cantidad de productos */}
+              <div className="mb-2">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white leading-tight">
+                  {selectedCategoryId === 15 
+                    ? 'Todos los Productos' 
+                    : selectedCategory ? selectedCategory.nombre : 'Productos'
+                  }
+                </h2>
+                {/* Aquí puedes pasar la cantidad real de productos si la tienes, por ahora solo ejemplo */}
+                <span className="text-xs text-gray-400 font-normal">
+                  {selectedCategoryId === 15 && (
+                    <span>Cerveza, Vapeadores, Licores y más categorías</span>
+                  )}
+                  {/* Puedes reemplazar 0 por la cantidad real si la tienes */}
+                  {/* Ejemplo: `${products.length} productos disponibles` */}
+                  {/* Si no tienes el dato, puedes dejarlo vacío o mostrar un guion */}
+                  {/* 13 productos disponibles */}
+                </span>
               </div>
-            )}
-          </div>
-        ) : selectedCategoryId !== null ? (
-          <div>
-            {/* Título sutil con nombre de la categoría y cantidad de productos */}
-            <div className="mb-2">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white leading-tight">
-                {selectedCategoryId === 15 
-                  ? 'Todos los Productos' 
-                  : selectedCategory ? selectedCategory.nombre : 'Productos'
-                }
-              </h2>
-              {/* Aquí puedes pasar la cantidad real de productos si la tienes, por ahora solo ejemplo */}
-              <span className="text-xs text-gray-400 font-normal">
-                {selectedCategoryId === 15 && (
-                  <span>Cerveza, Vapeadores, Licores y más categorías</span>
-                )}
-                {/* Puedes reemplazar 0 por la cantidad real si la tienes */}
-                {/* Ejemplo: `${products.length} productos disponibles` */}
-                {/* Si no tienes el dato, puedes dejarlo vacío o mostrar un guion */}
-                {/* 13 productos disponibles */}
-              </span>
+              <ProductGrid 
+                categoryId={selectedCategoryId}
+                showAddToCart={showAddToCart}
+                targetProductId={targetProductId}
+                loadAllCategories={selectedCategoryId === 15}
+                productsPerCategory={30}
+              />
             </div>
-            <ProductGrid 
-              categoryId={selectedCategoryId}
-              showAddToCart={showAddToCart}
-              targetProductId={targetProductId}
-              loadAllCategories={selectedCategoryId === 15}
-              productsPerCategory={30}
-            />
-          </div>
-        ) : (
-          <div>
-            {/* Mostrar skeleton mientras no hay categoría seleccionada */}
-            <div className="mb-2">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white leading-tight">
-                Productos
-              </h2>
-              <span className="text-xs text-gray-400 font-normal">
-                Cargando productos...
-              </span>
+          ) : (
+            <div>
+              {/* Mostrar skeleton mientras no hay categoría seleccionada */}
+              <div className="mb-2">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white leading-tight">
+                  Productos
+                </h2>
+                <span className="text-xs text-gray-400 font-normal">
+                  Cargando productos...
+                </span>
+              </div>
+              <ProductSkeleton count={20} />
             </div>
-            <ProductSkeleton count={20} />
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

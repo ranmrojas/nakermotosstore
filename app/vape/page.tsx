@@ -10,11 +10,25 @@ interface Producto {
   id_producto: number;
   nombre: string;
   alias: string;
-  precio_venta: number;
-  precio_venta_online: number | null;
-  precio_promocion_online: number;
-  existencias: number;
-  vende_sin_existencia: number;
+  // Campos de precios originales (pueden estar vacíos ya que se obtienen del API)
+  precio_venta?: number;
+  precio_venta_online?: number | null;
+  precio_promocion_online?: number;
+  // Campos de precios en tiempo real
+  precio_venta_real?: number;
+  precio_venta_online_real?: number | null;
+  precio_promocion_online_real?: number;
+  tiene_promocion_activa?: boolean;
+  precio_final?: number;
+  precio_formateado?: string;
+  precios_actualizados?: boolean;
+  // CAMPOS DE EXISTENCIAS EN TIEMPO REAL
+  existencias_real?: number;
+  vende_sin_existencia_real?: number;
+  existencias_actualizadas?: boolean;
+  // Campos de existencias locales (deprecados - usar los reales)
+  existencias?: number;
+  vende_sin_existencia?: number;
   id_categoria: number;
   nombre_categoria: string;
   id_marca: number;

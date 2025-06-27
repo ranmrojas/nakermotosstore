@@ -4,6 +4,11 @@ export interface Product {
   nombre: string;
   precio_venta: number;
   precio_venta_online: number | null;
+  // CAMPOS DE EXISTENCIAS EN TIEMPO REAL
+  existencias_real?: number;
+  vende_sin_existencia_real?: number;
+  existencias_actualizadas?: boolean;
+  // Campos de existencias locales (deprecados - usar los reales)
   existencias: number;
   nombre_marca: string;
   nombre_categoria: string;

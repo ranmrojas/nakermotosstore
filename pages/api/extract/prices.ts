@@ -107,14 +107,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           fecha_Ini_promocion_online: producto.fecha_Ini_promocion_online,
           fecha_fin_promocion_online: producto.fecha_fin_promocion_online,
           tipo_promocion_online: producto.tipo_promocion_online,
+          existencias: producto.existencias,
+          vende_sin_existencia: producto.vende_sin_existencia,
           timestamp: Date.now() // Marca de tiempo para saber cuándo se obtuvo
         }));
         
-        console.log(`[prices] Productos con precios extraídos:`, {
+        console.log(`[prices] Productos con precios y existencias extraídos:`, {
           total: productosConPrecios.length,
           conPrecioVenta: productosConPrecios.filter((p: any) => p.precio_venta).length,
           conPrecioOnline: productosConPrecios.filter((p: any) => p.precio_venta_online).length,
-          conPromocion: productosConPrecios.filter((p: any) => p.precio_promocion_online).length
+          conPromocion: productosConPrecios.filter((p: any) => p.precio_promocion_online).length,
+          conExistencias: productosConPrecios.filter((p: any) => p.existencias !== undefined).length
         });
       }
     }

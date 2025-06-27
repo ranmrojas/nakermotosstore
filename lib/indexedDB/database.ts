@@ -1,6 +1,6 @@
 // Configuración de la base de datos IndexedDB
 const DB_NAME = 'lzfDB';
-const DB_VERSION = 3; // Incrementamos versión para eliminar campos de precios
+const DB_VERSION = 4; // Incrementamos versión para eliminar campos de existencias
 const CATEGORIAS_STORE = 'categorias';
 const PRODUCTOS_STORE = 'productos';
 const METADATA_STORE = 'metadata';
@@ -21,8 +21,9 @@ interface Producto {
   // precio_venta: number;
   // precio_venta_online: number | null;
   // precio_promocion_online: number;
-  existencias: number;
-  vende_sin_existencia: number;
+  // CAMPOS DE EXISTENCIAS EXCLUIDOS - Se obtienen del API en tiempo real
+  // existencias: number;
+  // vende_sin_existencia: number;
   id_categoria: number;
   nombre_categoria: string;
   id_marca: number;
@@ -436,8 +437,6 @@ export class IndexedDBService {
       id_producto: Number(p.id_producto) || 0,
       nombre: String(p.nombre || ''),
       alias: String(p.alias || ''),
-      existencias: Number(p.existencias) || 0,
-      vende_sin_existencia: Number(p.vende_sin_existencia) || 0,
       id_categoria: Number(p.id_categoria) || 0,
       nombre_categoria: String(p.nombre_categoria || ''),
       id_marca: Number(p.id_marca) || 0,

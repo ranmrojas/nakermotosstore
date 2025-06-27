@@ -243,15 +243,15 @@ export default function ProductManagerList({
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {product.existencias}
+                      {product.existencias_real ?? product.existencias ?? 0}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        product.existencias > 0 || product.vende_sin_existencia === 1
+                        (product.existencias_real ?? 0) > 0 || (product.vende_sin_existencia_real ?? 0) === 1
                           ? 'bg-green-100 text-green-800'
                           : 'bg-red-100 text-red-800'
                       }`}>
-                        {product.existencias > 0 || product.vende_sin_existencia === 1 ? 'Disponible' : 'Agotado'}
+                        {(product.existencias_real ?? 0) > 0 || (product.vende_sin_existencia_real ?? 0) === 1 ? 'Disponible' : 'Agotado'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

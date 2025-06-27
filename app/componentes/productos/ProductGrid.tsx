@@ -23,8 +23,13 @@ interface Producto {
   precio_final?: number;
   precio_formateado?: string;
   precios_actualizados?: boolean;
-  existencias: number;
-  vende_sin_existencia: number;
+  // CAMPOS DE EXISTENCIAS EN TIEMPO REAL
+  existencias_real?: number;
+  vende_sin_existencia_real?: number;
+  existencias_actualizadas?: boolean;
+  // Campos de existencias locales (deprecados - usar los reales)
+  existencias?: number;
+  vende_sin_existencia?: number;
   id_categoria: number;
   nombre_categoria: string;
   id_marca: number;
@@ -116,8 +121,8 @@ export default function ProductGrid({
   };
   
   // Verificar disponibilidad
-  const isAvailable = (existencias: number, vende_sin_existencia: number) => {
-    return existencias > 0 || vende_sin_existencia === 1;
+  const isAvailable = (existencias: number | undefined, vende_sin_existencia: number | undefined) => {
+    return (existencias ?? 0) > 0 || (vende_sin_existencia ?? 0) === 1;
   };
 
   // Función para abrir el modal
@@ -166,7 +171,7 @@ export default function ProductGrid({
           try {
             const productos = await getProductosByCategoria(categoriaId);
             const availableProducts = productos.filter(
-              product => isAvailable(product.existencias, product.vende_sin_existencia)
+              product => isAvailable(product.existencias_real, product.vende_sin_existencia_real)
             );
             
             categoriasConProductos.push({
@@ -187,7 +192,7 @@ export default function ProductGrid({
         try {
           const productos = await getProductosByCategoria(categoria.id);
           const availableProducts = productos.filter(
-            product => isAvailable(product.existencias, product.vende_sin_existencia)
+            product => isAvailable(product.existencias_real, product.vende_sin_existencia_real)
           );
           
           categoriasConProductos.push({
@@ -229,7 +234,7 @@ export default function ProductGrid({
         for (const categoryId of categoryIds) {
           const data = await getProductosByCategoria(categoryId);
           const availableProducts = data.filter(
-            product => isAvailable(product.existencias, product.vende_sin_existencia)
+            product => isAvailable(product.existencias_real, product.vende_sin_existencia_real)
           );
           allProducts.push(...availableProducts);
         }
@@ -237,7 +242,7 @@ export default function ProductGrid({
         // Para otras categorías, cargar solo la categoría seleccionada
         const data = await getProductosByCategoria(catId);
         const availableProducts = data.filter(
-          product => isAvailable(product.existencias, product.vende_sin_existencia)
+          product => isAvailable(product.existencias_real, product.vende_sin_existencia_real)
         );
         allProducts = availableProducts;
       }
@@ -286,7 +291,7 @@ export default function ProductGrid({
     try {
       const productos = await getProductosByCategoria(categoriaId);
       const availableProducts = productos.filter(
-        product => isAvailable(product.existencias, product.vende_sin_existencia)
+        product => isAvailable(product.existencias_real, product.vende_sin_existencia_real)
       );
       
       setCategoriasProductos(prev => prev.map(cat => 
@@ -431,7 +436,7 @@ export default function ProductGrid({
                               </span>
                             )}
                           </div>
-                          {showAddToCart && product.existencias > 0 ? (
+                          {showAddToCart && (product.existencias_real ?? 0) > 0 ? (
                             <button
                               onClick={(e) => {
                                 e.preventDefault();
@@ -448,7 +453,7 @@ export default function ProductGrid({
                                 <path d="M12 8v8M8 12h8" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
                               </svg>
                             </button>
-                          ) : product.existencias <= 0 ? (
+                          ) : (product.existencias_real ?? 0) <= 0 ? (
                             <span className="ml-2 px-2 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 text-xs rounded-full font-medium">
                               Agotado
                             </span>
@@ -593,7 +598,7 @@ export default function ProductGrid({
                             </span>
                           )}
                         </div>
-                        {showAddToCart && product.existencias > 0 ? (
+                        {showAddToCart && (product.existencias_real ?? 0) > 0 ? (
                           <button
                             onClick={(e) => {
                               e.preventDefault();
@@ -610,7 +615,7 @@ export default function ProductGrid({
                               <path d="M12 8v8M8 12h8" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
                             </svg>
                           </button>
-                        ) : product.existencias <= 0 ? (
+                        ) : (product.existencias_real ?? 0) <= 0 ? (
                           <span className="ml-2 px-2 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 text-xs rounded-full font-medium">
                             Agotado
                           </span>

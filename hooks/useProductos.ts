@@ -11,8 +11,9 @@ interface Producto {
   // precio_venta: number;
   // precio_venta_online: number | null;
   // precio_promocion_online: number;
-  existencias: number;
-  vende_sin_existencia: number;
+  // CAMPOS DE EXISTENCIAS EXCLUIDOS - Se obtienen del API en tiempo real
+  // existencias: number;
+  // vende_sin_existencia: number;
   id_categoria: number;
   nombre_categoria: string;
   id_marca: number;
@@ -67,6 +68,10 @@ interface ProductoConPreciosReales extends Producto {
   precio_final?: number;
   precio_formateado?: string;
   precios_actualizados?: boolean;
+  // CAMPOS DE EXISTENCIAS EN TIEMPO REAL
+  existencias_real?: number;
+  vende_sin_existencia_real?: number;
+  existencias_actualizadas?: boolean;
 }
 
 interface UseProductosReturn {
@@ -236,7 +241,11 @@ export const useProductos = (): UseProductosReturn => {
                 tiene_promocion_activa: PreciosService.tienePromocionActiva(precioReal),
                 precio_final: PreciosService.getPrecioFinal(precioReal),
                 precio_formateado: PreciosService.formatearPrecio(PreciosService.getPrecioFinal(precioReal)),
-                precios_actualizados: true
+                precios_actualizados: true,
+                // CAMPOS DE EXISTENCIAS EN TIEMPO REAL
+                existencias_real: precioReal.existencias,
+                vende_sin_existencia_real: precioReal.vende_sin_existencia,
+                existencias_actualizadas: true
               };
             }
             return producto;
@@ -275,7 +284,11 @@ export const useProductos = (): UseProductosReturn => {
                 tiene_promocion_activa: PreciosService.tienePromocionActiva(precioReal),
                 precio_final: PreciosService.getPrecioFinal(precioReal),
                 precio_formateado: PreciosService.formatearPrecio(PreciosService.getPrecioFinal(precioReal)),
-                precios_actualizados: true
+                precios_actualizados: true,
+                // CAMPOS DE EXISTENCIAS EN TIEMPO REAL
+                existencias_real: precioReal.existencias,
+                vende_sin_existencia_real: precioReal.vende_sin_existencia,
+                existencias_actualizadas: true
               };
             }
             return {
@@ -311,8 +324,73 @@ export const useProductos = (): UseProductosReturn => {
       // Asegurar que la base de datos esté inicializada
       await indexedDBService.init();
       
+      // Obtener productos de IndexedDB
       const resultados = await indexedDBService.searchProductos(query);
-      return resultados.filter(p => p.mostrar_tienda_linea === 1);
+      const productosFiltrados = resultados.filter(p => p.mostrar_tienda_linea === 1);
+      
+      if (productosFiltrados.length === 0) {
+        return [];
+      }
+      
+      // Agrupar productos por categoría para obtener precios en tiempo real
+      const productosPorCategoria = new Map<number, ProductoConPreciosReales[]>();
+      
+      productosFiltrados.forEach(producto => {
+        const categoriaId = producto.id_categoria;
+        if (!productosPorCategoria.has(categoriaId)) {
+          productosPorCategoria.set(categoriaId, []);
+        }
+        productosPorCategoria.get(categoriaId)!.push(producto as ProductoConPreciosReales);
+      });
+      
+      // Obtener precios en tiempo real para cada categoría
+      const productosConPrecios: ProductoConPreciosReales[] = [];
+      
+      for (const [categoriaId, productos] of productosPorCategoria) {
+        try {
+          const precios = await preciosService.getPreciosCategoria(categoriaId);
+          
+          // Combinar productos con precios reales
+          const productosActualizados = productos.map(producto => {
+            const precioReal = precios.find(p => p.id_producto === producto.id_producto);
+            if (precioReal) {
+              return {
+                ...producto,
+                precio_venta_real: precioReal.precio_venta,
+                precio_venta_online_real: precioReal.precio_venta_online,
+                precio_promocion_online_real: precioReal.precio_promocion_online,
+                tiene_promocion_activa: PreciosService.tienePromocionActiva(precioReal),
+                precio_final: PreciosService.getPrecioFinal(precioReal),
+                precio_formateado: PreciosService.formatearPrecio(PreciosService.getPrecioFinal(precioReal)),
+                precios_actualizados: true,
+                // CAMPOS DE EXISTENCIAS EN TIEMPO REAL
+                existencias_real: precioReal.existencias,
+                vende_sin_existencia_real: precioReal.vende_sin_existencia,
+                existencias_actualizadas: true
+              };
+            }
+            return {
+              ...producto,
+              precios_actualizados: false,
+              existencias_actualizadas: false
+            };
+          });
+          
+          productosConPrecios.push(...productosActualizados);
+        } catch (error) {
+          console.warn(`⚠️ No se pudieron obtener precios para categoría ${categoriaId}:`, error);
+          // Si no se pueden obtener precios, agregar productos sin datos del API
+          productosConPrecios.push(...productos.map(producto => ({
+            ...producto,
+            precios_actualizados: false,
+            existencias_actualizadas: false
+          })));
+        }
+      }
+      
+      console.log(`🔍 Búsqueda completada: ${productosConPrecios.length} productos encontrados con precios en tiempo real`);
+      return productosConPrecios;
+      
     } catch (err) {
       console.error('Error buscando productos:', err);
       return [];
@@ -325,7 +403,72 @@ export const useProductos = (): UseProductosReturn => {
       // Asegurar que la base de datos esté inicializada
       await indexedDBService.init();
       
-      return await indexedDBService.getProductosTiendaOnline();
+      // Obtener productos de IndexedDB
+      const productos = await indexedDBService.getProductosTiendaOnline();
+      
+      if (productos.length === 0) {
+        return [];
+      }
+      
+      // Agrupar productos por categoría para obtener precios en tiempo real
+      const productosPorCategoria = new Map<number, ProductoConPreciosReales[]>();
+      
+      productos.forEach(producto => {
+        const categoriaId = producto.id_categoria;
+        if (!productosPorCategoria.has(categoriaId)) {
+          productosPorCategoria.set(categoriaId, []);
+        }
+        productosPorCategoria.get(categoriaId)!.push(producto as ProductoConPreciosReales);
+      });
+      
+      // Obtener precios en tiempo real para cada categoría
+      const productosConPrecios: ProductoConPreciosReales[] = [];
+      
+      for (const [categoriaId, productosCategoria] of productosPorCategoria) {
+        try {
+          const precios = await preciosService.getPreciosCategoria(categoriaId);
+          
+          // Combinar productos con precios reales
+          const productosActualizados = productosCategoria.map(producto => {
+            const precioReal = precios.find(p => p.id_producto === producto.id_producto);
+            if (precioReal) {
+              return {
+                ...producto,
+                precio_venta_real: precioReal.precio_venta,
+                precio_venta_online_real: precioReal.precio_venta_online,
+                precio_promocion_online_real: precioReal.precio_promocion_online,
+                tiene_promocion_activa: PreciosService.tienePromocionActiva(precioReal),
+                precio_final: PreciosService.getPrecioFinal(precioReal),
+                precio_formateado: PreciosService.formatearPrecio(PreciosService.getPrecioFinal(precioReal)),
+                precios_actualizados: true,
+                // CAMPOS DE EXISTENCIAS EN TIEMPO REAL
+                existencias_real: precioReal.existencias,
+                vende_sin_existencia_real: precioReal.vende_sin_existencia,
+                existencias_actualizadas: true
+              };
+            }
+            return {
+              ...producto,
+              precios_actualizados: false,
+              existencias_actualizadas: false
+            };
+          });
+          
+          productosConPrecios.push(...productosActualizados);
+        } catch (error) {
+          console.warn(`⚠️ No se pudieron obtener precios para categoría ${categoriaId}:`, error);
+          // Si no se pueden obtener precios, agregar productos sin datos del API
+          productosConPrecios.push(...productosCategoria.map(producto => ({
+            ...producto,
+            precios_actualizados: false,
+            existencias_actualizadas: false
+          })));
+        }
+      }
+      
+      console.log(`🛒 Productos tienda online obtenidos: ${productosConPrecios.length} productos con precios en tiempo real`);
+      return productosConPrecios;
+      
     } catch (err) {
       console.error('Error obteniendo productos de tienda online:', err);
       return [];
@@ -416,7 +559,7 @@ export const useProductos = (): UseProductosReturn => {
 
   const getProductosDisponibles = useCallback((): ProductoConPreciosReales[] => {
     return productos.filter(p => 
-      (p.existencias > 0 || p.vende_sin_existencia === 1) &&
+      ((p.existencias_real ?? 0) > 0 || (p.vende_sin_existencia_real ?? 0) === 1) &&
       p.mostrar_tienda_linea === 1
     );
   }, [productos]);
@@ -547,7 +690,11 @@ export const useProductos = (): UseProductosReturn => {
                 tiene_promocion_activa: PreciosService.tienePromocionActiva(precioReal),
                 precio_final: PreciosService.getPrecioFinal(precioReal),
                 precio_formateado: PreciosService.formatearPrecio(PreciosService.getPrecioFinal(precioReal)),
-                precios_actualizados: true
+                precios_actualizados: true,
+                // CAMPOS DE EXISTENCIAS EN TIEMPO REAL
+                existencias_real: precioReal.existencias,
+                vende_sin_existencia_real: precioReal.vende_sin_existencia,
+                existencias_actualizadas: true
               };
             }
           }
@@ -585,7 +732,11 @@ export const useProductos = (): UseProductosReturn => {
                 tiene_promocion_activa: PreciosService.tienePromocionActiva(precioReal),
                 precio_final: PreciosService.getPrecioFinal(precioReal),
                 precio_formateado: PreciosService.formatearPrecio(PreciosService.getPrecioFinal(precioReal)),
-                precios_actualizados: true
+                precios_actualizados: true,
+                // CAMPOS DE EXISTENCIAS EN TIEMPO REAL
+                existencias_real: precioReal.existencias,
+                vende_sin_existencia_real: precioReal.vende_sin_existencia,
+                existencias_actualizadas: true
               };
             }
             return producto;

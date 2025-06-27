@@ -7,6 +7,8 @@ interface PrecioProducto {
   fecha_Ini_promocion_online: number | null;
   fecha_fin_promocion_online: number | null;
   tipo_promocion_online: number;
+  existencias: number;
+  vende_sin_existencia: number;
   timestamp: number;
 }
 

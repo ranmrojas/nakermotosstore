@@ -46,7 +46,7 @@ export default function ProductosPage() {
   }, [categorias]);
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="h-screen">
       <ProductGridWithSidebar 
         ref={sidebarRef}
         showAddToCart={true}
