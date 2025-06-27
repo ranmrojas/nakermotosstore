@@ -1,10 +1,16 @@
 import { indexedDBService } from './database';
 
-// Configuración de sincronización
-const SYNC_INTERVAL = 24 * 60 * 60 * 1000; // 24 horas en milisegundos
+// Configuración de sincronización - REDUCIDO PARA MANTENER DATOS ACTUALIZADOS
+const SYNC_INTERVAL = 30 * 60 * 1000; // 30 minutos en lugar de 24 horas
+const QUICK_SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutos para sincronización rápida
 const LAST_PRODUCTOS_SYNC_KEY = 'lastProductosSync';
 const PRODUCTOS_VERSION_KEY = 'productosVersion';
 const MAX_CONCURRENT_REQUESTS = 3; // Máximo 3 peticiones simultáneas
+
+// Configuración para sincronización automática
+const AUTO_SYNC_ENABLED = true;
+const AUTO_SYNC_INTERVAL = 15 * 60 * 1000; // 15 minutos
+let autoSyncTimer: NodeJS.Timeout | null = null;
 
 interface Producto {
   id_producto: number;
@@ -349,6 +355,140 @@ export class ProductosSyncService {
   // Verificar si el navegador soporta IndexedDB
   static isSupported(): boolean {
     return typeof window !== 'undefined' && 'indexedDB' in window;
+  }
+
+  // ===== NUEVOS MÉTODOS PARA SINCRONIZACIÓN AUTOMÁTICA =====
+
+  // Iniciar sincronización automática
+  startAutoSync(categorias: { id: number; nombre: string }[]): void {
+    if (!AUTO_SYNC_ENABLED) {
+      console.log('⚠️ Sincronización automática deshabilitada');
+      return;
+    }
+
+    if (autoSyncTimer) {
+      console.log('🔄 Sincronización automática ya está activa');
+      return;
+    }
+
+    console.log('🚀 Iniciando sincronización automática cada 15 minutos...');
+    
+    // Primera sincronización inmediata
+    this.performAutoSync(categorias);
+    
+    // Configurar sincronización periódica
+    autoSyncTimer = setInterval(() => {
+      this.performAutoSync(categorias);
+    }, AUTO_SYNC_INTERVAL);
+  }
+
+  // Detener sincronización automática
+  stopAutoSync(): void {
+    if (autoSyncTimer) {
+      clearInterval(autoSyncTimer);
+      autoSyncTimer = null;
+      console.log('⏹️ Sincronización automática detenida');
+    }
+  }
+
+  // Ejecutar sincronización automática
+  private async performAutoSync(categorias: { id: number; nombre: string }[]): Promise<void> {
+    try {
+      console.log('🔄 Ejecutando sincronización automática...');
+      await this.syncProductosInteligente(categorias);
+      console.log('✅ Sincronización automática completada');
+    } catch (error: unknown) {
+      console.error('❌ Error en sincronización automática:', error);
+    }
+  }
+
+  // Sincronización forzada (ignora intervalos)
+  async forceSyncCategoria(categoriaId: number): Promise<SyncResult> {
+    console.log(`🔄 Forzando sincronización de categoría ${categoriaId}...`);
+    return await this.syncProductosByCategoria(categoriaId);
+  }
+
+  // Sincronización rápida (intervalo reducido)
+  async quickSyncCategoria(categoriaId: number): Promise<SyncResult> {
+    try {
+      const lastSync = await this.getLastSyncTime(categoriaId);
+      
+      if (lastSync) {
+        const timeSinceLastSync = Date.now() - lastSync.getTime();
+        if (timeSinceLastSync < QUICK_SYNC_INTERVAL) {
+          console.log(`⏭️ Categoría ${categoriaId} sincronizada recientemente, saltando...`);
+          return { success: true, categoriaId };
+        }
+      }
+      
+      return await this.syncProductosByCategoria(categoriaId);
+    } catch (error: unknown) {
+      console.error(`Error en sincronización rápida de categoría ${categoriaId}:`, error);
+      return { success: false, error: String(error), categoriaId };
+    }
+  }
+
+  // Verificar estado de sincronización automática
+  isAutoSyncActive(): boolean {
+    return autoSyncTimer !== null;
+  }
+
+  // Obtener configuración de sincronización
+  getSyncConfig(): {
+    syncInterval: number;
+    quickSyncInterval: number;
+    autoSyncInterval: number;
+    autoSyncEnabled: boolean;
+    isAutoSyncActive: boolean;
+  } {
+    return {
+      syncInterval: SYNC_INTERVAL,
+      quickSyncInterval: QUICK_SYNC_INTERVAL,
+      autoSyncInterval: AUTO_SYNC_INTERVAL,
+      autoSyncEnabled: AUTO_SYNC_ENABLED,
+      isAutoSyncActive: this.isAutoSyncActive()
+    };
+  }
+
+  // Sincronización inteligente mejorada (más agresiva)
+  async smartSync(categorias: { id: number; nombre: string }[]): Promise<void> {
+    console.log('🧠 Iniciando sincronización inteligente mejorada...');
+    
+    const categoriasNecesarias: { id: number; nombre: string }[] = [];
+    const categoriasRecientes: { id: number; nombre: string }[] = [];
+
+    // Clasificar categorías por necesidad de sincronización
+    for (const categoria of categorias) {
+      const lastSync = await this.getLastSyncTime(categoria.id);
+      
+      if (!lastSync) {
+        categoriasNecesarias.push(categoria);
+      } else {
+        const timeSinceLastSync = Date.now() - lastSync.getTime();
+        if (timeSinceLastSync >= SYNC_INTERVAL) {
+          categoriasNecesarias.push(categoria);
+        } else if (timeSinceLastSync >= QUICK_SYNC_INTERVAL) {
+          categoriasRecientes.push(categoria);
+        }
+      }
+    }
+
+    console.log(`📊 Categorías que necesitan sync: ${categoriasNecesarias.length}`);
+    console.log(`📊 Categorías para sync rápida: ${categoriasRecientes.length}`);
+
+    // Sincronizar categorías necesarias primero
+    if (categoriasNecesarias.length > 0) {
+      await this.syncAllProductos(categoriasNecesarias);
+    }
+
+    // Sincronización rápida para categorías recientes
+    if (categoriasRecientes.length > 0) {
+      console.log('⚡ Ejecutando sincronización rápida...');
+      const promises = categoriasRecientes.map(cat => this.quickSyncCategoria(cat.id));
+      await Promise.all(promises);
+    }
+
+    console.log('✅ Sincronización inteligente completada');
   }
 }
 

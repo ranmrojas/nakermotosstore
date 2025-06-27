@@ -7,7 +7,7 @@ import { productosSyncService } from '../../lib/indexedDB/productosSyncService';
 
 export default function ProductosPage() {
   const sidebarRef = useRef<ProductGridWithSidebarRef>(null);
-  const { categorias, loading: categoriasLoading } = useCategorias();
+  const { categorias } = useCategorias();
 
   // Función para controlar el sidebar desde el ButtonNav
   const handleToggleSidebar = () => {
@@ -18,7 +18,7 @@ export default function ProductosPage() {
 
   // Efecto para iniciar descarga silenciosa de todos los productos
   useEffect(() => {
-    if (categorias.length > 0 && !categoriasLoading) {
+    if (categorias.length > 0) {
       console.log('🚀 Iniciando descarga silenciosa de todos los productos...');
       
       const iniciarDescargaSilenciosa = async () => {
@@ -43,21 +43,7 @@ export default function ProductosPage() {
       // El servicio maneja internamente si necesita sincronizar o no
       iniciarDescargaSilenciosa();
     }
-  }, [categorias, categoriasLoading]);
-
-  // Mostrar loading mientras se inicializa
-  if (categoriasLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center min-h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">Cargando productos...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  }, [categorias]);
 
   return (
     <div className="container mx-auto px-4 py-8">

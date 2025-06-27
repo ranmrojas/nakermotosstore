@@ -1,6 +1,6 @@
 // Configuración de la base de datos IndexedDB
 const DB_NAME = 'lzfDB';
-const DB_VERSION = 2; // Incrementamos versión para agregar store de productos
+const DB_VERSION = 3; // Incrementamos versión para eliminar campos de precios
 const CATEGORIAS_STORE = 'categorias';
 const PRODUCTOS_STORE = 'productos';
 const METADATA_STORE = 'metadata';
@@ -17,9 +17,10 @@ interface Producto {
   id_producto: number;
   nombre: string;
   alias: string;
-  precio_venta: number;
-  precio_venta_online: number | null;
-  precio_promocion_online: number;
+  // CAMPOS DE PRECIOS EXCLUIDOS - Se obtienen del API en tiempo real
+  // precio_venta: number;
+  // precio_venta_online: number | null;
+  // precio_promocion_online: number;
   existencias: number;
   vende_sin_existencia: number;
   id_categoria: number;
@@ -107,7 +108,6 @@ export class IndexedDBService {
           productosStore.createIndex('mostrar_tienda_linea', 'mostrar_tienda_linea', { unique: false });
           productosStore.createIndex('es_servicio', 'es_servicio', { unique: false });
           productosStore.createIndex('id_marca', 'id_marca', { unique: false });
-          productosStore.createIndex('precio_venta', 'precio_venta', { unique: false });
         }
 
         // Crear store de metadata
@@ -315,47 +315,48 @@ export class IndexedDBService {
     });
   }
 
-  // Búsqueda de productos por nombre o alias
+  // Búsqueda de productos
   async searchProductos(query: string): Promise<Producto[]> {
     this.ensureDB();
-    const productos = await this.getProductos();
-    const searchTerm = query.toLowerCase();
-    
-    return productos.filter(producto => {
-      // Búsqueda en nombre y alias (existente)
-      const nombreMatch = producto.nombre.toLowerCase().includes(searchTerm);
-      const aliasMatch = producto.alias.toLowerCase().includes(searchTerm);
-      
-      // Búsqueda en marca
-      const marcaMatch = producto.nombre_marca.toLowerCase().includes(searchTerm);
-      
-      // Búsqueda en SKU
-      const skuMatch = producto.sku.toLowerCase().includes(searchTerm);
-      
-      // Búsqueda en nota/descripción
-      const notaMatch = producto.nota.toLowerCase().includes(searchTerm);
-      
-      // Búsqueda en precio (convertir a string para buscar)
-      const precioVenta = producto.precio_venta.toString();
-      const precioOnline = producto.precio_venta_online?.toString() || '';
-      const precioPromocion = producto.precio_promocion_online.toString();
-      
-      const precioVentaMatch = precioVenta.includes(searchTerm);
-      const precioOnlineMatch = precioOnline.includes(searchTerm);
-      const precioPromocionMatch = precioPromocion.includes(searchTerm);
-      
-      // Búsqueda en categoría
-      const categoriaMatch = producto.nombre_categoria.toLowerCase().includes(searchTerm);
-      
-      return nombreMatch || 
-             aliasMatch || 
-             marcaMatch || 
-             skuMatch || 
-             notaMatch || 
-             precioVentaMatch || 
-             precioOnlineMatch || 
-             precioPromocionMatch ||
-             categoriaMatch;
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction([PRODUCTOS_STORE], 'readonly');
+      const store = transaction.objectStore(PRODUCTOS_STORE);
+      const request = store.getAll();
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const productos = request.result;
+        const searchTerm = query.toLowerCase();
+
+        const resultados = productos.filter(producto => {
+          // Búsqueda en nombre
+          const nombreMatch = producto.nombre.toLowerCase().includes(searchTerm);
+          
+          // Búsqueda en alias
+          const aliasMatch = producto.alias.toLowerCase().includes(searchTerm);
+          
+          // Búsqueda en marca
+          const marcaMatch = producto.nombre_marca.toLowerCase().includes(searchTerm);
+          
+          // Búsqueda en SKU
+          const skuMatch = producto.sku.toLowerCase().includes(searchTerm);
+          
+          // Búsqueda en nota/descripción
+          const notaMatch = producto.nota.toLowerCase().includes(searchTerm);
+          
+          // Búsqueda en categoría
+          const categoriaMatch = producto.nombre_categoria.toLowerCase().includes(searchTerm);
+          
+          return nombreMatch || 
+                 aliasMatch || 
+                 marcaMatch || 
+                 skuMatch || 
+                 notaMatch || 
+                 categoriaMatch;
+        });
+
+        resolve(resultados);
+      };
     });
   }
 
@@ -435,9 +436,6 @@ export class IndexedDBService {
       id_producto: Number(p.id_producto) || 0,
       nombre: String(p.nombre || ''),
       alias: String(p.alias || ''),
-      precio_venta: Number(p.precio_venta) || 0,
-      precio_venta_online: p.precio_venta_online !== null ? Number(p.precio_venta_online) : null,
-      precio_promocion_online: Number(p.precio_promocion_online) || 0,
       existencias: Number(p.existencias) || 0,
       vende_sin_existencia: Number(p.vende_sin_existencia) || 0,
       id_categoria: Number(p.id_categoria) || 0,

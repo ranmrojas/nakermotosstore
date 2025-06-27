@@ -4,15 +4,25 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useProductos } from '../../../hooks/useProductos';
 import { getProductImageUrl } from '@/app/services/productService';
+import ProductSkeleton from './ProductSkeleton';
 
 // Definir la interfaz Producto basada en la del hook
 interface Producto {
   id_producto: number;
   nombre: string;
   alias: string;
-  precio_venta: number;
-  precio_venta_online: number | null;
-  precio_promocion_online: number;
+  // Campos de precios originales (pueden estar vacíos ya que se obtienen del API)
+  precio_venta?: number;
+  precio_venta_online?: number | null;
+  precio_promocion_online?: number;
+  // Campos de precios en tiempo real
+  precio_venta_real?: number;
+  precio_venta_online_real?: number | null;
+  precio_promocion_online_real?: number;
+  tiene_promocion_activa?: boolean;
+  precio_final?: number;
+  precio_formateado?: string;
+  precios_actualizados?: boolean;
   existencias: number;
   vende_sin_existencia: number;
   id_categoria: number;
@@ -289,18 +299,44 @@ export default function ProductGrid({
     }
   };
 
-  // Mostrar loading mientras se sincroniza o carga
-  if (loading || syncing || loadingAllCategories) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-800 dark:border-amber-400 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">
-            {syncing ? 'Sincronizando productos...' : loadingAllCategories ? 'Cargando todas las categorías...' : 'Cargando productos...'}
-          </p>
-        </div>
-      </div>
-    );
+  // Función helper para obtener el precio correcto
+  const getPrecioCorrecto = (product: Producto) => {
+    // Si tiene precios reales actualizados, usar esos
+    if (product.precios_actualizados && product.precio_final !== undefined) {
+      return product.precio_final;
+    }
+    // Si tiene precio_venta_online_real, usar ese
+    if (product.precio_venta_online_real !== undefined && product.precio_venta_online_real !== null) {
+      return product.precio_venta_online_real;
+    }
+    // Si tiene precio_venta_real, usar ese
+    if (product.precio_venta_real !== undefined) {
+      return product.precio_venta_real;
+    }
+    // Fallback a precios originales
+    return product.precio_venta_online !== null ? product.precio_venta_online : product.precio_venta;
+  };
+
+  // Función helper para obtener el precio base (para comparaciones)
+  const getPrecioBase = (product: Producto) => {
+    // Si tiene precios reales actualizados, usar precio_venta_real
+    if (product.precios_actualizados && product.precio_venta_real !== undefined) {
+      return product.precio_venta_real;
+    }
+    // Fallback a precio original
+    return product.precio_venta || 0;
+  };
+
+  // Función helper para verificar si hay oferta
+  const tieneOferta = (product: Producto) => {
+    const precioOnline = product.precio_venta_online_real !== undefined ? product.precio_venta_online_real : product.precio_venta_online;
+    const precioBase = getPrecioBase(product);
+    return precioOnline !== null && precioOnline !== undefined && precioBase !== undefined && precioOnline < precioBase;
+  };
+
+  // Mostrar loading solo si no hay productos y está cargando inicialmente
+  if (loading && products.length === 0 && categoriasProductos.length === 0) {
+    return <ProductSkeleton />;
   }
 
   if (error) {
@@ -369,7 +405,7 @@ export default function ProductGrid({
                           }}
                         />
                         {/* Tag de OFERTA cuando hay descuento */}
-                        {product.precio_venta_online !== null && product.precio_venta_online < product.precio_venta && (
+                        {tieneOferta(product) && (
                           <div className="absolute top-1 left-1 z-10 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-sm">
                             OFERTA
                           </div>
@@ -387,11 +423,11 @@ export default function ProductGrid({
                         <div className="flex items-center justify-between w-full mt-auto mb-0">
                           <div className="flex flex-col mb-0 pb-0">
                             <span className="text-sm font-bold text-gray-900 dark:text-white">
-                              ${product.precio_venta_online !== null ? product.precio_venta_online : product.precio_venta}
+                              ${getPrecioCorrecto(product)}
                             </span>
-                            {product.precio_venta_online !== null && product.precio_venta_online < product.precio_venta && (
+                            {tieneOferta(product) && (
                               <span className="text-xs text-gray-500 line-through">
-                                ${product.precio_venta}
+                                ${getPrecioBase(product)}
                               </span>
                             )}
                           </div>
@@ -400,7 +436,7 @@ export default function ProductGrid({
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${(product.precio_venta_online !== null ? product.precio_venta_online : product.precio_venta)?.toLocaleString('es-CO')}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
+                                const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${getPrecioCorrecto(product)?.toLocaleString('es-CO')}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
                                 window.open(`https://wa.me/573043668910?text=${encodeURIComponent(message)}`, '_blank');
                               }}
                               className="ml-2 w-8 h-8 flex items-center justify-center bg-amber-600 dark:bg-amber-500 text-white rounded-full hover:bg-amber-700 dark:hover:bg-amber-600 transition-colors"
@@ -487,7 +523,7 @@ export default function ProductGrid({
                         }}
                       />
                       {/* Tag de OFERTA cuando hay descuento */}
-                      {product.precio_venta_online !== null && product.precio_venta_online < product.precio_venta && (
+                      {tieneOferta(product) && (
                         <div className="absolute top-1 left-1 z-10 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-sm">
                           OFERTA
                         </div>
@@ -548,14 +584,12 @@ export default function ProductGrid({
                       )}
                       <div className="flex items-center justify-between w-full mt-auto mb-0">
                         <div className="flex flex-col mb-0 pb-0">
-                          <span className={`${product.precio_venta_online !== null && product.precio_venta_online < product.precio_venta ? 'text-green-600 dark:text-green-400 text-base font-bold' : 'text-amber-700 dark:text-amber-400 font-bold text-sm'}`}>
-                            ${(product.precio_venta_online !== null 
-                              ? product.precio_venta_online 
-                              : product.precio_venta)?.toLocaleString('es-CO')}
+                          <span className={`${tieneOferta(product) ? 'text-green-600 dark:text-green-400 text-base font-bold' : 'text-amber-700 dark:text-amber-400 font-bold text-sm'}`}>
+                            ${(getPrecioCorrecto(product))?.toLocaleString('es-CO')}
                           </span>
-                          {product.precio_venta_online !== null && product.precio_venta_online < product.precio_venta && (
+                          {tieneOferta(product) && (
                             <span className="text-red-400 dark:text-red-300 text-xs line-through font-medium" style={{ fontSize: '0.8rem', marginTop: '-2px' }}>
-                              ${product.precio_venta?.toLocaleString('es-CO')}
+                              ${getPrecioBase(product)?.toLocaleString('es-CO')}
                             </span>
                           )}
                         </div>
@@ -564,7 +598,7 @@ export default function ProductGrid({
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${(product.precio_venta_online !== null ? product.precio_venta_online : product.precio_venta)?.toLocaleString('es-CO')}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
+                              const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${getPrecioCorrecto(product)?.toLocaleString('es-CO')}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
                               window.open(`https://wa.me/573043668910?text=${encodeURIComponent(message)}`, '_blank');
                             }}
                             className="ml-2 w-8 h-8 flex items-center justify-center bg-amber-600 dark:bg-amber-500 text-white rounded-full hover:bg-amber-700 dark:hover:bg-amber-600 transition-colors"
@@ -682,7 +716,7 @@ export default function ProductGrid({
                   </svg>
                 </button>
                 {/* Tag de OFERTA en el modal cuando hay descuento */}
-                {selectedProduct.precio_venta_online !== null && selectedProduct.precio_venta_online < selectedProduct.precio_venta && (
+                {tieneOferta(selectedProduct) && (
                   <div className="absolute top-2 left-2 z-10 bg-red-600 text-white text-sm font-bold px-3 py-1 rounded shadow-sm">
                     OFERTA
                   </div>
@@ -701,14 +735,12 @@ export default function ProductGrid({
                 )}
                 
                 <div className="flex justify-between items-center">
-                  <span className={`text-2xl font-bold ${selectedProduct.precio_venta_online !== null && selectedProduct.precio_venta_online < selectedProduct.precio_venta ? 'text-green-600 dark:text-green-400 text-3xl' : ''}`} style={{ color: selectedProduct.precio_venta_online !== null && selectedProduct.precio_venta_online < selectedProduct.precio_venta ? '' : '#ff8c00' }}>
-                    ${(selectedProduct.precio_venta_online !== null 
-                      ? selectedProduct.precio_venta_online 
-                      : selectedProduct.precio_venta)?.toLocaleString('es-CO')}
+                  <span className={`text-2xl font-bold ${tieneOferta(selectedProduct) ? 'text-green-600 dark:text-green-400 text-3xl' : ''}`} style={{ color: tieneOferta(selectedProduct) ? '' : '#ff8c00' }}>
+                    ${(getPrecioCorrecto(selectedProduct))?.toLocaleString('es-CO')}
                   </span>
-                  {selectedProduct.precio_venta_online !== null && selectedProduct.precio_venta_online < selectedProduct.precio_venta && (
+                  {tieneOferta(selectedProduct) && (
                     <span className="text-red-400 dark:text-red-300 text-base line-through font-medium ml-2">
-                      ${selectedProduct.precio_venta?.toLocaleString('es-CO')}
+                      ${getPrecioBase(selectedProduct)?.toLocaleString('es-CO')}
                     </span>
                   )}
                 </div>

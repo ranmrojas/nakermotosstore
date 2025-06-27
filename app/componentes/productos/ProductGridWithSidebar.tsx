@@ -4,6 +4,7 @@ import React, { useState, useEffect, useImperativeHandle, forwardRef, useCallbac
 import SidebarCategories from './SidebarCategories';
 import ProductGrid from './ProductGrid';
 import ProductSearch from './ProductSearch';
+import ProductSkeleton from './ProductSkeleton';
 import { useCategorias } from '../../../hooks/useCategorias';
 import { useProductos } from '../../../hooks/useProductos';
 import { XMarkIcon } from '@heroicons/react/24/outline';
@@ -13,9 +14,18 @@ interface Producto {
   id_producto: number;
   nombre: string;
   alias: string;
-  precio_venta: number;
-  precio_venta_online: number | null;
-  precio_promocion_online: number;
+  // Campos de precios originales (pueden estar vacíos ya que se obtienen del API)
+  precio_venta?: number;
+  precio_venta_online?: number | null;
+  precio_promocion_online?: number;
+  // Campos de precios en tiempo real
+  precio_venta_real?: number;
+  precio_venta_online_real?: number | null;
+  precio_promocion_online_real?: number;
+  tiene_promocion_activa?: boolean;
+  precio_final?: number;
+  precio_formateado?: string;
+  precios_actualizados?: boolean;
   existencias: number;
   vende_sin_existencia: number;
   id_categoria: number;
@@ -300,18 +310,17 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
             />
           </div>
         ) : (
-          <div className="p-8 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
-            <div className="text-gray-600 dark:text-gray-400 mb-4">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
+          <div>
+            {/* Mostrar skeleton mientras no hay categoría seleccionada */}
+            <div className="mb-2">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white leading-tight">
+                Productos
+              </h2>
+              <span className="text-xs text-gray-400 font-normal">
+                Cargando productos...
+              </span>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              Selecciona una categoría
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Elige una categoría del menú lateral para ver los productos disponibles
-            </p>
+            <ProductSkeleton count={20} />
           </div>
         )}
       </div>
