@@ -1,5 +1,6 @@
 import { productosSyncService } from './indexedDB/productosSyncService';
 import { indexedDBService } from './indexedDB/database';
+import { analyticsEvents } from '../hooks/useAnalytics';
 
 interface PreloadConfig {
   enabled: boolean;
@@ -55,6 +56,19 @@ class PreloadService {
       await this.preloadProductosBusqueda();
 
       this.preloadCompleted = true;
+      
+      // Obtener estadísticas para analytics
+      try {
+        const stats = await productosSyncService.getSyncStats();
+        analyticsEvents.preloadCompleted(
+          stats.categoriasConProductos || 0,
+          stats.totalProductos || 0
+        );
+      } catch (error) {
+        console.error('Error obteniendo estadísticas para analytics:', error);
+        // Fallback con valores por defecto
+        analyticsEvents.preloadCompleted(0, 0);
+      }
       
       if (this.config.silent) {
         console.log('✅ Preload silencioso completado');

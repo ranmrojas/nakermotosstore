@@ -4,6 +4,7 @@ import "./globals.css";
 import ButtonNav from "./componentes/ui/ButtonNav";
 import PreloadOptimizer from "./componentes/ui/PreloadOptimizer";
 import Header from "./componentes/ui/Header";
+import { useAnalytics } from "../hooks/useAnalytics";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -20,6 +21,9 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Inicializar Google Analytics
+  useAnalytics();
+
   return (
     <html lang="es">
       <body className={geist.className}>

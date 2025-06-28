@@ -6,6 +6,7 @@ import { useProductos } from '../../../hooks/useProductos';
 import { getProductImageUrl } from '@/app/services/productService';
 import ProductSkeleton from './ProductSkeleton';
 import { useRouter } from 'next/navigation';
+import { analyticsEvents } from '../../../hooks/useAnalytics';
 
 // Definir la interfaz Producto basada en la del hook
 interface Producto {
@@ -106,20 +107,18 @@ export default function ProductGrid({
   onCategoryTagClick,
   onBrandTagClick
 }: ProductGridProps) {
-  const [products, setProducts] = useState<Producto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [copiedId, setCopiedId] = useState<number | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Producto | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+  const [isLoading, setIsLoading] = useState(false);
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
+  const { getProductosByCategoria: getProductosByCategoriaHook } = useProductos();
+  const router = useRouter();
+
   // Nuevo estado para categorías múltiples
   const [categoriasProductos, setCategoriasProductos] = useState<CategoriaProductos[]>([]);
   const [loadingAllCategories, setLoadingAllCategories] = useState(false);
-
-  // Usar el hook de productos
-  const { getProductosByCategoria } = useProductos();
-  const router = useRouter();
 
   // URL para imágenes utilizando el servicio centralizado
   const getImageUrl = (id: number, ext: string) => {
@@ -175,7 +174,7 @@ export default function ProductGrid({
         const categoria = categorias.find((cat: { id: number }) => cat.id === categoriaId);
         if (categoria) {
           try {
-            const productos = await getProductosByCategoria(categoriaId);
+            const productos = await getProductosByCategoriaHook(categoriaId);
             const availableProducts = productos.filter(
               product => isAvailable(product.existencias_real, product.vende_sin_existencia_real)
             );
@@ -196,7 +195,7 @@ export default function ProductGrid({
       // Luego cargar el resto de categorías
       for (const categoria of categoriasRestantes) {
         try {
-          const productos = await getProductosByCategoria(categoria.id);
+          const productos = await getProductosByCategoriaHook(categoria.id);
           const availableProducts = productos.filter(
             product => isAvailable(product.existencias_real, product.vende_sin_existencia_real)
           );
@@ -220,16 +219,16 @@ export default function ProductGrid({
     } finally {
       setLoadingAllCategories(false);
     }
-  }, [getProductosByCategoria, productsPerCategory]);
+  }, [getProductosByCategoriaHook, productsPerCategory]);
 
   // Función para cargar productos usando el hook
   const loadProducts = useCallback(async (catId: number | null) => {
     if (catId === null) {
-      setProducts([]);
-      setLoading(false);
+      setProductos([]);
+      setIsLoading(false);
       return;
     }
-    setLoading(true);
+    setIsLoading(true);
     setError(null);
     try {
       let allProducts: Producto[] = [];
@@ -238,7 +237,7 @@ export default function ProductGrid({
       if (catId === 15) {
         const categoryIds = [15, 46, 33]; // Cerveza, Vapeadores, Licores
         for (const categoryId of categoryIds) {
-          const data = await getProductosByCategoria(categoryId);
+          const data = await getProductosByCategoriaHook(categoryId);
           const availableProducts = data.filter(
             product => isAvailable(product.existencias_real, product.vende_sin_existencia_real)
           );
@@ -246,56 +245,55 @@ export default function ProductGrid({
         }
       } else {
         // Para otras categorías, cargar solo la categoría seleccionada
-        const data = await getProductosByCategoria(catId);
+        const data = await getProductosByCategoriaHook(catId);
         const availableProducts = data.filter(
           product => isAvailable(product.existencias_real, product.vende_sin_existencia_real)
         );
         allProducts = availableProducts;
       }
       
-      setProducts(allProducts);
+      setProductos(allProducts);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
-      setProducts([]);
+      setProductos([]);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }, [getProductosByCategoria]);
+  }, [getProductosByCategoriaHook]);
 
   // Efecto para manejar productos desde props o categoría
   useEffect(() => {
     if (productosProp) {
       // Si se pasan productos como prop (resultados de búsqueda)
-      setProducts(productosProp);
-      setLoading(false);
-      setError(null);
+      setProductos(productosProp);
+      setIsLoading(false);
     } else if (loadAllCategories) {
       // Si se solicita cargar todas las categorías
       loadAllCategoriesData();
-      setLoading(false);
+      setIsLoading(false);
     } else if (categoryId !== null && categoryId !== undefined) {
       // Si se pasa categoryId, cargar productos de esa categoría
       loadProducts(typeof categoryId === 'string' ? parseInt(categoryId) : categoryId as number);
     } else {
-      setLoading(false);
-      setProducts([]);
+      setIsLoading(false);
+      setProductos([]);
     }
   }, [categoryId, productosProp, loadProducts, loadAllCategories, loadAllCategoriesData]);
 
   // Efecto para abrir automáticamente el modal del producto específico cuando se carga
   useEffect(() => {
-    if (targetProductId && !loading && products.length > 0) {
-      const targetProduct = products.find(p => p.id_producto === targetProductId);
+    if (targetProductId && !isLoading && productos.length > 0) {
+      const targetProduct = productos.find(p => p.id_producto === targetProductId);
       if (targetProduct) {
         openModal(targetProduct);
       }
     }
-  }, [targetProductId, products, loading]);
+  }, [targetProductId, productos, isLoading]);
 
   // Función para mostrar todos los productos de una categoría
   const handleShowAllCategory = async (categoriaId: number) => {
     try {
-      const productos = await getProductosByCategoria(categoriaId);
+      const productos = await getProductosByCategoriaHook(categoriaId);
       const availableProducts = productos.filter(
         product => isAvailable(product.existencias_real, product.vende_sin_existencia_real)
       );
@@ -346,7 +344,7 @@ export default function ProductGrid({
   };
 
   // Mostrar loading solo si no hay productos y está cargando inicialmente
-  if (loading && products.length === 0 && categoriasProductos.length === 0) {
+  if (isLoading && productos.length === 0 && categoriasProductos.length === 0) {
     return <ProductSkeleton count={20} />;
   }
 
@@ -356,7 +354,7 @@ export default function ProductGrid({
   }
 
   // Mostrar skeletons si está cargando y no hay productos específicos
-  if (loading && products.length === 0 && !productosProp) {
+  if (isLoading && productos.length === 0 && !productosProp) {
     return <ProductSkeleton count={20} />;
   }
 
@@ -457,7 +455,16 @@ export default function ProductGrid({
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${getPrecioCorrecto(product)?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
+                                
+                                // Rastrear clic en WhatsApp
+                                const precio = getPrecioCorrecto(product);
+                                analyticsEvents.whatsappClick(
+                                  product.id_producto.toString(),
+                                  product.nombre,
+                                  precio || 0
+                                );
+                                
+                                const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${precio?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
                                 window.open(`https://wa.me/573043668910?text=${encodeURIComponent(message)}`, '_blank');
                               }}
                               className="ml-2 w-8 h-8 flex items-center justify-center bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors"
@@ -498,7 +505,7 @@ export default function ProductGrid({
       ) : (
         <>
           {/* Grid de productos tradicional */}
-          {products.length === 0 ? (
+          {productos.length === 0 ? (
             <div className="text-center py-10">
               <div className="text-gray-400 mb-4">
                 <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -515,7 +522,7 @@ export default function ProductGrid({
                 isSearchResults ? '' : ''
               }`}
             >
-              {products.map((product) => (
+              {productos.map((product) => (
                 <div
                   key={product.id_producto}
                   className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col items-center p-1 sm:p-2 h-full min-h-[180px] hover:shadow-md transition-shadow cursor-pointer"
@@ -556,6 +563,12 @@ export default function ProductGrid({
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
+                          
+                          // Rastrear evento de compartir producto
+                          analyticsEvents.productShared(
+                            product.id_producto.toString(),
+                            product.nombre
+                          );
                           
                           // Construir URL con categoría e ID de producto
                           // Asegurar que la categoría sea un valor válido
@@ -619,7 +632,16 @@ export default function ProductGrid({
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${getPrecioCorrecto(product)?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
+                              
+                              // Rastrear clic en WhatsApp
+                              const precio = getPrecioCorrecto(product);
+                              analyticsEvents.whatsappClick(
+                                product.id_producto.toString(),
+                                product.nombre,
+                                precio || 0
+                              );
+                              
+                              const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${precio?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
                               window.open(`https://wa.me/573043668910?text=${encodeURIComponent(message)}`, '_blank');
                             }}
                             className="ml-2 w-8 h-8 flex items-center justify-center bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors"
@@ -705,6 +727,12 @@ export default function ProductGrid({
                   className="absolute top-2 right-2 z-10 p-1 bg-white/80 rounded-full hover:bg-amber-100 transition-colors"
                   title="Compartir"
                   onClick={() => {
+                    // Rastrear evento de compartir producto
+                    analyticsEvents.productShared(
+                      selectedProduct.id_producto.toString(),
+                      selectedProduct.nombre
+                    );
+                    
                     // Construir URL con categoría e ID de producto
                     // Asegurar que la categoría sea un valor válido
                     const catId = categoryId !== null ? categoryId : '';

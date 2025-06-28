@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Cookies from 'js-cookie';
+import { analyticsEvents } from '../../../hooks/useAnalytics';
 
 export default function AgeVerification() {
   const [fadeOut, setFadeOut] = useState(false);
@@ -20,6 +21,9 @@ export default function AgeVerification() {
 
   const handleVerification = async (isAdult: boolean) => {
     if (isAdult) {
+      // Rastrear evento de verificación exitosa
+      analyticsEvents.ageVerificationCompleted();
+      
       setFadeOut(true);
       // Establecer cookie con expiración de 24 horas
       Cookies.set('age_verified', 'true', { 
@@ -29,6 +33,9 @@ export default function AgeVerification() {
       // Redirigir a la URL original o a productos por defecto
       window.location.href = redirectUrl;
     } else {
+      // Rastrear evento de verificación rechazada
+      analyticsEvents.ageVerificationRejected();
+      
       window.location.href = '/ageverification';
     }
   };
