@@ -444,11 +444,11 @@ export default function ProductGrid({
                         <div className="flex items-center justify-between w-full mt-auto mb-0">
                           <div className="flex flex-col mb-0 pb-0">
                             <span className={`${tieneOferta(product) ? 'text-green-600 text-base font-bold' : 'text-gray-800 font-bold text-sm'}`}>
-                              ${(getPrecioCorrecto(product))?.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              ${(getPrecioCorrecto(product))?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                             </span>
                             {tieneOferta(product) && (
                               <span className="text-red-400 text-xs line-through font-medium" style={{ fontSize: '0.8rem', marginTop: '-2px' }}>
-                                ${getPrecioBase(product)?.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                ${getPrecioBase(product)?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                               </span>
                             )}
                           </div>
@@ -457,7 +457,7 @@ export default function ProductGrid({
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${getPrecioCorrecto(product)?.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
+                                const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${getPrecioCorrecto(product)?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
                                 window.open(`https://wa.me/573043668910?text=${encodeURIComponent(message)}`, '_blank');
                               }}
                               className="ml-2 w-8 h-8 flex items-center justify-center bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors"
@@ -606,11 +606,11 @@ export default function ProductGrid({
                       <div className="flex items-center justify-between w-full mt-auto mb-0">
                         <div className="flex flex-col mb-0 pb-0">
                           <span className={`${tieneOferta(product) ? 'text-green-600 text-base font-bold' : 'text-gray-800 font-bold text-sm'}`}>
-                            ${(getPrecioCorrecto(product))?.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            ${(getPrecioCorrecto(product))?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                           </span>
                           {tieneOferta(product) && (
                             <span className="text-red-400 text-xs line-through font-medium" style={{ fontSize: '0.8rem', marginTop: '-2px' }}>
-                              ${getPrecioBase(product)?.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              ${getPrecioBase(product)?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                             </span>
                           )}
                         </div>
@@ -619,7 +619,7 @@ export default function ProductGrid({
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${getPrecioCorrecto(product)?.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
+                              const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${getPrecioCorrecto(product)?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
                               window.open(`https://wa.me/573043668910?text=${encodeURIComponent(message)}`, '_blank');
                             }}
                             className="ml-2 w-8 h-8 flex items-center justify-center bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors"
@@ -757,13 +757,41 @@ export default function ProductGrid({
                 
                 <div className="flex justify-between items-center">
                   <span className={`text-2xl font-bold ${tieneOferta(selectedProduct) ? 'text-green-600 text-3xl' : 'text-gray-800'}`}>
-                    ${(getPrecioCorrecto(selectedProduct))?.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ${(getPrecioCorrecto(selectedProduct))?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </span>
-                  {tieneOferta(selectedProduct) && (
-                    <span className="text-red-400 text-base line-through font-medium ml-2">
-                      ${getPrecioBase(selectedProduct)?.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {tieneOferta(selectedProduct) && (
+                      <span className="text-red-400 text-base line-through font-medium">
+                        ${getPrecioBase(selectedProduct)?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                      </span>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Función para agregar al carrito
+                        alert(`Producto "${selectedProduct.nombre}" agregado al carrito`);
+                      }}
+                      disabled={(selectedProduct.existencias_real ?? 0) <= 0 && (selectedProduct.vende_sin_existencia_real ?? 0) === 0}
+                      className={`flex items-center justify-center gap-1 px-3 py-2 rounded-lg font-semibold text-white transition-all duration-200 ${
+                        (selectedProduct.existencias_real ?? 0) <= 0 && (selectedProduct.vende_sin_existencia_real ?? 0) === 0
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-emerald-500 hover:bg-emerald-600 hover:shadow-lg active:scale-95'
+                      }`}
+                      title={(selectedProduct.existencias_real ?? 0) <= 0 && (selectedProduct.vende_sin_existencia_real ?? 0) === 0
+                        ? 'Producto agotado'
+                        : 'Agregar al carrito'
+                      }
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
+                      </svg>
+                      {(selectedProduct.existencias_real ?? 0) <= 0 && (selectedProduct.vende_sin_existencia_real ?? 0) === 0
+                        ? 'Agotado'
+                        : 'Agregar'
+                      }
+                    </button>
+                  </div>
                 </div>
                 
                 {/* Información adicional en una sola línea, bien distribuida */}
