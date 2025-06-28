@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import AgeVerification from '../componentes/ui/AgeVerification';
 import { preloadService } from '../../lib/preloadService';
 import { syncService } from '../../lib/indexedDB/syncService';
@@ -42,5 +42,5 @@ export default function AgeVerificationPage() {
     }
   }, []);
 
-  return <AgeVerification />;
+  return <Suspense><AgeVerification /></Suspense>;
 }

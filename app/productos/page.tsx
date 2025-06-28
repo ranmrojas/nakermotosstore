@@ -12,12 +12,17 @@ export default function ProductosPage() {
   const { categorias } = useCategorias();
   const { isPreloadComplete } = usePreload();
 
-  // Función para controlar el sidebar desde el ButtonNav
+  // Función para controlar el sidebar desde el ButtonNav y ahora también desde el Header
   const handleToggleSidebar = () => {
     if (sidebarRef.current) {
       sidebarRef.current.toggleSidebar();
     }
   };
+
+  // Exponer la función globalmente para el Header
+  if (typeof window !== 'undefined') {
+    window.__toggleSidebar = handleToggleSidebar;
+  }
 
   // Efecto optimizado para descarga silenciosa
   useEffect(() => {

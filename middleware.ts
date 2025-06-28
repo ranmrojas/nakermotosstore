@@ -20,7 +20,12 @@ export function middleware(request: NextRequest) {
 
   // Si no está verificado y no es una ruta pública, redirigir a verificación
   if (!isVerified) {
-    return NextResponse.redirect(new URL('/ageverification', request.url));
+    // Capturar la URL original que el usuario quería visitar
+    const originalUrl = request.nextUrl.pathname + request.nextUrl.search;
+    const redirectUrl = new URL('/ageverification', request.url);
+    redirectUrl.searchParams.set('redirect', originalUrl);
+    
+    return NextResponse.redirect(redirectUrl);
   }
 
   // Si está verificado, permitir acceso

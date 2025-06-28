@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import ProductGrid from '../componentes/productos/ProductGrid';
 import ProductSearch from '../componentes/productos/ProductSearch';
 import ProductSkeleton from '../componentes/productos/ProductSkeleton';
@@ -104,6 +104,8 @@ export default function BusquedaPage() {
   const { categorias, loading: categoriasLoading } = useCategorias();
   const { isPreloadComplete } = usePreload();
 
+  const categoriasScrollRef = useRef<HTMLDivElement>(null);
+
   // Función para ordenar categorías (primeras 4 específicas, resto alfabético)
   const getOrderedCategorias = useCallback(() => {
     if (!Array.isArray(categorias)) return [];
@@ -134,6 +136,32 @@ export default function BusquedaPage() {
       setCategoriasOrdenadas(ordenadas);
     }
   }, [categorias, getOrderedCategorias]);
+
+  // Animación de scroll automático en la fila de categorías
+  useEffect(() => {
+    const el = categoriasScrollRef.current;
+    if (!el || el.scrollWidth <= el.clientWidth) return;
+
+    // Función para animar el scroll
+    const animateScroll = () => {
+      el.scrollTo({ left: el.scrollWidth, behavior: 'smooth' });
+      setTimeout(() => {
+        el.scrollTo({ left: 0, behavior: 'smooth' });
+      }, 400); // 400ms para volver (más rápido)
+    };
+
+    // Primer scroll inmediato
+    animateScroll();
+    // Segundo scroll a los 5s
+    const timeout1 = setTimeout(animateScroll, 5000);
+    // Tercer scroll a los 20s
+    const timeout2 = setTimeout(animateScroll, 20000);
+
+    return () => {
+      clearTimeout(timeout1);
+      clearTimeout(timeout2);
+    };
+  }, [categoriasOrdenadas]);
 
   // Cargar marcas de la categoría seleccionada
   const loadMarcasByCategory = useCallback(async (categoryId: number | null) => {
@@ -348,7 +376,7 @@ export default function BusquedaPage() {
         `}</style>
         
         {/* Header fijo superior */}
-        <div className="fixed top-0 left-0 right-0 z-40 bg-gray-900 border-b border-gray-800">
+        <div className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200">
           <div className="container mx-auto px-2 py-2">
             {/* Componente de búsqueda */}
             <div className="mb-2">
@@ -415,25 +443,22 @@ export default function BusquedaPage() {
       `}</style>
       <div className="container mx-auto px-2 py-2">
         {/* Header fijo superior */}
-        <div className="fixed top-0 left-0 right-0 z-40 bg-gray-900 border-b border-gray-800">
+        <div className="bg-white border-b border-gray-200">
           <div className="container mx-auto px-2 py-2">
             {/* Componente de búsqueda */}
             <div className="mb-2">
-              <Suspense fallback={<div className="h-10 bg-gray-700 rounded animate-pulse" />}>
-                <ProductSearch
-                  onSearchResults={handleSearchResults}
-                  onSearchChange={handleSearchChange}
-                  onCategorySelect={handleCategorySelect}
-                  placeholder="Buscar productos por nombre, marca, ..."
-                  showSortOptions={false}
-                  className="!py-1"
-                />
-              </Suspense>
+              <ProductSearch
+                onSearchResults={handleSearchResults}
+                onSearchChange={handleSearchChange}
+                onCategorySelect={handleCategorySelect}
+                placeholder="Buscar productos por nombre, marca, ..."
+                showSortOptions={false}
+                className="!py-1"
+              />
             </div>
-            
             {/* Línea de categorías con scroll horizontal */}
             <div className="mb-2">
-              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
+              <div ref={categoriasScrollRef} className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
                 {Array.isArray(categoriasOrdenadas) && categoriasOrdenadas.map((categoria) => 
                   categoria ? (
                     <button
@@ -453,7 +478,6 @@ export default function BusquedaPage() {
                 )}
               </div>
             </div>
-
             {/* Línea de marcas con scroll horizontal */}
             <div className="mb-1">
               <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
@@ -477,43 +501,41 @@ export default function BusquedaPage() {
           </div>
         </div>
         {/* Espaciador para evitar que el contenido se oculte detrás del header fijo */}
-        <div className="h-32" />
+        {/* <div className="h-32" /> */}
         {/* Contenido principal */}
-        <Suspense fallback={<ProductSkeleton count={20} />}>
-          <div className="pb-0 mb-0 bg-white">
-            {/* Contenido según el estado */}
-            {mostrarResultadosBusqueda ? (
-              <div>
-                {/* Resultados de búsqueda */}
-                <div className="mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    {isSearching ? 'Buscando...' : `Resultados de búsqueda`}
-                  </h2>
-                </div>
-                <ProductGrid 
-                  productos={searchResults}
-                  onCategoryTagClick={handleCategoryTagClick}
-                  onBrandTagClick={handleBrandTagClick}
-                />
+        <div className="pb-0 mb-0 bg-white">
+          {/* Contenido según el estado */}
+          {mostrarResultadosBusqueda ? (
+            <div>
+              {/* Resultados de búsqueda */}
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  {isSearching ? 'Buscando...' : `Resultados de búsqueda`}
+                </h2>
               </div>
-            ) : (
-              <div>
-                {/* Mostrar productos por defecto */}
-                <div className="mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Productos Destacados
-                  </h2>
-                </div>
-                <ProductGrid 
-                  productos={defaultProducts}
-                  showAddToCart={true}
-                  onCategoryTagClick={handleCategoryTagClick}
-                  onBrandTagClick={handleBrandTagClick}
-                />
+              <ProductGrid 
+                productos={searchResults}
+                onCategoryTagClick={handleCategoryTagClick}
+                onBrandTagClick={handleBrandTagClick}
+              />
+            </div>
+          ) : (
+            <div>
+              {/* Mostrar productos por defecto */}
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Productos Destacados
+                </h2>
               </div>
-            )}
-          </div>
-        </Suspense>
+              <ProductGrid 
+                productos={defaultProducts}
+                showAddToCart={true}
+                onCategoryTagClick={handleCategoryTagClick}
+                onBrandTagClick={handleBrandTagClick}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

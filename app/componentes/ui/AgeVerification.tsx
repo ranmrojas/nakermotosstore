@@ -1,13 +1,23 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Cookies from 'js-cookie';
 
 export default function AgeVerification() {
   const [fadeOut, setFadeOut] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [redirectUrl, setRedirectUrl] = useState<string>('/productos');
+
+  // Obtener la URL de redirección desde los parámetros de búsqueda
+  useEffect(() => {
+    const redirect = searchParams?.get('redirect');
+    if (redirect) {
+      setRedirectUrl(redirect);
+    }
+  }, [searchParams]);
 
   const handleVerification = async (isAdult: boolean) => {
     if (isAdult) {
@@ -19,7 +29,8 @@ export default function AgeVerification() {
         sameSite: 'strict'
       });
       await new Promise(resolve => setTimeout(resolve, 1000));
-      router.push('/productos'); ///tienda/pedidos
+      // Redirigir a la URL original o a productos por defecto
+      router.push(redirectUrl);
     } else {
       window.location.href = '/ageverification';
     }

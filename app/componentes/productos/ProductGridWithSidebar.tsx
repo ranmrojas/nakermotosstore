@@ -206,6 +206,14 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
 
   return (
     <div className="flex h-screen" data-testid="product-container">
+      {/* Overlay para cerrar el sidebar al hacer clic fuera (solo mobile) */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-transparent md:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Cerrar menú de categorías"
+        />
+      )}
       {/* Sidebar flotante */}
       <div className={`
         fixed top-0 left-0 h-full w-80 bg-white dark:bg-gray-800 shadow-xl z-50 transform transition-transform duration-300 ease-in-out
@@ -245,7 +253,7 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
       <div className="flex-1 flex flex-col md:ml-0 overflow-hidden">
         {/* Componente de búsqueda */}
         {showSearch && (
-          <div className="flex-shrink-0 p-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <div className="flex-shrink-0 p-2 border-b border-gray-200 bg-white">
             <ProductSearch
               onSearchResults={handleSearchResults}
               onSearchChange={handleSearchChange}

@@ -243,7 +243,7 @@ export default function VapePage() {
     <div className="min-h-screen bg-white">
       <div className="container mx-auto px-2 py-2">
         {/* Header fijo superior */}
-        <div className="fixed top-0 left-0 right-0 z-40 bg-gray-900 border-b border-gray-800">
+        <div className="bg-white border-b border-gray-200">
           <div className="container mx-auto px-2 py-2">
             {/* Componente de búsqueda */}
             <div className="mb-2">
@@ -251,12 +251,12 @@ export default function VapePage() {
                 onSearchResults={handleSearchResults}
                 onSearchChange={handleSearchChange}
                 onCategorySelect={handleCategorySelect}
-                placeholder="Buscar vapeadores por nombre, marca, SKU, precio..."
+                placeholder="Buscar productos por nombre, marca, ..."
                 showSortOptions={false}
                 className="!py-1"
               />
             </div>
-            {/* Tags de categorías específicas de vape */}
+            {/* Tags de categorías */}
             <div>
               <div className="flex items-center gap-1 justify-center">
                 <button
@@ -300,7 +300,7 @@ export default function VapePage() {
           </div>
         </div>
         {/* Espaciador para evitar que el contenido se oculte detrás del header fijo */}
-        <div className="h-20" />
+        {/* <div className="h-32" /> */}
         {/* Contenido principal */}
         <div className="pb-0 mb-0 bg-white">
           {/* Contenido según el estado */}
