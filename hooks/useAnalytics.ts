@@ -37,6 +37,25 @@ export const initGA = () => {
   }
 };
 
+// Variable para almacenar timers de debounce
+const debounceTimers: Record<string, NodeJS.Timeout> = {};
+
+// Función para rastrear eventos con debounce
+export const trackEventWithDebounce = (event: AnalyticsEvent, key: string, delay: number = 1500) => {
+  if (typeof window !== 'undefined') {
+    // Cancelar el timer anterior si existe
+    if (debounceTimers[key]) {
+      clearTimeout(debounceTimers[key]);
+    }
+    
+    // Crear un nuevo timer
+    debounceTimers[key] = setTimeout(() => {
+      trackEvent(event);
+      delete debounceTimers[key];
+    }, delay);
+  }
+};
+
 // Función para rastrear eventos personalizados
 export const trackEvent = (event: AnalyticsEvent) => {
   if (typeof window !== 'undefined' && window.gtag) {
@@ -80,6 +99,7 @@ export const useAnalytics = () => {
 
   return {
     trackEvent,
+    trackEventWithDebounce,
     trackConversion,
   };
 };
@@ -215,16 +235,20 @@ export const analyticsEvents = {
     },
   }),
 
-  searchInputUsed: (query: string, page: string) => trackEvent({
-    action: 'campo_busqueda_usado',
-    category: 'busqueda',
-    label: query,
-    custom_parameters: {
-      consulta_busqueda: query,
-      pagina: page,
-      tipo_entrada: 'busqueda_texto',
-    },
-  }),
+  searchInputUsed: (query: string, page: string) => {
+    // Usar debounce para evitar eventos múltiples durante escritura
+    const key = `search_${page}`;
+    trackEventWithDebounce({
+      action: 'campo_busqueda_usado',
+      category: 'busqueda',
+      label: query,
+      custom_parameters: {
+        consulta_busqueda: query,
+        pagina: page,
+        tipo_entrada: 'busqueda_texto',
+      },
+    }, key, 1500); // Espera 1.5 segundos de inactividad antes de enviar el evento
+  },
 
   // Navegación
   categoryFilterApplied: (categoryId: string, categoryName: string) => trackEvent({
@@ -260,4 +284,4 @@ declare global {
     gtag: (...args: any[]) => void;
     dataLayer: any[];
   }
-} 
+}
