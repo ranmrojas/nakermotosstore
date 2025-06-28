@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Cookies from 'js-cookie';
 
 export default function AgeVerification() {
   const [fadeOut, setFadeOut] = useState(false);
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [redirectUrl, setRedirectUrl] = useState<string>('/productos');
 
@@ -28,7 +27,7 @@ export default function AgeVerification() {
       });
       await new Promise(resolve => setTimeout(resolve, 1000));
       // Redirigir a la URL original o a productos por defecto
-      router.push(redirectUrl);
+      window.location.href = redirectUrl;
     } else {
       window.location.href = '/ageverification';
     }
