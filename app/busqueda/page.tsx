@@ -7,6 +7,7 @@ import ProductSkeleton from '../componentes/productos/ProductSkeleton';
 import { useProductos } from '../../hooks/useProductos';
 import { useCategorias } from '../../hooks/useCategorias';
 import { usePreload } from '../../hooks/usePreload';
+import { analyticsEvents } from '../../hooks/useAnalytics';
 
 // Importar el tipo Categoria del hook
 type Categoria = {
@@ -248,6 +249,9 @@ export default function BusquedaPage() {
     setIsSearching(query.length > 0);
     if (!query.trim()) {
       setSearchResults([]);
+    } else {
+      // Rastrear uso del input de búsqueda
+      analyticsEvents.searchInputUsed(query, 'busqueda');
     }
   }, []);
 
@@ -264,10 +268,16 @@ export default function BusquedaPage() {
           allProductos.push(...productos);
         }
         setSearchResults(allProductos);
+        
+        // Rastrear búsqueda por categorías múltiples
+        analyticsEvents.searchPerformed(`categorías: ${categoryIds.join(', ')}`, allProductos.length, 'busqueda');
       } else {
         // Si es un solo ID, obtener productos de esa categoría
         const productos = await getProductosByCategoria(categoryIds);
         setSearchResults(productos);
+        
+        // Rastrear búsqueda por categoría única
+        analyticsEvents.searchPerformed(`categoría: ${categoryIds}`, productos.length, 'busqueda');
       }
       
       setIsSearching(false);
@@ -323,6 +333,16 @@ export default function BusquedaPage() {
       setSelectedCategoryId(categoryId);
       setSelectedMarca(null);
       
+      // Rastrear clic en tag de categoría del filtro
+      const categoria = categoriasOrdenadas.find(cat => cat.id === categoryId);
+      if (categoria) {
+        analyticsEvents.filterCategoryTagClick(
+          categoryId.toString(),
+          categoria.nombre,
+          'busqueda'
+        );
+      }
+      
       // Cargar productos de la categoría
       const productos = await getProductosByCategoria(categoryId);
       setSearchResults(productos);
@@ -336,7 +356,7 @@ export default function BusquedaPage() {
       console.error('Error cargando productos de categoría:', error);
       setIsSearching(false);
     }
-  }, [getProductosByCategoria, loadMarcasByCategory]);
+  }, [getProductosByCategoria, loadMarcasByCategory, categoriasOrdenadas]);
 
   // Handler para clic en marca de la línea de scroll
   const handleMarcaScrollClick = useCallback(async (marcaName: string) => {
@@ -344,6 +364,9 @@ export default function BusquedaPage() {
       setIsSearching(true);
       setSelectedMarca(marcaName);
       setSelectedCategoryId(null);
+      
+      // Rastrear clic en tag de marca del filtro
+      analyticsEvents.filterBrandTagClick(marcaName, 'busqueda');
       
       const resultados = await searchProductos(marcaName);
       const productosFiltrados = resultados.filter(producto => 

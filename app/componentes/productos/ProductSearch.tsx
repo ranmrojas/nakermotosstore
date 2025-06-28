@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useProductos } from '../../../hooks/useProductos';
 import { useSearchParams } from 'next/navigation';
+import { analyticsEvents } from '../../../hooks/useAnalytics';
 
 // Usar la misma interfaz Producto que ProductGrid
 interface Producto {
@@ -150,6 +151,9 @@ export default function ProductSearch({
         // Ordenar por nombre por defecto
         productosFiltrados.sort((a, b) => a.nombre.localeCompare(b.nombre));
 
+        // Rastrear búsqueda realizada
+        analyticsEvents.searchPerformed(debouncedQuery, productosFiltrados.length, window.location.pathname);
+
         onSearchResults(productosFiltrados);
       } catch (error) {
         console.error('Error en búsqueda:', error);
@@ -174,6 +178,11 @@ export default function ProductSearch({
     const value = e.target.value;
     setSearchQuery(value);
     onSearchChange?.(value);
+    
+    // Rastrear uso del input de búsqueda
+    if (value.trim()) {
+      analyticsEvents.searchInputUsed(value, window.location.pathname);
+    }
     
     // Deseleccionar tag si se está escribiendo en el buscador
     if (value.trim() && sortBy !== 'none') {
@@ -200,6 +209,9 @@ export default function ProductSearch({
     }
     
     setSortBy(categoryType);
+    
+    // Rastrear clic en tag de filtro
+    analyticsEvents.filterTagClick('product_filter', categoryType, window.location.pathname);
     
     // Determinar IDs de categoría según el tipo
     let categoryIds: number | number[];

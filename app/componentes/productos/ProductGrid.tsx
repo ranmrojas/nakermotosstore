@@ -134,6 +134,13 @@ export default function ProductGrid({
   const openModal = (product: Producto) => {
     setSelectedProduct(product);
     setIsModalOpen(true);
+    
+    // Rastrear vista de detalle de producto
+    analyticsEvents.productDetailView(
+      product.id_producto.toString(),
+      product.nombre,
+      product.nombre_categoria
+    );
   };
 
   // Función para cerrar el modal
@@ -797,7 +804,7 @@ export default function ProductGrid({
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        // Función para agregar al carrito
+                        // Función para pedir producto
                         alert(`Producto "${selectedProduct.nombre}" agregado al carrito`);
                       }}
                       disabled={(selectedProduct.existencias_real ?? 0) <= 0 && (selectedProduct.vende_sin_existencia_real ?? 0) === 0}
@@ -808,7 +815,7 @@ export default function ProductGrid({
                       }`}
                       title={(selectedProduct.existencias_real ?? 0) <= 0 && (selectedProduct.vende_sin_existencia_real ?? 0) === 0
                         ? 'Producto agotado'
-                        : 'Agregar al carrito'
+                        : 'Pedir producto'
                       }
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -816,7 +823,7 @@ export default function ProductGrid({
                       </svg>
                       {(selectedProduct.existencias_real ?? 0) <= 0 && (selectedProduct.vende_sin_existencia_real ?? 0) === 0
                         ? 'Agotado'
-                        : 'Agregar'
+                        : 'Pedir'
                       }
                     </button>
                   </div>
@@ -836,6 +843,14 @@ export default function ProductGrid({
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
+                          
+                          // Rastrear clic en tag de categoría del modal
+                          analyticsEvents.modalCategoryTagClick(
+                            selectedProduct.id_categoria.toString(),
+                            selectedProduct.nombre_categoria,
+                            selectedProduct.id_producto.toString()
+                          );
+                          
                           if (selectedProduct.id_categoria) {
                             if (onCategoryTagClick) {
                               onCategoryTagClick(selectedProduct.id_categoria);
@@ -856,6 +871,13 @@ export default function ProductGrid({
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
+                          
+                          // Rastrear clic en tag de marca del modal
+                          analyticsEvents.modalBrandTagClick(
+                            selectedProduct.nombre_marca,
+                            selectedProduct.id_producto.toString()
+                          );
+                          
                           if (selectedProduct.nombre_marca) {
                             if (onBrandTagClick) {
                               onBrandTagClick(selectedProduct.nombre_marca);

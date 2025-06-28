@@ -88,81 +88,169 @@ export const useAnalytics = () => {
 export const analyticsEvents = {
   // Verificación de edad
   ageVerificationCompleted: () => trackEvent({
-    action: 'age_verification_completed',
-    category: 'user_verification',
-    label: 'success',
+    action: 'verificacion_edad_completada',
+    category: 'verificacion_usuario',
+    label: 'exitoso',
   }),
 
   ageVerificationRejected: () => trackEvent({
-    action: 'age_verification_rejected',
-    category: 'user_verification',
-    label: 'rejected',
+    action: 'verificacion_edad_rechazada',
+    category: 'verificacion_usuario',
+    label: 'rechazado',
   }),
 
   // Productos
   productViewed: (productId: string, productName: string, category: string) => trackEvent({
-    action: 'product_view',
-    category: 'product_interaction',
+    action: 'vista_producto',
+    category: 'interaccion_producto',
     label: productName,
     custom_parameters: {
-      product_id: productId,
-      product_category: category,
+      id_producto: productId,
+      categoria_producto: category,
+    },
+  }),
+
+  productDetailView: (productId: string, productName: string, category: string) => trackEvent({
+    action: 'vista_detalle_producto',
+    category: 'interaccion_producto',
+    label: productName,
+    custom_parameters: {
+      id_producto: productId,
+      categoria_producto: category,
+      ubicacion: 'modal',
     },
   }),
 
   productShared: (productId: string, productName: string) => trackEvent({
-    action: 'product_share',
-    category: 'product_interaction',
+    action: 'producto_compartido',
+    category: 'interaccion_producto',
     label: productName,
     custom_parameters: {
-      product_id: productId,
+      id_producto: productId,
     },
   }),
 
   whatsappClick: (productId: string, productName: string, price: number) => trackEvent({
-    action: 'whatsapp_click',
+    action: 'clic_whatsapp',
     category: 'conversion',
     label: productName,
     value: price,
     custom_parameters: {
-      product_id: productId,
-      conversion_type: 'whatsapp_order',
+      id_producto: productId,
+      tipo_conversion: 'pedido_whatsapp',
+    },
+  }),
+
+  // Tags en Modal de Producto (Detalle)
+  modalCategoryTagClick: (categoryId: string, categoryName: string, productId: string) => trackEvent({
+    action: 'clic_tag_categoria_modal',
+    category: 'interaccion_etiquetas',
+    label: categoryName,
+    custom_parameters: {
+      id_categoria: categoryId,
+      nombre_categoria: categoryName,
+      id_producto: productId,
+      ubicacion_etiqueta: 'modal_producto',
+    },
+  }),
+
+  modalBrandTagClick: (brandName: string, productId: string) => trackEvent({
+    action: 'clic_tag_marca_modal',
+    category: 'interaccion_etiquetas',
+    label: brandName,
+    custom_parameters: {
+      nombre_marca: brandName,
+      id_producto: productId,
+      ubicacion_etiqueta: 'modal_producto',
+    },
+  }),
+
+  // Tags en Filtros Superiores
+  filterCategoryTagClick: (categoryId: string, categoryName: string, page: string) => trackEvent({
+    action: 'clic_tag_categoria_filtro',
+    category: 'interaccion_etiquetas',
+    label: categoryName,
+    custom_parameters: {
+      id_categoria: categoryId,
+      nombre_categoria: categoryName,
+      pagina: page,
+      ubicacion_etiqueta: 'barra_filtros',
+    },
+  }),
+
+  filterBrandTagClick: (brandName: string, page: string) => trackEvent({
+    action: 'clic_tag_marca_filtro',
+    category: 'interaccion_etiquetas',
+    label: brandName,
+    custom_parameters: {
+      nombre_marca: brandName,
+      pagina: page,
+      ubicacion_etiqueta: 'barra_filtros',
+    },
+  }),
+
+  // Tags de Filtros Específicos
+  filterTagClick: (filterType: string, filterName: string, page: string) => trackEvent({
+    action: 'clic_tag_filtro',
+    category: 'interaccion_etiquetas',
+    label: filterName,
+    custom_parameters: {
+      tipo_filtro: filterType,
+      nombre_filtro: filterName,
+      pagina: page,
+      ubicacion_etiqueta: 'barra_filtros',
     },
   }),
 
   // Búsqueda
-  searchPerformed: (query: string, resultsCount: number) => trackEvent({
-    action: 'search_performed',
-    category: 'search',
+  searchPerformed: (query: string, resultsCount: number, page: string) => trackEvent({
+    action: 'busqueda_realizada',
+    category: 'busqueda',
     label: query,
     value: resultsCount,
+    custom_parameters: {
+      consulta_busqueda: query,
+      cantidad_resultados: resultsCount,
+      pagina: page,
+    },
+  }),
+
+  searchInputUsed: (query: string, page: string) => trackEvent({
+    action: 'campo_busqueda_usado',
+    category: 'busqueda',
+    label: query,
+    custom_parameters: {
+      consulta_busqueda: query,
+      pagina: page,
+      tipo_entrada: 'busqueda_texto',
+    },
   }),
 
   // Navegación
   categoryFilterApplied: (categoryId: string, categoryName: string) => trackEvent({
-    action: 'category_filter_applied',
-    category: 'navigation',
+    action: 'filtro_categoria_aplicado',
+    category: 'navegacion',
     label: categoryName,
     custom_parameters: {
-      category_id: categoryId,
+      id_categoria: categoryId,
     },
   }),
 
   // Preload system
   preloadCompleted: (categoriesCount: number, productsCount: number) => trackEvent({
-    action: 'preload_completed',
-    category: 'performance',
-    label: 'success',
+    action: 'precarga_completada',
+    category: 'rendimiento',
+    label: 'exitoso',
     custom_parameters: {
-      categories_count: categoriesCount,
-      products_count: productsCount,
+      cantidad_categorias: categoriesCount,
+      cantidad_productos: productsCount,
     },
   }),
 
   offlineDataUsed: () => trackEvent({
-    action: 'offline_data_used',
-    category: 'performance',
-    label: 'cached_data',
+    action: 'datos_offline_usados',
+    category: 'rendimiento',
+    label: 'datos_cache',
   }),
 };
 

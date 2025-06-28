@@ -5,6 +5,7 @@ import ProductGrid from '../componentes/productos/ProductGrid';
 import ProductSearch from '../componentes/productos/ProductSearch';
 import { useProductos } from '../../hooks/useProductos';
 import { usePreload } from '../../hooks/usePreload';
+import { analyticsEvents } from '../../hooks/useAnalytics';
 
 // Usar la misma interfaz Producto que ProductGrid
 interface Producto {
@@ -202,6 +203,9 @@ export default function VapePage() {
     }
     
     setSelectedCategory(categoryType);
+    
+    // Rastrear clic en tag de filtro de vape
+    analyticsEvents.filterTagClick('vape_category', categoryType, 'vape');
     
     // Determinar IDs de categoría según el tipo
     let categoryIds: number;
