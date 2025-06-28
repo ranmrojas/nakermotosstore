@@ -36,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     traerDetalle = '0',
     numeroCategoria = '15',
     validar_inventario = '1',
-    limite = '40',
+    limite = '9999',
     url: customUrl,
   } = req.query;
 
