@@ -3,6 +3,18 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  
+  /* Colores principales de la marca */
+  --primary-color: #440d00;
+  --secondary-color: #611d14;
+  --accent-color: #f8f6f4;
+  
+  /* Variaciones suaves para botones y elementos interactivos */
+  --primary-light: #8a1a00;
+  --primary-lighter: #b34d1a;
+  --secondary-light: #8a2a1a;
+  --accent-light: #faf8f6;
+  --accent-lighter: #fdfcfb;
 }
 
 @theme inline {
@@ -23,4 +35,4 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-}
+} 

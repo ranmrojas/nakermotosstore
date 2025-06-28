@@ -443,12 +443,12 @@ export default function ProductGrid({
                         )}
                         <div className="flex items-center justify-between w-full mt-auto mb-0">
                           <div className="flex flex-col mb-0 pb-0">
-                            <span className="text-sm font-bold text-gray-900">
-                              ${getPrecioCorrecto(product)}
+                            <span className={`${tieneOferta(product) ? 'text-green-600 text-base font-bold' : 'text-gray-800 font-bold text-sm'}`}>
+                              ${(getPrecioCorrecto(product))?.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                             {tieneOferta(product) && (
-                              <span className="text-xs text-gray-500 line-through">
-                                ${getPrecioBase(product)}
+                              <span className="text-red-400 text-xs line-through font-medium" style={{ fontSize: '0.8rem', marginTop: '-2px' }}>
+                                ${getPrecioBase(product)?.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                             )}
                           </div>
@@ -457,15 +457,15 @@ export default function ProductGrid({
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${getPrecioCorrecto(product)?.toLocaleString('es-CO')}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
+                                const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${getPrecioCorrecto(product)?.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
                                 window.open(`https://wa.me/573043668910?text=${encodeURIComponent(message)}`, '_blank');
                               }}
-                              className="ml-2 w-8 h-8 flex items-center justify-center bg-amber-600 text-white rounded-full hover:bg-amber-700 transition-colors"
+                              className="ml-2 w-8 h-8 flex items-center justify-center bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors"
                               aria-label={`Pedir ${product.nombre} por WhatsApp`}
                             >
                               {/* Icono de suma moderno */}
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2" fill="currentColor" className="text-amber-600" />
+                                <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2" fill="currentColor" className="text-green-600" />
                                 <path d="M12 8v8M8 12h8" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
                               </svg>
                             </button>
@@ -605,12 +605,12 @@ export default function ProductGrid({
                       )}
                       <div className="flex items-center justify-between w-full mt-auto mb-0">
                         <div className="flex flex-col mb-0 pb-0">
-                          <span className={`${tieneOferta(product) ? 'text-green-600 text-base font-bold' : 'text-amber-700 font-bold text-sm'}`}>
-                            ${(getPrecioCorrecto(product))?.toLocaleString('es-CO')}
+                          <span className={`${tieneOferta(product) ? 'text-green-600 text-base font-bold' : 'text-gray-800 font-bold text-sm'}`}>
+                            ${(getPrecioCorrecto(product))?.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                           {tieneOferta(product) && (
                             <span className="text-red-400 text-xs line-through font-medium" style={{ fontSize: '0.8rem', marginTop: '-2px' }}>
-                              ${getPrecioBase(product)?.toLocaleString('es-CO')}
+                              ${getPrecioBase(product)?.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           )}
                         </div>
@@ -619,15 +619,15 @@ export default function ProductGrid({
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${getPrecioCorrecto(product)?.toLocaleString('es-CO')}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
+                              const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${getPrecioCorrecto(product)?.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
                               window.open(`https://wa.me/573043668910?text=${encodeURIComponent(message)}`, '_blank');
                             }}
-                            className="ml-2 w-8 h-8 flex items-center justify-center bg-amber-600 text-white rounded-full hover:bg-amber-700 transition-colors"
+                            className="ml-2 w-8 h-8 flex items-center justify-center bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors"
                             aria-label={`Pedir ${product.nombre} por WhatsApp`}
                           >
                             {/* Icono de suma moderno */}
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2" fill="currentColor" className="text-amber-600" />
+                              <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2" fill="currentColor" className="text-green-600" />
                               <path d="M12 8v8M8 12h8" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
                             </svg>
                           </button>
@@ -756,12 +756,12 @@ export default function ProductGrid({
                 )}
                 
                 <div className="flex justify-between items-center">
-                  <span className={`text-2xl font-bold ${tieneOferta(selectedProduct) ? 'text-green-600 text-3xl' : ''}`} style={{ color: tieneOferta(selectedProduct) ? '' : '#ff8c00' }}>
-                    ${(getPrecioCorrecto(selectedProduct))?.toLocaleString('es-CO')}
+                  <span className={`text-2xl font-bold ${tieneOferta(selectedProduct) ? 'text-green-600 text-3xl' : 'text-gray-800'}`}>
+                    ${(getPrecioCorrecto(selectedProduct))?.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                   {tieneOferta(selectedProduct) && (
                     <span className="text-red-400 text-base line-through font-medium ml-2">
-                      ${getPrecioBase(selectedProduct)?.toLocaleString('es-CO')}
+                      ${getPrecioBase(selectedProduct)?.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   )}
                 </div>
