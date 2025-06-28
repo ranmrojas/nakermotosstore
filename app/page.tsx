@@ -1,133 +1,73 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { preloadService } from '../lib/preloadService';
-import { syncService } from '../lib/indexedDB/syncService';
-import { indexedDBService } from '../lib/indexedDB/database';
+import Image from 'next/image';
+
+const infoCards = [
+  {
+    icon: '🎉',
+    title: 'Para cada ocasión',
+    text: 'Licores y bebidas para reuniones o un momento especial.'
+  },
+  {
+    icon: '🚗',
+    title: 'Entrega a domicilio',
+    text: 'Recibe tu pedido en tu puerta, 20min aprox.'
+  },
+  {
+    icon: '📱',
+    title: 'Compra fácil',
+    text: 'Haz tu pedido desde tu celular en pocos pasos.'
+  }
+];
 
 export default function Home() {
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-
-  const handleTestIndexedDB = async () => {
-    setLoading(true);
-    setMessage('Probando IndexedDB...');
-    
-    try {
-      // Inicializar IndexedDB
-      await indexedDBService.init();
-      setMessage('IndexedDB inicializado correctamente');
-      
-      // Sincronizar categorías
-      const result = await syncService.syncCategorias();
-      if (result.success) {
-        setMessage(`✅ Sincronización exitosa: ${result.data?.length} categorías cargadas`);
-      } else {
-        setMessage(`❌ Error en sincronización: ${result.error}`);
-      }
-    } catch (error) {
-      setMessage(`❌ Error: ${error instanceof Error ? error.message : 'Error desconocido'}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePreload = async () => {
-    setLoading(true);
-    setMessage('Iniciando preload...');
-    
-    try {
-      await preloadService.startSilentPreload();
-      setMessage('✅ Preload completado exitosamente');
-    } catch (error) {
-      setMessage(`❌ Error en preload: ${error instanceof Error ? error.message : 'Error desconocido'}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-amber-100">
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-amber-800 mb-4">
-            Licorera Zona Frank
-          </h1>
-          <p className="text-xl text-amber-700">
-            Sistema de Gestión de Productos
-          </p>
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* Header con logo centrado */}
+      <header className="w-full py-4 shadow-sm flex justify-center items-center sticky top-0 bg-white z-40">
+        <div className="relative w-40 h-14 flex items-center justify-center">
+          <Image
+            src="/logo.png"
+            alt="Licorera Zona Frank Logo"
+            fill
+            className="object-contain"
+            priority
+          />
         </div>
-
-        {/* Botones de prueba */}
-        <div className="max-w-md mx-auto mb-8 space-y-4">
-          <button
-            onClick={handleTestIndexedDB}
-            disabled={loading}
-            className="w-full px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50"
+      </header>
+      {/* Cards informativas */}
+      <div className="w-full flex flex-col items-center gap-3 mt-6 px-4">
+        {infoCards.map((card, idx) => (
+          <div
+            key={idx}
+            className="w-full max-w-sm bg-[#f8f6f4] border border-[#440d00] rounded-xl shadow flex items-center gap-4 px-4 py-3"
           >
-            {loading ? 'Probando...' : 'Probar IndexedDB'}
-          </button>
-          
-          <button
-            onClick={handlePreload}
-            disabled={loading}
-            className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? 'Cargando...' : 'Iniciar Preload'}
-          </button>
-        </div>
-
-        {message && (
-          <div className="max-w-md mx-auto mb-8 p-4 bg-white rounded-lg shadow">
-            <p className="text-sm">{message}</p>
+            <span className="text-3xl" style={{ color: '#611d14' }}>{card.icon}</span>
+            <div className="flex-1 text-left">
+              <div className="font-bold text-base mb-1" style={{ color: '#440d00' }}>{card.title}</div>
+              <div className="text-sm text-[#611d14]">{card.text}</div>
+            </div>
           </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Link href="/productos" className="group">
-            <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">Productos</h3>
-                <p className="text-gray-600">Gestionar catálogo de productos</p>
-              </div>
-            </div>
-          </Link>
-
-          <Link href="/vape" className="group">
-            <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">Vape</h3>
-                <p className="text-gray-600">Productos de vape y accesorios</p>
-              </div>
-            </div>
-          </Link>
-
-          <Link href="/busqueda" className="group">
-            <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">Búsqueda</h3>
-                <p className="text-gray-600">Buscar productos específicos</p>
-              </div>
-            </div>
-          </Link>
-        </div>
+        ))}
       </div>
+      {/* Card de advertencia */}
+      <main className="flex-1 flex items-center justify-center px-4">
+        <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 flex flex-col items-center text-center border" style={{ borderColor: '#440d00', marginTop: '2rem' }}>
+          <div className="mb-4">
+            <svg className="mx-auto" width="56" height="56" fill="none" viewBox="0 0 24 24" stroke="#440d00">
+              <circle cx="12" cy="12" r="10" stroke="#440d00" strokeWidth="2" fill="#611d14" fillOpacity="0.12" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold mb-2" style={{ color: '#440d00' }}>Solo para mayores de 18 años</h1>
+          <p className="mb-4 text-base" style={{ color: '#611d14' }}>
+            El acceso y la compra de productos en esta tienda está restringido exclusivamente a personas mayores de edad.
+          </p>
+          <div className="rounded-lg px-4 py-2 text-sm font-semibold" style={{ background: '#611d14', color: 'white' }}>
+            Prohíbase el expendio de bebidas embriagantes a menores de edad. Ley 124 de 1994
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
