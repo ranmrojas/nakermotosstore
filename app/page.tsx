@@ -69,13 +69,13 @@ export default function Home() {
             className={`text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}
             style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}
           >
-            Licores Zona Frank
+            Licorera Zona Frank
           </h1>
           <p 
             className={`text-lg sm:text-xl text-white mb-6 max-w-lg transition-all duration-1000 delay-300 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}
             style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}
           >
-            licores, bebidas, vapes y mucho mas en Villavicencio
+            Licores, bebidas, vapes y mucho mas... en Villavicencio-Meta
           </p>
           <Link 
             href={currentSlide === 1 ? "/vape" : "/productos"} 

@@ -89,39 +89,61 @@ export default function CarritoPage() {
                 
                 <div className="divide-y divide-gray-200">
                   {cart.map((item) => (
-                    <div key={item.id} className="p-6">
-                      <div className="flex items-start space-x-4">
-                        {/* Imagen del producto */}
-                        <div className="relative w-20 h-20 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
-                          <Image
-                            src={getImageUrl(item.imagen, item.extension)}
-                            alt={item.nombre}
-                            fill
-                            className="object-cover"
-                            unoptimized={true}
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = '/file.svg';
-                            }}
-                          />
+                    <div key={item.id} className="p-4 sm:p-6">
+                      <div className="flex flex-row items-start sm:items-center gap-3 sm:gap-4">
+                        {/* Info principal */}
+                        <div className="flex-1 w-full">
+                          <div className="flex flex-col sm:flex-row sm:items-center w-full">
+                            <div className="flex-1">
+                              <h3 className="text-base font-medium text-gray-900 mb-0.5 break-words whitespace-normal">
+                                {item.nombre}
+                              </h3>
+                              <p className="text-xs text-gray-500 mb-0.5">
+                                {item.categoria} • {item.marca}
+                              </p>
+                              {item.sku && (
+                                <p className="text-[11px] text-gray-400 mb-1">
+                                  SKU: {item.sku}
+                                </p>
+                              )}
+                              {/* Precios */}
+                              <div className="mt-2">
+                                <p className="text-xs text-gray-500">
+                                  ${item.precio.toLocaleString('es-CO')} c/u
+                                </p>
+                                <p className="text-lg font-bold text-gray-900">
+                                  ${(item.precio * item.cantidad).toLocaleString('es-CO')}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        
-                        {/* Información del producto */}
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-lg font-medium text-gray-900 truncate">
-                            {item.nombre}
-                          </h3>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {item.categoria} • {item.marca}
-                          </p>
-                          {item.sku && (
-                            <p className="text-xs text-gray-400 mt-1">
-                              SKU: {item.sku}
-                            </p>
-                          )}
-                          
-                          {/* Controles de cantidad */}
-                          <div className="flex items-center mt-4">
+                        {/* Imagen y controles debajo en móvil, a la derecha en desktop */}
+                        <div className="flex flex-col items-center w-24">
+                          <div className="relative w-20 h-20 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden mb-2">
+                            <Image
+                              src={getImageUrl(item.imagen, item.extension)}
+                              alt={item.nombre}
+                              fill
+                              className="object-cover"
+                              unoptimized={true}
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = '/file.svg';
+                              }}
+                            />
+                          </div>
+                          {/* Controles de cantidad y eliminar */}
+                          <div className="flex items-center justify-center mt-1 pr-6">
+                            <button
+                              onClick={() => handleRemoveItem(item.id)}
+                              className="text-red-500 hover:text-red-700 transition-colors mr-2"
+                              aria-label="Eliminar producto"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
                             <button
                               onClick={() => handleUpdateQuantity(item.id, item.cantidad - 1)}
                               className="w-8 h-8 flex items-center justify-center bg-gray-200 text-gray-600 rounded-l-md hover:bg-gray-300 transition-colors"
@@ -144,27 +166,6 @@ export default function CarritoPage() {
                               </svg>
                             </button>
                           </div>
-                        </div>
-                        
-                        {/* Precio y botón eliminar */}
-                        <div className="flex flex-col items-end space-y-4">
-                          <div className="text-right">
-                            <p className="text-sm text-gray-500">
-                              ${item.precio.toLocaleString('es-CO')} c/u
-                            </p>
-                            <p className="text-lg font-bold text-gray-900">
-                              ${(item.precio * item.cantidad).toLocaleString('es-CO')}
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => handleRemoveItem(item.id)}
-                            className="text-red-500 hover:text-red-700 transition-colors"
-                            aria-label="Eliminar producto"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
                         </div>
                       </div>
                     </div>
@@ -202,7 +203,7 @@ export default function CarritoPage() {
                 </div>
                 
                 <p className="text-xs text-gray-500 mb-6">
-                  El envío y los impuestos se calcularán en el checkout
+                  El costo del envio se calculará de acuerdo a la dirección de entrega.
                 </p>
                 
                 {/* Botones de acción */}
@@ -296,7 +297,7 @@ export default function CarritoPage() {
                           </span>
                         </div>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                          Total pedido <span className="inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold shadow-sm shadow-emerald-200 align-middle" style={{marginTop: 0, marginBottom: 0}}>{`$${totalPrice.toLocaleString('es-CO')}`}</span> más el valor del domicilio de entre <span className="font-bold">$5.000 a $12.000</span> o más si es Vereda, que se confirmará vía WhatsApp de acuerdo a la dirección suministrada.
+                          Total productos:  <span className="inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold shadow-sm shadow-emerald-200 align-middle" style={{marginTop: 0, marginBottom: 0}}>{`$${totalPrice.toLocaleString('es-CO')}`}</span> más el valor del domicilio, puede ser entre <span className="font-bold">$5.000 a $12.000</span> o más si es una Vereda, que se confirmará de acuerdo a la dirección suministrada.
                         </p>
                         {/* Input para nota opcional (movido aquí) */}
                         <input
