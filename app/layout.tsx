@@ -26,6 +26,13 @@ export default function RootLayout({
 
   return (
     <html lang="es">
+      <head>
+        <link rel="icon" href="/copa-de-vino.png" />
+        <link rel="shortcut icon" href="/copa-de-vino.png" />
+        <link rel="apple-touch-icon" href="/copa-de-vino.png" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Licorera Zona Frank</title>
+      </head>
       <body className={geist.className}>
         <PreloadOptimizer autoStart={true}>
           <HeaderWrapper />
