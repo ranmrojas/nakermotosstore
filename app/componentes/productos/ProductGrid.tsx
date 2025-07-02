@@ -683,14 +683,14 @@ export default function ProductGrid({
       {/* Modal del producto */}
       {isModalOpen && selectedProduct && (
         <div
-          className="fixed inset-0 bg-white/70 flex items-start justify-center z-50 p-4"
+          className="fixed inset-0 bg-white/70 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               closeModal();
             }
           }}
         >
-          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto mt-12 shadow-2xl border border-gray-200">
+          <div className="bg-white rounded-lg max-w-md w-full max-h-[95vh] overflow-y-auto my-2 sm:my-4 shadow-2xl border border-gray-200">
             {/* Header del modal */}
             <div className="flex justify-between items-center p-4 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900">
@@ -707,9 +707,9 @@ export default function ProductGrid({
             </div>
             
             {/* Contenido del modal */}
-            <div className="p-4">
+            <div className="p-3 sm:p-4">
               {/* Imagen del producto */}
-              <div className="relative w-full aspect-square mb-4 rounded-lg overflow-hidden bg-white" style={{ maxHeight: '220px' }}>
+              <div className="relative w-full aspect-square mb-3 sm:mb-4 rounded-lg overflow-hidden bg-white" style={{ maxHeight: '180px', minHeight: '120px' }}>
                 <Image
                   src={selectedProduct.id_imagen && selectedProduct.ext1 ? getImageUrl(selectedProduct.id_imagen, selectedProduct.ext1) : '/file.svg'}
                   alt={selectedProduct.nombre}
@@ -781,7 +781,7 @@ export default function ProductGrid({
               
               {/* Información del producto */}
               <div className="space-y-3">
-                <h3 className="text-xl font-bold text-gray-900">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900">
                   {selectedProduct.nombre}
                 </h3>
                 {selectedProduct.nota && (
@@ -790,11 +790,11 @@ export default function ProductGrid({
                   </div>
                 )}
                 
-                <div className="flex justify-between items-center">
-                  <span className={`text-2xl font-bold ${tieneOferta(selectedProduct) ? 'text-green-600 text-3xl' : 'text-gray-800'}`}>
+                <div className="flex flex-wrap justify-between items-center gap-2">
+                  <span className={`text-xl sm:text-2xl font-bold ${tieneOferta(selectedProduct) ? 'text-green-600 sm:text-3xl' : 'text-gray-800'}`}>
                     ${(getPrecioCorrecto(selectedProduct))?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 sm:gap-2">
                     {tieneOferta(selectedProduct) && (
                       <span className="text-red-400 text-base line-through font-medium">
                         ${getPrecioBase(selectedProduct)?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
@@ -830,7 +830,7 @@ export default function ProductGrid({
                 </div>
                 
                 {/* Información adicional en una sola línea, bien distribuida */}
-                <div className="flex flex-row items-center justify-between gap-2 mt-2 w-full flex-wrap">
+                <div className="flex flex-row items-center justify-between gap-1 sm:gap-2 mt-2 w-full flex-wrap">
                   {selectedProduct.sku && (
                     <span className="text-gray-600 text-xs font-medium whitespace-nowrap">
                       SKU: <span className="text-gray-900">{selectedProduct.sku}</span>
