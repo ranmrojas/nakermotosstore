@@ -7,6 +7,8 @@ import { getProductImageUrl } from '@/app/services/productService';
 import ProductSkeleton from './ProductSkeleton';
 import { useRouter } from 'next/navigation';
 import { analyticsEvents } from '../../../hooks/useAnalytics';
+import { useCart } from '../../../hooks/useCart';
+import { ShoppingBagIcon } from '@heroicons/react/24/outline';
 import { gsap } from 'gsap';
 
 // Definir la interfaz Producto basada en la del hook
@@ -120,6 +122,7 @@ export default function ProductGrid({
   const brandTagRef = useRef<HTMLSpanElement>(null);
   const { getProductosByCategoria: getProductosByCategoriaHook } = useProductos();
   const router = useRouter();
+  const { addToCart } = useCart();
 
   // Nuevo estado para categorías múltiples
   const [categoriasProductos, setCategoriasProductos] = useState<CategoriaProductos[]>([]);
@@ -502,25 +505,36 @@ export default function ProductGrid({
                                 e.preventDefault();
                                 e.stopPropagation();
                                 
-                                // Rastrear clic en WhatsApp
                                 const precio = getPrecioCorrecto(product);
-                                analyticsEvents.whatsappClick(
+                                
+                                // Rastrear evento de añadir al carrito
+                                analyticsEvents.addToCart(
                                   product.id_producto.toString(),
                                   product.nombre,
-                                  precio || 0
+                                  precio || 0,
+                                  1
                                 );
                                 
-                                const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${precio?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
-                                window.open(`https://wa.me/573043668910?text=${encodeURIComponent(message)}`, '_blank');
+                                // Añadir al carrito
+                                addToCart({
+                                  id: product.id_producto,
+                                  nombre: product.nombre,
+                                  precio: precio || 0,
+                                  cantidad: 1,
+                                  imagen: product.id_imagen,
+                                  extension: product.ext1 || product.ext2,
+                                  sku: product.sku || '',
+                                  categoria: product.nombre_categoria,
+                                  marca: product.nombre_marca
+                                });
                               }}
-                              className="ml-2 w-8 h-8 flex items-center justify-center bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors"
-                              aria-label={`Pedir ${product.nombre} por WhatsApp`}
+                              className="ml-2 p-1 text-emerald-600 hover:text-emerald-700 transition-colors relative"
+                              aria-label={`Agregar ${product.nombre} al carrito`}
                             >
-                              {/* Icono de suma moderno */}
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2" fill="currentColor" className="text-green-600" />
-                                <path d="M12 8v8M8 12h8" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-                              </svg>
+                              <ShoppingBagIcon className="h-5 w-5" />
+                              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                                +1
+                              </span>
                             </button>
                           ) : (product.existencias_real ?? 0) <= 0 ? (
                             <span className="ml-2 px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium">
@@ -679,25 +693,36 @@ export default function ProductGrid({
                               e.preventDefault();
                               e.stopPropagation();
                               
-                              // Rastrear clic en WhatsApp
                               const precio = getPrecioCorrecto(product);
-                              analyticsEvents.whatsappClick(
+                              
+                              // Rastrear evento de añadir al carrito
+                              analyticsEvents.addToCart(
                                 product.id_producto.toString(),
                                 product.nombre,
-                                precio || 0
+                                precio || 0,
+                                1
                               );
                               
-                              const message = `Hola, quiero pedir:\n1 ${product.nombre}\nValor: $${precio?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\nsku: ${product.sku || '000'}\n\n¿Cuál sería el valor del domicilio?`;
-                              window.open(`https://wa.me/573043668910?text=${encodeURIComponent(message)}`, '_blank');
+                              // Añadir al carrito
+                              addToCart({
+                                id: product.id_producto,
+                                nombre: product.nombre,
+                                precio: precio || 0,
+                                cantidad: 1,
+                                imagen: product.id_imagen,
+                                extension: product.ext1 || product.ext2,
+                                sku: product.sku || '',
+                                categoria: product.nombre_categoria,
+                                marca: product.nombre_marca
+                              });
                             }}
-                            className="ml-2 w-8 h-8 flex items-center justify-center bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors"
-                            aria-label={`Pedir ${product.nombre} por WhatsApp`}
+                            className="ml-2 p-1 text-emerald-600 hover:text-emerald-700 transition-colors relative"
+                            aria-label={`Agregar ${product.nombre} al carrito`}
                           >
-                            {/* Icono de suma moderno */}
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2" fill="currentColor" className="text-green-600" />
-                              <path d="M12 8v8M8 12h8" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-                            </svg>
+                            <ShoppingBagIcon className="h-5 w-5" />
+                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                              +1
+                            </span>
                           </button>
                         ) : (product.existencias_real ?? 0) <= 0 ? (
                           <span className="ml-2 px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium">
@@ -839,31 +864,58 @@ export default function ProductGrid({
                         ${getPrecioBase(selectedProduct)?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                       </span>
                     )}
-                    <button
+                                        <button
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        // Función para pedir producto
-                        alert(`Producto "${selectedProduct.nombre}" agregado al carrito`);
+                        
+                        const precio = getPrecioCorrecto(selectedProduct);
+                        
+                        // Rastrear evento de añadir al carrito
+                        analyticsEvents.addToCart(
+                          selectedProduct.id_producto.toString(),
+                          selectedProduct.nombre,
+                          precio || 0,
+                          1
+                        );
+                        
+                        // Añadir al carrito
+                        addToCart({
+                          id: selectedProduct.id_producto,
+                          nombre: selectedProduct.nombre,
+                          precio: precio || 0,
+                          cantidad: 1,
+                          imagen: selectedProduct.id_imagen,
+                          extension: selectedProduct.ext1 || selectedProduct.ext2,
+                          sku: selectedProduct.sku || '',
+                          categoria: selectedProduct.nombre_categoria,
+                          marca: selectedProduct.nombre_marca
+                        });
+                        
+                        // Cerrar modal después de agregar
+                        closeModal();
                       }}
                       disabled={(selectedProduct.existencias_real ?? 0) <= 0 && (selectedProduct.vende_sin_existencia_real ?? 0) === 0}
-                      className={`flex items-center justify-center gap-1 px-3 py-2 rounded-lg font-semibold text-white transition-all duration-200 ${
+                      className={`flex items-center justify-center gap-1 px-3 py-2 rounded-lg font-semibold text-white transition-all duration-200 relative ${
                         (selectedProduct.existencias_real ?? 0) <= 0 && (selectedProduct.vende_sin_existencia_real ?? 0) === 0
                           ? 'bg-gray-400 cursor-not-allowed'
                           : 'bg-emerald-500 hover:bg-emerald-600 hover:shadow-lg active:scale-95'
                       }`}
                       title={(selectedProduct.existencias_real ?? 0) <= 0 && (selectedProduct.vende_sin_existencia_real ?? 0) === 0
                         ? 'Producto agotado'
-                        : 'Pedir producto'
+                        : 'Agregar al carrito'
                       }
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
-                      </svg>
+                      <ShoppingBagIcon className="h-4 w-4" />
                       {(selectedProduct.existencias_real ?? 0) <= 0 && (selectedProduct.vende_sin_existencia_real ?? 0) === 0
                         ? 'Agotado'
-                        : 'Pedir'
+                        : 'Agregar'
                       }
+                      {(selectedProduct.existencias_real ?? 0) > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                          +1
+                        </span>
+                      )}
                     </button>
                   </div>
                 </div>

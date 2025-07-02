@@ -276,6 +276,90 @@ export const analyticsEvents = {
     category: 'rendimiento',
     label: 'datos_cache',
   }),
+
+  // Carrito
+  addToCart: (productId: string, productName: string, price: number, quantity: number) => trackEvent({
+    action: 'producto_agregado_carrito',
+    category: 'carrito',
+    label: productName,
+    value: price * quantity,
+    custom_parameters: {
+      id_producto: productId,
+      nombre_producto: productName,
+      precio_unitario: price,
+      cantidad: quantity,
+      precio_total: price * quantity,
+    },
+  }),
+
+  removeFromCart: (productId: string) => trackEvent({
+    action: 'producto_eliminado_carrito',
+    category: 'carrito',
+    label: productId,
+    custom_parameters: {
+      id_producto: productId,
+    },
+  }),
+
+  updateCartQuantity: (productId: string, quantity: number) => trackEvent({
+    action: 'cantidad_actualizada_carrito',
+    category: 'carrito',
+    label: productId,
+    value: quantity,
+    custom_parameters: {
+      id_producto: productId,
+      nueva_cantidad: quantity,
+    },
+  }),
+
+  cartOpened: (totalItems: number, totalPrice: number) => trackEvent({
+    action: 'carrito_abierto',
+    category: 'carrito',
+    label: 'panel_carrito',
+    value: totalPrice,
+    custom_parameters: {
+      total_items: totalItems,
+      precio_total: totalPrice,
+    },
+  }),
+
+  beginCheckout: (totalItems: number, totalPrice: number) => trackEvent({
+    action: 'inicio_checkout',
+    category: 'conversion',
+    label: 'proceso_compra',
+    value: totalPrice,
+    custom_parameters: {
+      total_items: totalItems,
+      precio_total: totalPrice,
+    },
+  }),
+
+  checkout: (totalItems: number, totalPrice: number, paymentMethod: string) => trackEvent({
+    action: 'checkout_completado',
+    category: 'conversion',
+    label: 'pedido_whatsapp',
+    value: totalPrice,
+    custom_parameters: {
+      total_items: totalItems,
+      precio_total: totalPrice,
+      metodo_pago: paymentMethod,
+      tipo_pedido: 'whatsapp',
+    },
+  }),
+
+  purchase: (orderId: string, totalItems: number, totalPrice: number, paymentMethod: string) => trackEvent({
+    action: 'compra_completada',
+    category: 'conversion',
+    label: orderId,
+    value: totalPrice,
+    custom_parameters: {
+      id_pedido: orderId,
+      total_items: totalItems,
+      precio_total: totalPrice,
+      metodo_pago: paymentMethod,
+      tipo_pedido: 'whatsapp',
+    },
+  }),
 };
 
 // Declaraciones globales para TypeScript

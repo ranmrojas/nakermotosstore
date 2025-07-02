@@ -28,15 +28,13 @@ export const usePreload = (): UsePreloadReturn => {
 
     checkPreloadStatus();
 
-    // Verificar estado cada 2 segundos si no está completo
+    // Verificar estado cada 2 segundos
     const interval = setInterval(() => {
-      if (!isPreloadComplete && !isPreloading) {
-        checkPreloadStatus();
-      }
+      checkPreloadStatus();
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [isPreloadComplete, isPreloading]);
+  }, []); // Sin dependencias para evitar bucle infinito
 
   // Función para iniciar preload manualmente
   const startPreload = async (): Promise<void> => {
