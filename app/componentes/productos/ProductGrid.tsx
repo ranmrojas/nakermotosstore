@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { useProductos } from '../../../hooks/useProductos';
 import { getProductImageUrl } from '@/app/services/productService';
 import ProductSkeleton from './ProductSkeleton';
 import { useRouter } from 'next/navigation';
 import { analyticsEvents } from '../../../hooks/useAnalytics';
+import { gsap } from 'gsap';
 
 // Definir la interfaz Producto basada en la del hook
 interface Producto {
@@ -113,6 +114,10 @@ export default function ProductGrid({
   const [productos, setProductos] = useState<Producto[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  
+  // Referencias para las animaciones GSAP
+  const categoryTagRef = useRef<HTMLSpanElement>(null);
+  const brandTagRef = useRef<HTMLSpanElement>(null);
   const { getProductosByCategoria: getProductosByCategoriaHook } = useProductos();
   const router = useRouter();
 
@@ -130,18 +135,52 @@ export default function ProductGrid({
     return (existencias ?? 0) > 0 || (vende_sin_existencia ?? 0) === 1;
   };
 
+  // Función para iniciar las animaciones de los tags
+  const startTagAnimations = useCallback(() => {
+    // Animación para el tag de categoría
+    if (categoryTagRef.current) {
+      gsap.to(categoryTagRef.current, {
+        keyframes: [
+          { scale: 1, duration: 0 },
+          { scale: 1.19, duration: 0.3, ease: "power1.inOut" },
+          { scale: 1, duration: 0.3, ease: "power1.inOut" },
+          { scale: 1.15, duration: 0.3, ease: "power1.inOut" },
+          { scale: 1, duration: 0.3, ease: "power1.inOut" }
+        ],
+        repeat: -1,
+        repeatDelay: 2.5,
+        delay: 0.5
+      });
+    }
+    
+    // Animación para el tag de marca
+    if (brandTagRef.current) {
+      gsap.to(brandTagRef.current, {
+        keyframes: [
+          { scale: 1, duration: 0 },
+          { scale: 1.19, duration: 0.3, ease: "power1.inOut" },
+          { scale: 1, duration: 0.3, ease: "power1.inOut" },
+          { scale: 1.15, duration: 0.3, ease: "power1.inOut" },
+          { scale: 1, duration: 0.3, ease: "power1.inOut" }
+        ],
+        repeat: -1,
+        repeatDelay: 2.5,
+        delay: 1.2
+      });
+    }
+  }, [categoryTagRef, brandTagRef]);
+  
   // Función para abrir el modal
-  const openModal = (product: Producto) => {
+  const openModal = useCallback((product: Producto) => {
     setSelectedProduct(product);
     setIsModalOpen(true);
+    analyticsEvents.productDetailView(product.id_producto.toString(), product.nombre, product.nombre_categoria);
     
-    // Rastrear vista de detalle de producto
-    analyticsEvents.productDetailView(
-      product.id_producto.toString(),
-      product.nombre,
-      product.nombre_categoria
-    );
-  };
+    // Iniciar animaciones después de que el modal esté visible
+    setTimeout(() => {
+      startTagAnimations();
+    }, 500);
+  }, [startTagAnimations]);
 
   // Función para cerrar el modal
   const closeModal = () => {
@@ -295,7 +334,7 @@ export default function ProductGrid({
         openModal(targetProduct);
       }
     }
-  }, [targetProductId, productos, isLoading]);
+  }, [targetProductId, productos, isLoading, openModal]);
 
   // Función para mostrar todos los productos de una categoría
   const handleShowAllCategory = async (categoriaId: number) => {
@@ -839,7 +878,8 @@ export default function ProductGrid({
                   <div className="flex flex-row gap-2 ml-auto">
                     {selectedProduct.nombre_categoria && (
                       <span
-                        className="px-3 py-1 bg-orange-500 text-white text-xs rounded-full font-semibold whitespace-nowrap shadow-2xl shadow-orange-300/80 transition-all duration-150 cursor-pointer hover:bg-orange-600 hover:shadow-[0_8px_32px_0_rgba(255,140,0,0.35)] hover:scale-110 active:scale-95"
+                        ref={categoryTagRef}
+                        className="px-3 py-1 bg-orange-500 text-white text-xs rounded-full font-semibold whitespace-nowrap shadow-2xl shadow-orange-300/80 transition-all duration-150 cursor-pointer hover:bg-orange-600 hover:shadow-[0_8px_32px_0_rgba(255,140,0,0.35)] hover:scale-110 active:scale-95 relative"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -863,11 +903,13 @@ export default function ProductGrid({
                         }}
                       >
                         {selectedProduct.nombre_categoria}
+                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full animate-ping opacity-75"></span>
                       </span>
                     )}
                     {selectedProduct.nombre_marca && (
                       <span
-                        className="px-3 py-1 bg-blue-600 text-white text-xs rounded-full font-semibold whitespace-nowrap shadow-2xl shadow-blue-300/80 transition-all duration-150 cursor-pointer hover:bg-blue-700 hover:shadow-[0_8px_32px_0_rgba(59,130,246,0.35)] hover:scale-110 active:scale-95"
+                        ref={brandTagRef}
+                        className="px-3 py-1 bg-blue-600 text-white text-xs rounded-full font-semibold whitespace-nowrap shadow-2xl shadow-blue-300/80 transition-all duration-150 cursor-pointer hover:bg-blue-700 hover:shadow-[0_8px_32px_0_rgba(59,130,246,0.35)] hover:scale-110 active:scale-95 relative"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -891,6 +933,7 @@ export default function ProductGrid({
                         }}
                       >
                         {selectedProduct.nombre_marca}
+                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full animate-ping opacity-75"></span>
                       </span>
                     )}
                   </div>
