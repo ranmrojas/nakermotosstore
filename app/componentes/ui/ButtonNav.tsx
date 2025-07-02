@@ -6,8 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   HomeIcon,
   ShoppingBagIcon,
-  MagnifyingGlassIcon,
-  Bars3Icon
+  MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 import {
   HomeIcon as HomeIconSolid,
@@ -58,7 +57,6 @@ interface ButtonNavProps {
   accentColor?: string;
   className?: string;
   hideOnProducts?: boolean;
-  onToggleSidebar?: () => void;
 }
 
 // Configuración por defecto
@@ -99,8 +97,7 @@ export default function ButtonNav({
   items = defaultNavigation,
   accentColor = 'blue',
   className = '',
-  hideOnProducts = false,
-  onToggleSidebar
+  hideOnProducts = false
 }: ButtonNavProps) {
   const pathname = usePathname();
 
@@ -153,58 +150,10 @@ export default function ButtonNav({
 
   const colors = getAccentColors();
 
-  // Función para manejar el clic en el botón de menú
-  const handleMenuClick = () => {
-    if (pathname === '/productos' && onToggleSidebar) {
-      onToggleSidebar();
-    }
-  };
-
   // Renderizar el botón de navegación
   const renderNavButton = (item: NavItem) => {
     const isActive = pathname === item.href;
-    const isMenuButton = pathname === '/productos' && item.href === '/';
     const IconComponent = isActive ? item.iconSolid : item.icon;
-    
-    // Si estamos en /productos y es el botón de inicio, mostrar menú hamburguesa
-    if (isMenuButton) {
-      return (
-        <button
-          onClick={handleMenuClick}
-          className={`flex flex-col items-center justify-center w-full py-0.5 px-1 rounded-xl transition-all duration-300 ease-in-out group relative
-            ${isActive ? colors.active : 'text-gray-600 dark:text-gray-400'} ${colors.hover}`}
-        >
-          {/* Icono */}
-          <div className={`relative p-1 rounded-full transition-all duration-300
-            ${isActive ? colors.activeBg : colors.hoverBg}`}
-          >
-            <Bars3Icon 
-              className={`w-5 h-5 transition-all duration-300
-                ${isActive ? 'scale-110' : 'scale-100 group-hover:scale-105'}`}
-            />
-            
-            {/* Badge de notificaciones */}
-            {item.badge && item.badge > 0 && (
-              <div className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-0.5 animate-pulse">
-                {item.badge > 99 ? '99+' : item.badge}
-              </div>
-            )}
-            
-            {/* Indicador de actividad */}
-            {isActive && (
-              <div className={`absolute -bottom-0.5 left-1/2 transform -translate-x-1/2 w-0.5 h-0.5 ${colors.indicator} rounded-full animate-pulse`} />
-            )}
-          </div>
-          
-          {/* Texto */}
-          <span className={`text-xs font-medium mt-0.5 transition-all duration-300
-            ${isActive ? colors.active : 'text-gray-600 dark:text-gray-400'} ${colors.hover}`}
-          >
-            Categorías
-          </span>
-        </button>
-      );
-    }
 
     // Botón normal para otras páginas
     return (

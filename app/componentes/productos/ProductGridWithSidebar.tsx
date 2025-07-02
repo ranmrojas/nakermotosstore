@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useImperativeHandle, forwardRef, useCallback } from 'react';
+import React, { useState, useEffect, useImperativeHandle, forwardRef, useCallback, useRef } from 'react';
 import SidebarCategories from './SidebarCategories';
 import ProductGrid from './ProductGrid';
 import ProductSearch from './ProductSearch';
@@ -8,6 +8,21 @@ import ProductSkeleton from './ProductSkeleton';
 import { useCategorias } from '../../../hooks/useCategorias';
 import { useProductos } from '../../../hooks/useProductos';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { analyticsEvents } from '../../../hooks/useAnalytics';
+
+// Importar el tipo Categoria del hook
+type Categoria = {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+  activa: boolean;
+  fechaCreacion?: string;
+  fechaActualizacion?: string;
+  categoriaPadreId?: number;
+  esPadre?: boolean;
+  tieneSubcategorias?: boolean;
+  subcategorias?: Categoria[];
+};
 
 // Usar la misma interfaz Producto que ProductGrid
 interface Producto {
@@ -106,6 +121,14 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
   const [searchResults, setSearchResults] = useState<Producto[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   
+  // Nuevos estados para el sistema de tags
+  const [selectedMarca, setSelectedMarca] = useState<string | null>(null);
+  const [marcas, setMarcas] = useState<Array<{id: number, nombre: string}>>([]);
+  const [categoriasOrdenadas, setCategoriasOrdenadas] = useState<Categoria[]>([]);
+  
+  // Referencias para las animaciones de scroll
+  const categoriasScrollRef = useRef<HTMLDivElement>(null);
+  
   // Obtener categorías usando el hook
   const { categorias, loading: categoriasLoading } = useCategorias();
   const { getProductosByCategoria, searchProductos } = useProductos();
@@ -117,6 +140,138 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
     closeSidebar: () => setSidebarOpen(false)
   }), [sidebarOpen]);
 
+  // Función para ordenar categorías (primeras 4 específicas, resto alfabético)
+  const getOrderedCategorias = useCallback(() => {
+    if (!Array.isArray(categorias)) return [];
+
+    // Filtrar solo categorías activas
+    const categoriasActivas = categorias.filter(cat => cat.activa);
+
+    // IDs de las primeras 4 categorías en orden específico
+    const firstFourIds = [15, 63, 17, 33]; // Cerveza, Baterías, Cigarrillos, Aguardiente
+
+    // Separar las primeras 4 del resto
+    const firstFour = firstFourIds
+      .map(id => categoriasActivas.find(cat => cat.id === id))
+      .filter((cat): cat is Categoria => cat !== undefined);
+
+    const rest = categoriasActivas.filter(cat => !firstFourIds.includes(cat.id));
+
+    // Ordenar el resto alfabéticamente por nombre
+    const sortedRest = rest.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+    return [...firstFour, ...sortedRest];
+  }, [categorias]);
+
+  // Efecto para establecer el orden de categorías una sola vez
+  useEffect(() => {
+    if (Array.isArray(categorias) && categorias.length > 0) {
+      const ordenadas = getOrderedCategorias();
+      setCategoriasOrdenadas(ordenadas);
+    }
+  }, [categorias, getOrderedCategorias]);
+
+  // Scroll sincronizado de tags de categorías con el scroll de productos
+  useEffect(() => {
+    const el = categoriasScrollRef.current;
+    if (!el || el.scrollWidth <= el.clientWidth) return;
+
+    let lastScrollTop = 0;
+    let accumulatedScroll = 0;
+    let isMovingLeft = false;
+    let returnTimeout: NodeJS.Timeout;
+
+    const handleProductsScroll = (event: Event) => {
+      const target = event.target as HTMLElement;
+      const currentScrollTop = target.scrollTop;
+      const scrollDelta = currentScrollTop - lastScrollTop;
+      
+      // Solo procesar scroll hacia abajo
+      if (scrollDelta > 0) {
+        // Acumular el scroll
+        accumulatedScroll += scrollDelta;
+        
+        // Calcular el scroll horizontal proporcional (de derecha a izquierda)
+        const maxHorizontalScroll = el.scrollWidth - el.clientWidth;
+        const scrollRatio = Math.min(accumulatedScroll / 100, 1); // Normalizar a 100px de scroll vertical
+        const targetScrollLeft = maxHorizontalScroll - (scrollRatio * maxHorizontalScroll); // Invertir la dirección
+        
+        // Mover los tags hacia la izquierda (de derecha a izquierda)
+        if (!isMovingLeft) {
+          isMovingLeft = true;
+          console.log('Moviendo tags hacia la izquierda:', { accumulatedScroll, targetScrollLeft });
+        }
+        
+        el.scrollTo({ 
+          left: targetScrollLeft, 
+          behavior: 'auto' // Sin animación para que sea instantáneo
+        });
+        
+        // Limpiar timeout de retorno si existe
+        if (returnTimeout) {
+          clearTimeout(returnTimeout);
+        }
+        
+        // Programar retorno al inicio si no hay más scroll
+        returnTimeout = setTimeout(() => {
+          console.log('Retornando tags al inicio');
+          el.scrollTo({ 
+            left: 0, 
+            behavior: 'smooth' 
+          });
+          isMovingLeft = false;
+          accumulatedScroll = 0;
+        }, 500); // 500ms después del último scroll
+      }
+      
+      lastScrollTop = currentScrollTop;
+    };
+
+    // Buscar el contenedor de productos (el área scrollable)
+    const productsContainer = document.querySelector('.flex-1.overflow-y-auto');
+    
+    if (productsContainer) {
+      // Agregar event listener para scroll del contenedor de productos
+      productsContainer.addEventListener('scroll', handleProductsScroll, { passive: true });
+      
+      return () => {
+        productsContainer.removeEventListener('scroll', handleProductsScroll);
+        if (returnTimeout) {
+          clearTimeout(returnTimeout);
+        }
+      };
+    }
+  }, [categoriasOrdenadas]);
+
+  // Cargar marcas de la categoría seleccionada
+  const loadMarcasByCategory = useCallback(async (categoryId: number | null) => {
+    if (!categoryId) {
+      setMarcas([]);
+      return;
+    }
+
+    try {
+      const productos = await getProductosByCategoria(categoryId);
+      const marcasSet = new Set<string>();
+      const marcasArray: Array<{id: number, nombre: string}> = [];
+      
+      productos.forEach(producto => {
+        if (producto.nombre_marca && !marcasSet.has(producto.nombre_marca)) {
+          marcasSet.add(producto.nombre_marca);
+          marcasArray.push({
+            id: producto.id_marca,
+            nombre: producto.nombre_marca
+          });
+        }
+      });
+      
+      setMarcas(marcasArray);
+    } catch (error) {
+      console.error(`Error cargando marcas de categoría ${categoryId}:`, error);
+      setMarcas([]);
+    }
+  }, [getProductosByCategoria]);
+
   // Efecto para seleccionar una categoría por defecto si no hay ninguna seleccionada
   useEffect(() => {
     if (selectedCategoryId === null && !categoriasLoading && categorias.length > 0) {
@@ -125,10 +280,18 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
     }
   }, [categorias, categoriasLoading, selectedCategoryId]);
 
+  // Efecto para cargar marcas cuando cambia la categoría seleccionada
+  useEffect(() => {
+    if (selectedCategoryId) {
+      loadMarcasByCategory(selectedCategoryId);
+    }
+  }, [selectedCategoryId, loadMarcasByCategory]);
+
   // Manejador para cuando se selecciona una categoría en el sidebar
   const handleSidebarCategorySelect = (categoryId: number | null) => {
     if (categoryId !== null) {
       setSelectedCategoryId(categoryId);
+      setSelectedMarca(null);
       setSidebarOpen(false);
       // Limpiar resultados de búsqueda al cambiar de categoría
       setSearchResults([]);
@@ -146,6 +309,9 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
     setIsSearching(query.length > 0);
     if (!query.trim()) {
       setSearchResults([]);
+    } else {
+      // Rastrear uso del input de búsqueda
+      analyticsEvents.searchInputUsed(query, 'productos');
     }
   }, []);
 
@@ -162,10 +328,16 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
           allProductos.push(...productos);
         }
         setSearchResults(allProductos);
+        
+        // Rastrear búsqueda por categorías múltiples
+        analyticsEvents.searchPerformed(`categorías: ${categoryIds.join(', ')}`, allProductos.length, 'productos');
       } else {
         // Si es un solo ID, obtener productos de esa categoría
         const productos = await getProductosByCategoria(categoryIds);
         setSearchResults(productos);
+        
+        // Rastrear búsqueda por categoría única
+        analyticsEvents.searchPerformed(`categoría: ${categoryIds}`, productos.length, 'productos');
       }
       
       setIsSearching(false);
@@ -176,17 +348,89 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
     }
   }, [getProductosByCategoria]);
 
-  // Handler para búsqueda por marca desde el modal
-  const handleBrandSearch = useCallback(async (brandName: string) => {
+  // Handler personalizado para clic en tag de categoría en el modal
+  const handleCategoryTagClick = useCallback(async (categoryId: number) => {
     try {
       setIsSearching(true);
       
-      // Usar la función searchProductos que ya está disponible
+      // Obtener productos de la categoría seleccionada
+      const productos = await getProductosByCategoria(categoryId);
+      setSearchResults(productos);
+      setIsSearching(false);
+      
+    } catch (error) {
+      console.error('Error cargando productos de categoría:', error);
+      setIsSearching(false);
+    }
+  }, [getProductosByCategoria]);
+
+  // Handler personalizado para clic en tag de marca en el modal
+  const handleBrandTagClick = useCallback(async (brandName: string) => {
+    try {
+      setIsSearching(true);
+      
+      // Usar el hook de productos para buscar por marca
       const resultados = await searchProductos(brandName);
       
       // Filtrar solo productos que coincidan exactamente con la marca
-      const productosFiltrados = resultados.filter((producto: Producto) => 
+      const productosFiltrados = resultados.filter(producto => 
         producto.nombre_marca === brandName
+      );
+      
+      setSearchResults(productosFiltrados);
+      setIsSearching(false);
+      
+    } catch (error) {
+      console.error('Error buscando productos por marca:', error);
+      setIsSearching(false);
+    }
+  }, [searchProductos]);
+
+  // Handler para clic en categoría de la línea de scroll
+  const handleCategoryScrollClick = useCallback(async (categoryId: number) => {
+    try {
+      setIsSearching(true);
+      setSelectedCategoryId(categoryId);
+      setSelectedMarca(null);
+      
+      // Rastrear clic en tag de categoría del filtro
+      const categoria = categoriasOrdenadas.find(cat => cat.id === categoryId);
+      if (categoria) {
+        analyticsEvents.filterCategoryTagClick(
+          categoryId.toString(),
+          categoria.nombre,
+          'productos'
+        );
+      }
+      
+      // Cargar productos de la categoría
+      const productos = await getProductosByCategoria(categoryId);
+      setSearchResults(productos);
+      
+      // Cargar marcas de esta categoría
+      await loadMarcasByCategory(categoryId);
+      
+      setIsSearching(false);
+      
+    } catch (error) {
+      console.error('Error cargando productos de categoría:', error);
+      setIsSearching(false);
+    }
+  }, [getProductosByCategoria, loadMarcasByCategory, categoriasOrdenadas]);
+
+  // Handler para clic en marca de la línea de scroll
+  const handleMarcaScrollClick = useCallback(async (marcaName: string) => {
+    try {
+      setIsSearching(true);
+      setSelectedMarca(marcaName);
+      setSelectedCategoryId(null);
+      
+      // Rastrear clic en tag de marca del filtro
+      analyticsEvents.filterBrandTagClick(marcaName, 'productos');
+      
+      const resultados = await searchProductos(marcaName);
+      const productosFiltrados = resultados.filter(producto => 
+        producto.nombre_marca === marcaName
       );
       
       setSearchResults(productosFiltrados);
@@ -206,6 +450,15 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
 
   return (
     <div className="flex h-screen" data-testid="product-container">
+      <style jsx>{`
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
       {/* Overlay para cerrar el sidebar al hacer clic fuera (solo mobile) */}
       {sidebarOpen && (
         <div
@@ -259,11 +512,59 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
               onSearchChange={handleSearchChange}
               onCategorySelect={handleCategorySelect}
               placeholder={searchPlaceholder}
-              showSortOptions={true}
+              showSortOptions={false}
               className="!py-1"
             />
           </div>
         )}
+
+        {/* Sistema de tags de categorías y marcas */}
+        <div className="flex-shrink-0 bg-white border-b border-gray-200">
+          <div className="container mx-auto px-2 py-2">
+            {/* Línea de categorías con scroll horizontal */}
+            <div className="mb-2">
+              <div ref={categoriasScrollRef} className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
+                {Array.isArray(categoriasOrdenadas) && categoriasOrdenadas.map((categoria) => 
+                  categoria ? (
+                    <button
+                      key={categoria.id}
+                      onClick={() => handleCategoryScrollClick(categoria.id)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+                        selectedCategoryId === categoria.id
+                          ? 'bg-amber-500 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                      style={{fontSize:'0.85rem'}}
+                      title={`Filtrar por ${categoria.nombre}`}
+                    >
+                      {categoria.nombre}
+                    </button>
+                  ) : null
+                )}
+              </div>
+            </div>
+            {/* Línea de marcas con scroll horizontal */}
+            <div className="mb-1">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
+                {Array.isArray(marcas) && marcas.map((marca) => (
+                  <button
+                    key={marca.id}
+                    onClick={() => handleMarcaScrollClick(marca.nombre)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+                      selectedMarca === marca.nombre
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
+                    style={{fontSize:'0.85rem'}}
+                    title={`Buscar productos de ${marca.nombre}`}
+                  >
+                    {marca.nombre}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Contenido según el estado */}
         <div className="flex-1 overflow-y-auto p-4 bg-white">
@@ -294,7 +595,8 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
                       showAddToCart={showAddToCart}
                       targetProductId={targetProductId}
                       isSearchResults={true}
-                      onBrandTagClick={handleBrandSearch}
+                      onCategoryTagClick={handleCategoryTagClick}
+                      onBrandTagClick={handleBrandTagClick}
                     />
                   </div>
                 </div>
@@ -341,7 +643,8 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
                 targetProductId={targetProductId}
                 loadAllCategories={selectedCategoryId === 15}
                 productsPerCategory={30}
-                onBrandTagClick={handleBrandSearch}
+                onCategoryTagClick={handleCategoryTagClick}
+                onBrandTagClick={handleBrandTagClick}
               />
             </div>
           ) : (

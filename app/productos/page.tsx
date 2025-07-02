@@ -12,18 +12,6 @@ export default function ProductosPage() {
   const { categorias } = useCategorias();
   const { isPreloadComplete } = usePreload();
 
-  // Función para controlar el sidebar desde el ButtonNav y ahora también desde el Header
-  const handleToggleSidebar = () => {
-    if (sidebarRef.current) {
-      sidebarRef.current.toggleSidebar();
-    }
-  };
-
-  // Exponer la función globalmente para el Header
-  if (typeof window !== 'undefined') {
-    window.__toggleSidebar = handleToggleSidebar;
-  }
-
   // Efecto optimizado para descarga silenciosa
   useEffect(() => {
     // Solo ejecutar si el preload no está completo y hay categorías
@@ -65,10 +53,9 @@ export default function ProductosPage() {
           searchPlaceholder="Buscar por nombre, marca, SKU, precio..."
         />
 
-        {/* ButtonNav con callback para controlar el sidebar */}
+        {/* ButtonNav */}
         <ButtonNav 
           accentColor="amber" 
-          onToggleSidebar={handleToggleSidebar}
         />
       </div>
     </Suspense>
