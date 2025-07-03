@@ -12,7 +12,7 @@ interface HeaderProps {
 
 export default function Header({ onToggleSidebar }: HeaderProps) {
   const pathname = usePathname();
-  const { totalItems } = useCart();
+  const { totalItems, totalPrice } = useCart();
   const showHamburger = pathname === "/productos" && typeof onToggleSidebar === "function";
 
   return (
@@ -59,6 +59,17 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
             </div>
             {/* <span className="text-[10px] text-gray-700 mt-0.5 leading-none">Carrito</span> */}
           </Link>
+          
+          {/* Valor total del pedido */}
+          {totalItems > 0 && (
+            <Link
+              href="/carrito"
+              className="text-xs font-bold text-gray-800 hover:text-gray-900 transition-colors cursor-pointer"
+              aria-label="Ver carrito"
+            >
+              ${totalPrice.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            </Link>
+          )}
         </div>
       </div>
     </header>

@@ -120,9 +120,11 @@ export default function ProductGrid({
   // Referencias para las animaciones GSAP
   const categoryTagRef = useRef<HTMLSpanElement>(null);
   const brandTagRef = useRef<HTMLSpanElement>(null);
+  const cartIconRefs = useRef<{ [key: number]: HTMLSpanElement | null }>({});
+  const cartButtonRefs = useRef<{ [key: number]: HTMLButtonElement | null }>({});
   const { getProductosByCategoria: getProductosByCategoriaHook } = useProductos();
   const router = useRouter();
-  const { addToCart } = useCart();
+  const { addToCart, getItemQuantity } = useCart();
 
   // Nuevo estado para categorías múltiples
   const [categoriasProductos, setCategoriasProductos] = useState<CategoriaProductos[]>([]);
@@ -392,6 +394,46 @@ export default function ProductGrid({
     return precioOnline !== null && precioOnline !== undefined && precioBase !== undefined && precioOnline < precioBase;
   };
 
+  // Animación bump para el icono del carrito
+  const animateCartIcon = (productId: number) => {
+    requestAnimationFrame(() => {
+      const icon = cartIconRefs.current[productId];
+      if (icon) {
+        gsap.to(icon, {
+          scale: 1.25,
+          duration: 0.15,
+          yoyo: true,
+          repeat: 1,
+          ease: 'power1.inOut',
+          onComplete: () => {
+            gsap.to(icon, { scale: 1, duration: 0.1 });
+          }
+        });
+      }
+    });
+  };
+
+  // Animación de hundimiento para el botón del carrito
+  const animateCartButton = (productId: number) => {
+    requestAnimationFrame(() => {
+      const button = cartButtonRefs.current[productId];
+      if (button) {
+        gsap.to(button, {
+          scale: 0.9,
+          duration: 0.1,
+          ease: 'power2.out',
+          onComplete: () => {
+            gsap.to(button, {
+              scale: 1,
+              duration: 0.15,
+              ease: 'elastic.out(1, 0.3)'
+            });
+          }
+        });
+      }
+    });
+  };
+
   // Mostrar loading solo si no hay productos y está cargando inicialmente
   if (isLoading && productos.length === 0 && categoriasProductos.length === 0) {
     return <ProductSkeleton count={20} />;
@@ -501,9 +543,12 @@ export default function ProductGrid({
                           </div>
                           {showAddToCart && (product.existencias_real ?? 0) > 0 ? (
                             <button
+                              ref={el => { cartButtonRefs.current[product.id_producto] = el; }}
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
+                                animateCartIcon(product.id_producto);
+                                animateCartButton(product.id_producto);
                                 
                                 const precio = getPrecioCorrecto(product);
                                 
@@ -532,8 +577,11 @@ export default function ProductGrid({
                               aria-label={`Agregar ${product.nombre} al carrito`}
                             >
                               <ShoppingBagIcon className="h-5 w-5" />
-                              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
-                                +1
+                              <span
+                                ref={el => { cartIconRefs.current[product.id_producto] = el; }}
+                                className="absolute -top-1 -right-1 bg-green-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center"
+                              >
+                                {getItemQuantity(product.id_producto) > 0 ? getItemQuantity(product.id_producto) : '+'}
                               </span>
                             </button>
                           ) : (product.existencias_real ?? 0) <= 0 ? (
@@ -689,9 +737,12 @@ export default function ProductGrid({
                         </div>
                         {showAddToCart && (product.existencias_real ?? 0) > 0 ? (
                           <button
+                            ref={el => { cartButtonRefs.current[product.id_producto] = el; }}
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
+                              animateCartIcon(product.id_producto);
+                              animateCartButton(product.id_producto);
                               
                               const precio = getPrecioCorrecto(product);
                               
@@ -720,8 +771,11 @@ export default function ProductGrid({
                             aria-label={`Agregar ${product.nombre} al carrito`}
                           >
                             <ShoppingBagIcon className="h-5 w-5" />
-                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
-                              +1
+                            <span
+                              ref={el => { cartIconRefs.current[product.id_producto] = el; }}
+                              className="absolute -top-1 -right-1 bg-green-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center"
+                            >
+                              {getItemQuantity(product.id_producto) > 0 ? getItemQuantity(product.id_producto) : '+'}
                             </span>
                           </button>
                         ) : (product.existencias_real ?? 0) <= 0 ? (
@@ -864,10 +918,13 @@ export default function ProductGrid({
                         ${getPrecioBase(selectedProduct)?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                       </span>
                     )}
-                                        <button
+                    <button
+                      ref={el => { cartButtonRefs.current[selectedProduct.id_producto] = el; }}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        animateCartIcon(selectedProduct.id_producto);
+                        animateCartButton(selectedProduct.id_producto);
                         
                         const precio = getPrecioCorrecto(selectedProduct);
                         
