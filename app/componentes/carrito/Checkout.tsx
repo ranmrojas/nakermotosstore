@@ -2,21 +2,24 @@
 
 import React, { useState } from 'react';
 import { useCart } from '../../../hooks/useCart';
+import { useShipping } from '../../../hooks/useShipping';
 import { analyticsEvents } from '../../../hooks/useAnalytics';
 import Image from 'next/image';
 import { getProductImageUrl } from '@/app/services/productService';
+import ShippingCalculator from './ShippingCalculator';
 import Link from 'next/link';
 
 export default function Checkout() {
   const { cart, clearCart, totalItems, totalPrice } = useCart();
+  const { shippingInfo, updateShippingInfo, updateAddress } = useShipping();
   const [formData, setFormData] = useState({
     nombre: '',
     apellido: '',
     email: '',
     telefono: '',
     direccion: '',
-    ciudad: 'Barranquilla',
-    departamento: 'Atlántico',
+    ciudad: 'Villavicencio',
+    departamento: 'Meta',
     codigoPostal: '',
     metodoPago: 'efectivo',
     notasAdicionales: ''
@@ -46,11 +49,14 @@ export default function Checkout() {
       `${item.cantidad} ${item.nombre} - $${item.precio.toLocaleString('es-CO')} c/u = $${(item.precio * item.cantidad).toLocaleString('es-CO')}`
     ).join('\n');
 
+    const subtotal = totalPrice;
+    const totalConEnvio = subtotal + shippingInfo.cost;
+
     const customerInfo = `*DATOS DEL CLIENTE:*
 Nombre: ${formData.nombre} ${formData.apellido}
 Email: ${formData.email}
 Teléfono: ${formData.telefono}
-Dirección: ${formData.direccion}
+Dirección: ${shippingInfo.address || formData.direccion}
 Ciudad: ${formData.ciudad}
 Departamento: ${formData.departamento}
 ${formData.codigoPostal ? `Código Postal: ${formData.codigoPostal}` : ''}
@@ -63,9 +69,12 @@ ${formData.notasAdicionales}
 ` : ''}*PEDIDO:*
 ${itemsList}
 
-*TOTAL A PAGAR: $${totalPrice.toLocaleString('es-CO')}*
+*RESUMEN DE COSTOS:*
+Subtotal: $${subtotal.toLocaleString('es-CO')}
+${shippingInfo.cost > 0 ? `Envío: $${shippingInfo.cost.toLocaleString('es-CO')}` : 'Envío: Gratis'}
+*TOTAL A PAGAR: $${totalConEnvio.toLocaleString('es-CO')}*
 
-¿Cuál sería el valor del domicilio y en cuánto tiempo puedo recibir mi pedido?`;
+${shippingInfo.address ? `*DIRECCIÓN CONFIRMADA:* ${shippingInfo.address}` : ''}`;
 
     return customerInfo;
   };
@@ -78,15 +87,23 @@ ${itemsList}
       setError('Tu carrito está vacío. Agrega productos antes de realizar el pedido.');
       return;
     }
+
+    // Verificar que se haya calculado el envío si hay productos
+    if (!shippingInfo.confirmed && cart.length > 0) {
+      setError('Por favor, calcula el costo de envío antes de continuar.');
+      return;
+    }
     
     setLoading(true);
     setError(null);
     
     try {
+      const totalConEnvio = totalPrice + shippingInfo.cost;
+      
       // Rastrear evento de checkout
       analyticsEvents.checkout(
         totalItems,
-        totalPrice,
+        totalConEnvio,
         formData.metodoPago
       );
       
@@ -99,7 +116,7 @@ ${itemsList}
       analyticsEvents.purchase(
         'WHATSAPP_ORDER',
         totalItems,
-        totalPrice,
+        totalConEnvio,
         formData.metodoPago
       );
       
@@ -241,10 +258,18 @@ ${itemsList}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Dirección de envío</h2>
               
-              <div className="space-y-4">
+              {/* Calculadora de envío */}
+              <ShippingCalculator
+                onShippingCalculated={updateShippingInfo}
+                onAddressChange={updateAddress}
+                currentAddress={shippingInfo.address}
+                currentShippingCost={shippingInfo.cost}
+              />
+              
+              <div className="mt-4 space-y-4">
                 <div>
                   <label htmlFor="direccion" className="block text-sm font-medium text-gray-700 mb-1">
-                    Dirección
+                    Dirección adicional (opcional)
                   </label>
                   <input
                     type="text"
@@ -252,7 +277,7 @@ ${itemsList}
                     name="direccion"
                     value={formData.direccion}
                     onChange={handleChange}
-                    required
+                    placeholder="Detalles adicionales de la dirección..."
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>

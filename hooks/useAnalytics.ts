@@ -360,6 +360,45 @@ export const analyticsEvents = {
       tipo_pedido: 'whatsapp',
     },
   }),
+
+  // Envío y dirección
+  addressSelected: (address: string, distance: number, cost: number) => trackEvent({
+    action: 'direccion_seleccionada',
+    category: 'envio',
+    label: address,
+    value: cost,
+    custom_parameters: {
+      direccion: address,
+      distancia_km: distance,
+      costo_envio: cost,
+      ciudad: 'Villavicencio',
+    },
+  }),
+
+  shippingConfirmed: (address: string, cost: number) => trackEvent({
+    action: 'envio_confirmado',
+    category: 'envio',
+    label: address,
+    value: cost,
+    custom_parameters: {
+      direccion: address,
+      costo_envio: cost,
+      ciudad: 'Villavicencio',
+    },
+  }),
+
+  shippingCalculated: (address: string, distance: number, cost: number) => trackEvent({
+    action: 'envio_calculado',
+    category: 'envio',
+    label: address,
+    value: cost,
+    custom_parameters: {
+      direccion: address,
+      distancia_km: distance,
+      costo_envio: cost,
+      ciudad: 'Villavicencio',
+    },
+  }),
 };
 
 // Declaraciones globales para TypeScript
