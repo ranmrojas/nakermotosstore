@@ -29,6 +29,8 @@ export default function CarritoPage() {
   const [hasSelectedSuggestion, setHasSelectedSuggestion] = useState(false);
   /* eslint-enable @typescript-eslint/no-unused-vars */
   const addressInputRef = useRef<HTMLInputElement>(null);
+  const [nombreError, setNombreError] = useState('');
+  const [direccionError, setDireccionError] = useState('');
 
   // Coordenadas de la tienda en Villavicencio
   const STORE_LOCATION = {
@@ -109,8 +111,7 @@ export default function CarritoPage() {
 
     const autocompleteInstance = new window.google.maps.places.Autocomplete(addressInputRef.current, {
       componentRestrictions: { country: 'co' },
-      types: ['address'],
-      fields: ['formatted_address', 'geometry', 'place_id'],
+      fields: ['formatted_address', 'geometry', 'place_id', 'name'],
       bounds: new window.google.maps.LatLngBounds(
         new window.google.maps.LatLng(4.0, -73.7), // Suroeste de Villavicencio
         new window.google.maps.LatLng(4.3, -73.5)  // Noreste de Villavicencio
@@ -402,18 +403,26 @@ export default function CarritoPage() {
                           type="text"
                           className="w-full mb-3 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-neutral-800 dark:text-gray-100"
                           value={nombre}
-                          onChange={e => setNombre(e.target.value)}
+                          onChange={e => {
+                            setNombre(e.target.value);
+                            if (e.target.value.trim()) setNombreError('');
+                          }}
                           placeholder="Nombre"
                         />
+                        {nombreError && <div className="text-red-500 text-xs mb-2">{nombreError}</div>}
                         {/* Input para dirección */}
                         <input
                           ref={addressInputRef}
                           type="text"
                           className="w-full mb-1 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-neutral-800 dark:text-gray-100"
                           value={direccion}
-                          onChange={handleAddressChange}
+                          onChange={e => {
+                            handleAddressChange(e);
+                            if (e.target.value.trim()) setDireccionError('');
+                          }}
                           placeholder="Escribe tu dirección en Villavicencio..."
                         />
+                        {direccionError && <div className="text-red-500 text-xs mb-2">{direccionError}</div>}
                         {/* Tag de ciudad/departamento */}
                         <div className="mb-2">
                           <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold border border-gray-300 dark:bg-neutral-700 dark:text-gray-200 dark:border-neutral-600">
@@ -443,16 +452,26 @@ export default function CarritoPage() {
                           className="w-full mb-1 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-neutral-800 dark:text-gray-100"
                           value={nota}
                           onChange={e => setNota(e.target.value)}
-                          placeholder="Nota..."
+                          placeholder="Nota, Apto, Casa, Barrio, etc."
                         />
                         {error && <div className="text-red-500 text-xs mb-2">{error}</div>}
                         <button
                           className="w-full bg-green-600 text-white font-semibold py-2 rounded hover:bg-green-700 transition-colors"
                           onClick={() => {
-                            if (!nombre.trim() || !direccion.trim()) {
-                              setError('Por favor ingresa tu nombre y dirección.');
-                              return;
+                            let hasError = false;
+                            if (!nombre.trim()) {
+                              setNombreError('Este campo es obligatorio');
+                              hasError = true;
+                            } else {
+                              setNombreError('');
                             }
+                            if (!direccion.trim()) {
+                              setDireccionError('Este campo es obligatorio');
+                              hasError = true;
+                            } else {
+                              setDireccionError('');
+                            }
+                            if (hasError) return;
                             setError('');
                             setShowModal(false);
                             const metodo = selectedPayment === 'contraentrega' ? 'Contra entrega' : 'QR o Transferencia';
@@ -461,14 +480,10 @@ sku: ${item.sku}`).join('\n');
                             const total = `$${totalPrice.toLocaleString('es-CO')}`;
                             const totalConEnvio = totalPrice + shippingCost;
                             const valorDomicilio = shippingCost > 0 ? `$${shippingCost.toLocaleString('es-CO')}` : 'Por calcular';
-                            // Procesar la dirección para asegurar que se incluya correctamente
                             const direccionProcesada = direccion.includes(',') 
-                              ? direccion.split(',')[0].trim() // Tomar solo la parte antes de la primera coma
+                              ? direccion.split(',')[0].trim() 
                               : direccion;
-                              
                             const mensaje = `¡Hola! Realice este pedido:\n${productos}\n\nSubtotal: ${total}\nValor domicilio: ${valorDomicilio}\nTotal a Pagar: $${totalConEnvio.toLocaleString('es-CO')}\nMedio de Pago: ${metodo}\nNombre: ${nombre}\nDirección: ${direccionProcesada}${nota ? `\nNota: ${nota}` : ''}`;
-                            
-                            // Codificar el mensaje para asegurar que se transmita correctamente
                             const url = `https://wa.me/573043668910?text=${encodeURIComponent(mensaje)}`;
                             window.open(url, '_blank');
                             clearCart();
