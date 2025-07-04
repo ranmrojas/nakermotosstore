@@ -1,3 +1,4 @@
+/// <reference types="@types/google.maps" />
 'use client';
 
 import React, { useEffect, useRef, useCallback } from 'react';
@@ -50,7 +51,7 @@ export default function StoreMap({ className = '' }: StoreMapProps) {
         strokeWeight: 3
       }
     });
-  }, []);
+  }, [storeLat, storeLon]);
 
   useEffect(() => {
     if (!isLoaded && !isLoading) {

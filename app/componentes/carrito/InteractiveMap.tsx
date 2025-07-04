@@ -1,3 +1,4 @@
+/// <reference types="@types/google.maps" />
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -29,12 +30,9 @@ export default function InteractiveMap({
   const [mapError, setMapError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [map, setMap] = useState<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [marker, setMarker] = useState<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [geocoder, setGeocoder] = useState<any>(null);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [marker, setMarker] = useState<google.maps.Marker | null>(null);
+  const [geocoder, setGeocoder] = useState<google.maps.Geocoder | null>(null);
   const { isLoaded, isLoading, loadGoogleMaps } = useGoogleMaps();
 
   // Coordenadas de la tienda
@@ -43,7 +41,7 @@ export default function InteractiveMap({
     lng: -73.632540
   };
 
-  const searchAddress = async (address: string, mapInstance: any, geocoderInstance: any): Promise<void> => {
+  const searchAddress = async (address: string, mapInstance: google.maps.Map, geocoderInstance: google.maps.Geocoder): Promise<void> => {
     setIsLoadingMap(true);
     setMapError(null);
 
@@ -74,8 +72,7 @@ export default function InteractiveMap({
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const getUserLocation = (mapInstance: any): void => {
+  const getUserLocation = (mapInstance: google.maps.Map): void => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -103,8 +100,7 @@ export default function InteractiveMap({
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const addMarkerToMap = (location: Location, mapInstance: any): void => {
+  const addMarkerToMap = useCallback((location: Location, mapInstance: google.maps.Map): void => {
     if (!window.google) return;
 
     const google = window.google;
@@ -171,7 +167,7 @@ export default function InteractiveMap({
     });
 
     setMarker(newMarker);
-  };
+  }, [marker, geocoder]);
 
   const initializeMap = useCallback(() => {
     if (!window.google || !mapRef.current) return;
@@ -179,7 +175,6 @@ export default function InteractiveMap({
     const google = window.google;
     
     // Crear mapa centrado en Villavicencio
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const newMap = new google.maps.Map(mapRef.current, {
       center: { lat: STORE_LOCATION.lat, lng: STORE_LOCATION.lng },
       zoom: 13,
@@ -224,7 +219,7 @@ export default function InteractiveMap({
 
     // Obtener ubicación actual del usuario
     getUserLocation(newMap);
-  }, [initialAddress, searchAddress, getUserLocation, addMarkerToMap]);
+  }, [initialAddress, searchAddress, getUserLocation, addMarkerToMap, STORE_LOCATION.lat, STORE_LOCATION.lng]);
 
   // Cargar Google Maps API
   useEffect(() => {
@@ -251,8 +246,8 @@ export default function InteractiveMap({
       // Evento de clic en el mapa
     useEffect(() => {
       if (map && !marker) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const clickListener = map.addListener('click', async (e: any) => {
+        const clickListener = map.addListener('click', async (e: google.maps.MapMouseEvent) => {
+        if (!e.latLng) return;
         const clickedLocation = {
           lat: e.latLng.lat(),
           lng: e.latLng.lng(),
@@ -279,7 +274,7 @@ export default function InteractiveMap({
          window.google.maps.event.removeListener(clickListener);
        };
     }
-  }, [map, marker, geocoder]);
+  }, [map, marker, geocoder, addMarkerToMap]);
 
   const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
     const R = 6371;
