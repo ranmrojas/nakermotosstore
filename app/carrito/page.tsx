@@ -457,7 +457,7 @@ export default function CarritoPage() {
                             setShowModal(false);
                             const metodo = selectedPayment === 'contraentrega' ? 'Contra entrega' : 'QR o Transferencia';
                             const productos = cart.map(item => `${item.cantidad} ${item.nombre} = $${(item.precio * item.cantidad).toLocaleString('es-CO')}
-sku: ${item.sku}`).join('%0A');
+sku: ${item.sku}`).join('\n');
                             const total = `$${totalPrice.toLocaleString('es-CO')}`;
                             const totalConEnvio = totalPrice + shippingCost;
                             const valorDomicilio = shippingCost > 0 ? `$${shippingCost.toLocaleString('es-CO')}` : 'Por calcular';
@@ -466,7 +466,7 @@ sku: ${item.sku}`).join('%0A');
                               ? direccion.split(',')[0].trim() // Tomar solo la parte antes de la primera coma
                               : direccion;
                               
-                            const mensaje = `¡Hola! Realice este pedido:%0A${productos}%0A%0ASubtotal: ${total}%0AValor domicilio: ${valorDomicilio}%0ATotal a Pagar: $${totalConEnvio.toLocaleString('es-CO')}%0AMedio de Pago: ${metodo}%0ANombre: ${nombre}%0ADirección: ${direccionProcesada}${nota ? `%0ANota: ${nota}` : ''}`;
+                            const mensaje = `¡Hola! Realice este pedido:\n${productos}\n\nSubtotal: ${total}\nValor domicilio: ${valorDomicilio}\nTotal a Pagar: $${totalConEnvio.toLocaleString('es-CO')}\nMedio de Pago: ${metodo}\nNombre: ${nombre}\nDirección: ${direccionProcesada}${nota ? `\nNota: ${nota}` : ''}`;
                             
                             // Codificar el mensaje para asegurar que se transmita correctamente
                             const url = `https://wa.me/573043668910?text=${encodeURIComponent(mensaje)}`;
