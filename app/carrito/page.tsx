@@ -1,29 +1,89 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useCart } from '../../hooks/useCart';
 import { analyticsEvents } from '../../hooks/useAnalytics';
+import { useGoogleMaps } from '../../hooks/useGoogleMaps';
 import Image from 'next/image';
 import { getProductImageUrl } from '@/app/services/productService';
 import Link from 'next/link';
 
-
-
 export default function CarritoPage() {
   const { cart, removeFromCart, updateQuantity, clearCart, totalItems, totalPrice } = useCart();
+  const { isLoaded, isLoading, loadGoogleMaps } = useGoogleMaps();
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [nombre, setNombre] = useState('');
   const [direccion, setDireccion] = useState('');
   const [error, setError] = useState('');
-  const [barrio, setBarrio] = useState('');
   const [nota, setNota] = useState('');
+  const [shippingCost, setShippingCost] = useState(0);
+  
+  // Variables para la gestión de direcciones y ubicación
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  const [selectedAddress, setSelectedAddress] = useState<{
+    display_name: string;
+    lat: string;
+    lon: string;
+  } | null>(null);
+  const [hasSelectedSuggestion, setHasSelectedSuggestion] = useState(false);
+  /* eslint-enable @typescript-eslint/no-unused-vars */
+  const addressInputRef = useRef<HTMLInputElement>(null);
+
+  // Coordenadas de la tienda en Villavicencio
+  const STORE_LOCATION = {
+    lat: 4.126551,
+    lon: -73.632540
+  };
+
+  // Rangos de distancia y costos de envío - memoizado para evitar recreaciones
+  const SHIPPING_ZONES = useCallback(() => [
+    { min: 0, max: 0.5, cost: 4500 },
+    { min: 0.5, max: 0.750, cost: 5000 },
+    { min: 0.750, max: 1.2, cost: 6000 },
+    { min: 1.2, max: 1.8, cost: 7000 },
+    { min: 1.8, max: 2.4, cost: 9000 },
+    { min: 2.4, max: 3, cost: 10000 },
+    { min: 3, max: 4, cost: 11000 },
+    { min: 4, max: 6, cost: 12000 },
+    { min: 7, max: 8, cost: 14000 },
+    { min: 8, max: Infinity, cost: 15000 }
+  ], []);
 
   // URL para imágenes utilizando el servicio centralizado
   const getImageUrl = (id: number | null, ext: string | null) => {
     if (!id || !ext) return '/file.svg';
     return getProductImageUrl(id, ext);
   };
+
+  // Calcular distancia usando la fórmula de Haversine - memoizada para evitar recreaciones
+  const calculateDistance = useCallback((lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }, []);
+
+  // Calcular costo de envío basado en la distancia - memoizada para evitar recreaciones
+  const calculateShippingCost = useCallback((distance: number): number => {
+    const zones = SHIPPING_ZONES();
+    const zone = zones.find(z => distance >= z.min && distance <= z.max);
+    
+    if (zone) {
+      return zone.cost;
+    }
+    
+    if (distance > 8) {
+      return zones[zones.length - 1].cost;
+    }
+    
+    return zones[0].cost;
+  }, [SHIPPING_ZONES]);
 
   // Función para eliminar un producto del carrito
   const handleRemoveItem = (id: number) => {
@@ -41,6 +101,76 @@ export default function CarritoPage() {
       // Rastrear evento de actualización de cantidad
       analyticsEvents.updateCartQuantity(id.toString(), newQuantity);
     }
+  };
+
+  // Inicializar autocompletado de direcciones
+  const initializeAutocomplete = useCallback(() => {
+    if (!window.google || !addressInputRef.current) return;
+
+    const autocompleteInstance = new window.google.maps.places.Autocomplete(addressInputRef.current, {
+      componentRestrictions: { country: 'co' },
+      types: ['address'],
+      fields: ['formatted_address', 'geometry', 'place_id'],
+      bounds: new window.google.maps.LatLngBounds(
+        new window.google.maps.LatLng(4.0, -73.7), // Suroeste de Villavicencio
+        new window.google.maps.LatLng(4.3, -73.5)  // Noreste de Villavicencio
+      ),
+      strictBounds: true
+    });
+
+    autocompleteInstance.addListener('place_changed', () => {
+      const place = autocompleteInstance.getPlace();
+      if (place.geometry && place.geometry.location) {
+        const location = {
+          lat: place.geometry.location.lat(),
+          lng: place.geometry.location.lng(),
+          address: place.formatted_address
+        };
+        
+        setDireccion(place.formatted_address);
+        setSelectedAddress({
+          display_name: place.formatted_address,
+          lat: location.lat.toString(),
+          lon: location.lng.toString()
+        });
+        setHasSelectedSuggestion(true);
+        
+        // Calcular envío
+        const distance = calculateDistance(
+          STORE_LOCATION.lat,
+          STORE_LOCATION.lon,
+          location.lat,
+          location.lng
+        );
+        const cost = calculateShippingCost(distance);
+        setShippingCost(cost);
+        
+        analyticsEvents.addressSelected(place.formatted_address, distance, cost);
+      }
+    });
+  }, [calculateDistance, calculateShippingCost, STORE_LOCATION.lat, STORE_LOCATION.lon]);
+
+  // Cargar Google Maps API
+  useEffect(() => {
+    if (!isLoaded && !isLoading) {
+      loadGoogleMaps().then(() => {
+        if (showModal) {
+          initializeAutocomplete();
+        }
+      }).catch((err) => {
+        console.error('Error loading Google Maps:', err);
+      });
+    } else if (isLoaded && showModal) {
+      initializeAutocomplete();
+    }
+  }, [isLoaded, isLoading, loadGoogleMaps, showModal, initializeAutocomplete]);
+
+  // Manejar cambios en el input de dirección
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDireccion(e.target.value);
+    setHasSelectedSuggestion(false);
+    setShippingCost(0);
+    setSelectedAddress(null);
   };
 
   // Rastrear vista de la página del carrito (solo una vez al montar)
@@ -277,28 +407,36 @@ export default function CarritoPage() {
                         />
                         {/* Input para dirección */}
                         <input
+                          ref={addressInputRef}
                           type="text"
                           className="w-full mb-1 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-neutral-800 dark:text-gray-100"
                           value={direccion}
-                          onChange={e => setDireccion(e.target.value)}
-                          placeholder="Dirección de entrega"
+                          onChange={handleAddressChange}
+                          placeholder="Escribe tu dirección en Villavicencio..."
                         />
-                        {/* Input para barrio/conjunto opcional */}
-                        <input
-                          type="text"
-                          className="w-full mb-1 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-neutral-800 dark:text-gray-100"
-                          value={barrio}
-                          onChange={e => setBarrio(e.target.value)}
-                          placeholder="Barrio o conjunto (opcional)"
-                        />
-                        <div className="mb-3">
-                          <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold border border-gray-300">
+                        {/* Tag de ciudad/departamento */}
+                        <div className="mb-2">
+                          <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold border border-gray-300 dark:bg-neutral-700 dark:text-gray-200 dark:border-neutral-600">
                             Villavicencio-Meta
                           </span>
                         </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                          Total productos:  <span className="inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold shadow-sm shadow-emerald-200 align-middle" style={{marginTop: 0, marginBottom: 0}}>{`$${totalPrice.toLocaleString('es-CO')}`}</span> más el valor del domicilio, puede ser entre <span className="font-bold">$5.000 a $12.000</span> o más si es una Vereda, que se confirmará de acuerdo a la dirección suministrada.
-                        </p>
+                        {/* Resumen clásico debajo del campo de dirección */}
+                        <div className="flex items-center justify-between gap-2 mb-3 mt-2">
+                          <div className="flex items-center gap-4 flex-wrap">
+                            <span className="text-xs text-gray-600 dark:text-gray-300">
+                              Total productos: <span className="font-bold text-gray-900 dark:text-gray-100">{`$${totalPrice.toLocaleString('es-CO')}`}</span>
+                            </span>
+                            <span className="text-xs text-gray-600 dark:text-gray-300">
+                              Valor domicilio: <span className="font-bold text-gray-900 dark:text-gray-100">{shippingCost > 0 ? `$${shippingCost.toLocaleString('es-CO')}` : 'Por calcular'}</span>
+                            </span>
+                          </div>
+                        </div>
+                        {/* Total a pagar destacado */}
+                        <div className="mb-3">
+                          <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                            Total a pagar: {shippingCost > 0 ? `$${(totalPrice + shippingCost).toLocaleString('es-CO')}` : `$${totalPrice.toLocaleString('es-CO')}`}
+                          </span>
+                        </div>
                         {/* Input para nota opcional (movido aquí) */}
                         <input
                           type="text"
@@ -321,14 +459,25 @@ export default function CarritoPage() {
                             const productos = cart.map(item => `${item.cantidad} ${item.nombre} = $${(item.precio * item.cantidad).toLocaleString('es-CO')}
 sku: ${item.sku}`).join('%0A');
                             const total = `$${totalPrice.toLocaleString('es-CO')}`;
-                            const mensaje = `¡Hola! Realice este pedido:%0A${productos}%0A%0ATotal: ${total}%0AMétodo de pago: ${metodo}%0ANombre: ${nombre}%0ADirección: ${direccion}${barrio ? `%0ABarrio o conjunto: ${barrio}` : ''}${nota ? `%0ANota: ${nota}` : ''}%0AValor del domicilio por Confirmar....`;
-                            const url = `https://wa.me/573043668910?text=${mensaje}`;
+                            const totalConEnvio = totalPrice + shippingCost;
+                            const valorDomicilio = shippingCost > 0 ? `$${shippingCost.toLocaleString('es-CO')}` : 'Por calcular';
+                            // Procesar la dirección para asegurar que se incluya correctamente
+                            const direccionProcesada = direccion.includes(',') 
+                              ? direccion.split(',')[0].trim() // Tomar solo la parte antes de la primera coma
+                              : direccion;
+                              
+                            const mensaje = `¡Hola! Realice este pedido:%0A${productos}%0A%0ASubtotal: ${total}%0AValor domicilio: ${valorDomicilio}%0ATotal a Pagar: $${totalConEnvio.toLocaleString('es-CO')}%0AMedio de Pago: ${metodo}%0ANombre: ${nombre}%0ADirección: ${direccionProcesada}${nota ? `%0ANota: ${nota}` : ''}`;
+                            
+                            // Codificar el mensaje para asegurar que se transmita correctamente
+                            const url = `https://wa.me/573043668910?text=${encodeURIComponent(mensaje)}`;
                             window.open(url, '_blank');
                             clearCart();
                             setNombre('');
                             setDireccion('');
-                            setBarrio('');
                             setNota('');
+                            setShippingCost(0);
+                            setSelectedAddress(null);
+                            setHasSelectedSuggestion(false);
                           }}
                         >
                           Confirmar pedido
@@ -357,4 +506,4 @@ sku: ${item.sku}`).join('%0A');
       </div>
     </div>
   );
-} 
+}

@@ -17,8 +17,6 @@ interface InteractiveMapProps {
   initialAddress?: string;
 }
 
-
-
 export default function InteractiveMap({ 
   isOpen, 
   onClose, 
@@ -40,66 +38,21 @@ export default function InteractiveMap({
     lat: 4.126551,
     lng: -73.632540
   };
+  
+  // Función para calcular distancia entre dos puntos (Haversine formula)
+  const calculateDistance = useCallback((lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }, []);
 
-  const searchAddress = async (address: string, mapInstance: google.maps.Map, geocoderInstance: google.maps.Geocoder): Promise<void> => {
-    setIsLoadingMap(true);
-    setMapError(null);
-
-    try {
-      const searchQuery = `${address}, Villavicencio, Meta, Colombia`;
-      const response = await geocoderInstance.geocode({ address: searchQuery });
-
-      if (response.results.length > 0) {
-        const result = response.results[0];
-        const location = {
-          lat: result.geometry.location.lat(),
-          lng: result.geometry.location.lng(),
-          address: result.formatted_address
-        };
-
-        setSelectedLocation(location);
-        addMarkerToMap(location, mapInstance);
-        mapInstance.setCenter({ lat: location.lat, lng: location.lng });
-        mapInstance.setZoom(16);
-      } else {
-        setMapError('No se encontró la dirección. Puedes seleccionar tu ubicación en el mapa.');
-      }
-    } catch (err) {
-      console.error('Error buscando dirección:', err);
-      setMapError('Error al buscar la dirección. Puedes seleccionar tu ubicación en el mapa.');
-    } finally {
-      setIsLoadingMap(false);
-    }
-  };
-
-  const getUserLocation = (mapInstance: google.maps.Map): void => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const userLoc = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-          setUserLocation(userLoc);
-          
-          // Solo centrar en ubicación del usuario si está cerca de Villavicencio
-          const distance = calculateDistance(
-            STORE_LOCATION.lat, STORE_LOCATION.lng,
-            userLoc.lat, userLoc.lng
-          );
-          
-          if (distance < 50) { // Dentro de 50km de Villavicencio
-            mapInstance.setCenter({ lat: userLoc.lat, lng: userLoc.lng });
-            mapInstance.setZoom(15);
-          }
-        },
-        (error) => {
-          console.log('Error obteniendo ubicación:', error);
-        }
-      );
-    }
-  };
-
+  // Memoizando addMarkerToMap para evitar recreaciones en cada renderizado
   const addMarkerToMap = useCallback((location: Location, mapInstance: google.maps.Map): void => {
     if (!window.google) return;
 
@@ -169,28 +122,84 @@ export default function InteractiveMap({
     setMarker(newMarker);
   }, [marker, geocoder]);
 
-  const initializeMap = useCallback(() => {
-    if (!window.google || !mapRef.current) return;
+  // Definir searchAddress usando addMarkerToMap
+  const searchAddress = useCallback(async (address: string, mapInstance: google.maps.Map, geocoderInstance: google.maps.Geocoder): Promise<void> => {
+    setIsLoadingMap(true);
+    setMapError(null);
 
-    const google = window.google;
-    
-    // Crear mapa centrado en Villavicencio
-    const newMap = new google.maps.Map(mapRef.current, {
-      center: { lat: STORE_LOCATION.lat, lng: STORE_LOCATION.lng },
-      zoom: 13,
-      mapTypeControl: true,
-      streetViewControl: true,
-      fullscreenControl: true,
-      zoomControl: true,
-      styles: [
-        {
-          featureType: 'poi',
-          elementType: 'labels',
-          stylers: [{ visibility: 'off' }]
+    try {
+      const searchQuery = `${address}, Villavicencio, Meta, Colombia`;
+      const response = await geocoderInstance.geocode({ address: searchQuery });
+
+      if (response.results.length > 0) {
+        const result = response.results[0];
+        const location = {
+          lat: result.geometry.location.lat(),
+          lng: result.geometry.location.lng(),
+          address: result.formatted_address
+        };
+
+        setSelectedLocation(location);
+        addMarkerToMap(location, mapInstance);
+        mapInstance.setCenter({ lat: location.lat, lng: location.lng });
+        mapInstance.setZoom(16);
+      } else {
+        setMapError('No se encontró la dirección. Puedes seleccionar tu ubicación en el mapa.');
+      }
+    } catch (err) {
+      console.error('Error buscando dirección:', err);
+      setMapError('Error al buscar la dirección. Puedes seleccionar tu ubicación en el mapa.');
+    } finally {
+      setIsLoadingMap(false);
+    }
+  }, [addMarkerToMap]);
+
+  // Función para obtener ubicación del usuario
+  const getUserLocation = useCallback((mapInstance: google.maps.Map): void => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userLoc = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          setUserLocation(userLoc);
+          
+          // Solo centrar en ubicación del usuario si está cerca de Villavicencio
+          const distance = calculateDistance(
+            STORE_LOCATION.lat, STORE_LOCATION.lng,
+            userLoc.lat, userLoc.lng
+          );
+          
+          if (distance < 50) { // Dentro de 50km de Villavicencio
+            mapInstance.setCenter({ lat: userLoc.lat, lng: userLoc.lng });
+            mapInstance.setZoom(15);
+          }
+        },
+        (error) => {
+          console.log('Error obteniendo ubicación:', error);
         }
-      ]
-    });
+      );
+    }
+  }, [calculateDistance, STORE_LOCATION.lat, STORE_LOCATION.lng]);
 
+    // Esta sección se ha eliminado para evitar la duplicación de la función addMarkerToMap
+
+  // Inicializar mapa
+  const initializeMap = useCallback(() => {
+    if (!mapRef.current || !window.google) return;
+    
+    const google = window.google;
+    const mapOptions = {
+      center: { lat: STORE_LOCATION.lat, lng: STORE_LOCATION.lng },
+      zoom: 14,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: false
+    };
+    
+    const newMap = new google.maps.Map(mapRef.current, mapOptions);
+    
     // Agregar marcador de la tienda
     new google.maps.Marker({
       position: { lat: STORE_LOCATION.lat, lng: STORE_LOCATION.lng },
@@ -219,7 +228,7 @@ export default function InteractiveMap({
 
     // Obtener ubicación actual del usuario
     getUserLocation(newMap);
-  }, [initialAddress, searchAddress, getUserLocation, addMarkerToMap, STORE_LOCATION.lat, STORE_LOCATION.lng]);
+  }, [initialAddress, searchAddress, getUserLocation, STORE_LOCATION.lat, STORE_LOCATION.lng]);
 
   // Cargar Google Maps API
   useEffect(() => {
@@ -243,10 +252,10 @@ export default function InteractiveMap({
     }
   }, [isOpen, initializeMap]);
 
-      // Evento de clic en el mapa
-    useEffect(() => {
-      if (map && !marker) {
-        const clickListener = map.addListener('click', async (e: google.maps.MapMouseEvent) => {
+  // Evento de clic en el mapa
+  useEffect(() => {
+    if (map && window.google) {
+      const clickListener = map.addListener('click', async (e: google.maps.MapMouseEvent) => {
         if (!e.latLng) return;
         const clickedLocation = {
           lat: e.latLng.lat(),
@@ -270,23 +279,15 @@ export default function InteractiveMap({
         addMarkerToMap(clickedLocation, map);
       });
 
-             return () => {
-         window.google.maps.event.removeListener(clickListener);
-       };
+      return () => {
+        if (window.google) {
+          window.google.maps.event.removeListener(clickListener);
+        }
+      };
     }
-  }, [map, marker, geocoder, addMarkerToMap]);
+  }, [map, geocoder, addMarkerToMap]);
 
-  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLng/2) * Math.sin(dLng/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  };
+  // La función calculateDistance se ha movido al principio del componente
 
   const handleConfirm = () => {
     if (selectedLocation) {
@@ -417,4 +418,4 @@ export default function InteractiveMap({
       </div>
     </div>
   );
-} 
+}
