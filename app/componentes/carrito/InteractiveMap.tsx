@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import type { Map, Marker, LeafletMouseEvent } from 'leaflet';
+import { useGoogleMaps } from '../../../hooks/useGoogleMaps';
 
 interface Location {
   lat: number;
@@ -16,6 +16,8 @@ interface InteractiveMapProps {
   initialAddress?: string;
 }
 
+
+
 export default function InteractiveMap({ 
   isOpen, 
   onClose, 
@@ -23,12 +25,17 @@ export default function InteractiveMap({
   initialAddress = ''
 }: InteractiveMapProps) {
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoadingMap, setIsLoadingMap] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
-  const [map, setMap] = useState<Map | null>(null);
-  const [marker, setMarker] = useState<Marker | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [map, setMap] = useState<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [marker, setMarker] = useState<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [geocoder, setGeocoder] = useState<any>(null);
+  const { isLoaded, isLoading, loadGoogleMaps } = useGoogleMaps();
 
   // Coordenadas de la tienda
   const STORE_LOCATION = {
@@ -36,126 +43,39 @@ export default function InteractiveMap({
     lng: -73.632540
   };
 
-  // Inicializar mapa cuando se abre el modal
-  useEffect(() => {
-    if (isOpen && mapRef.current) {
-      initializeMap();
-    }
-  }, [isOpen]);
-
-  // Cargar script de Leaflet
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !window.L) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      document.head.appendChild(link);
-
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      script.onload = () => {
-        if (isOpen) {
-          initializeMap();
-        }
-      };
-      document.head.appendChild(script);
-    } else if (window.L && isOpen) {
-      initializeMap();
-    }
-  }, [isOpen]);
-
-  const initializeMap = useCallback(() => {
-    if (!window.L || !mapRef.current) return;
-
-    // Destruir el mapa anterior si existe
-    const existingMap = document.getElementById('leaflet-map');
-    if (existingMap && (existingMap as { _leaflet_id?: number })._leaflet_id) {
-      (existingMap as { _leaflet_id?: number })._leaflet_id = undefined;
-    }
-
-    const L = window.L;
-    
-    // Crear mapa centrado en Villavicencio con controles de zoom
-    const newMap = L.map('leaflet-map', {
-      zoomControl: true, // Mostrar controles de zoom
-      dragging: true,    // Permitir arrastrar el mapa
-      scrollWheelZoom: true, // Permitir zoom con rueda del mouse
-      doubleClickZoom: true, // Permitir zoom con doble clic
-      boxZoom: true,     // Permitir zoom con caja
-      keyboard: true     // Permitir navegación con teclado
-    }).setView([STORE_LOCATION.lat, STORE_LOCATION.lng], 13);
-    
-    // Agregar capa de OpenStreetMap
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(newMap);
-
-    // Agregar marcador de la tienda
-    const storeIcon = L.divIcon({
-      className: 'custom-div-icon',
-      html: `<div style="background-color: #dc2626; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
-      iconSize: [20, 20],
-      iconAnchor: [10, 10]
-    });
-
-    L.marker([STORE_LOCATION.lat, STORE_LOCATION.lng], { icon: storeIcon })
-      .addTo(newMap)
-      .bindPopup('<b>Nuestra tienda</b><br>Punto de referencia para envíos')
-      .openPopup();
-
-    setMap(newMap);
-
-    // Agregar evento de clic al mapa (solo una vez)
-    newMap.on('click', (e: LeafletMouseEvent) => handleMapClick(e, newMap));
-
-    // Buscar dirección inicial si se proporciona
-    if (initialAddress) {
-      searchAddress(initialAddress, newMap);
-    }
-
-    // Obtener ubicación actual del usuario
-    getUserLocation(newMap);
-  }, []);
-
-  const searchAddress = async (address: string, mapInstance: Map) => {
-    setIsLoading(true);
-    setError(null);
+  const searchAddress = async (address: string, mapInstance: any, geocoderInstance: any): Promise<void> => {
+    setIsLoadingMap(true);
+    setMapError(null);
 
     try {
       const searchQuery = `${address}, Villavicencio, Meta, Colombia`;
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1&addressdetails=1&countrycodes=co&state=Meta&city=Villavicencio`
-      );
+      const response = await geocoderInstance.geocode({ address: searchQuery });
 
-      if (!response.ok) {
-        throw new Error('Error al buscar la dirección');
-      }
-
-      const data = await response.json();
-      
-      if (data.length > 0) {
-        const result = data[0];
+      if (response.results.length > 0) {
+        const result = response.results[0];
         const location = {
-          lat: parseFloat(result.lat),
-          lng: parseFloat(result.lon),
-          address: result.display_name
+          lat: result.geometry.location.lat(),
+          lng: result.geometry.location.lng(),
+          address: result.formatted_address
         };
 
         setSelectedLocation(location);
         addMarkerToMap(location, mapInstance);
-        mapInstance.setView([location.lat, location.lng], 16);
+        mapInstance.setCenter({ lat: location.lat, lng: location.lng });
+        mapInstance.setZoom(16);
       } else {
-        setError('No se encontró la dirección. Puedes seleccionar tu ubicación en el mapa.');
+        setMapError('No se encontró la dirección. Puedes seleccionar tu ubicación en el mapa.');
       }
     } catch (err) {
       console.error('Error buscando dirección:', err);
-      setError('Error al buscar la dirección. Puedes seleccionar tu ubicación en el mapa.');
+      setMapError('Error al buscar la dirección. Puedes seleccionar tu ubicación en el mapa.');
     } finally {
-      setIsLoading(false);
+      setIsLoadingMap(false);
     }
   };
 
-  const getUserLocation = (mapInstance: Map) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getUserLocation = (mapInstance: any): void => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -172,7 +92,8 @@ export default function InteractiveMap({
           );
           
           if (distance < 50) { // Dentro de 50km de Villavicencio
-            mapInstance.setView([userLoc.lat, userLoc.lng], 15);
+            mapInstance.setCenter({ lat: userLoc.lat, lng: userLoc.lng });
+            mapInstance.setZoom(15);
           }
         },
         (error) => {
@@ -182,51 +103,183 @@ export default function InteractiveMap({
     }
   };
 
-  const addMarkerToMap = (location: Location, mapInstance: Map) => {
-    if (!window.L) return;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const addMarkerToMap = (location: Location, mapInstance: any): void => {
+    if (!window.google) return;
 
-    const L = window.L;
+    const google = window.google;
     
     // Remover marcador anterior
     if (marker) {
-      mapInstance.removeLayer(marker);
+      marker.setMap(null);
     }
 
     // Crear nuevo marcador ARRASTRABLE
-    const newMarker = L.marker([location.lat, location.lng], {
-      draggable: true // Hacer el marcador arrastrable
-    })
-      .addTo(mapInstance)
-      .bindPopup(`
-        <b>Ubicación seleccionada</b><br>
-        ${location.address}<br>
-        <small>Arrastra el marcador para ajustar la ubicación</small>
-      `);
+    const newMarker = new google.maps.Marker({
+      position: { lat: location.lat, lng: location.lng },
+      map: mapInstance,
+      draggable: true,
+      title: 'Ubicación seleccionada'
+    });
+
+    // InfoWindow para el marcador
+    const infoWindow = new google.maps.InfoWindow({
+      content: `
+        <div style="padding: 10px;">
+          <h3 style="margin: 0 0 5px 0; font-size: 14px;">Ubicación seleccionada</h3>
+          <p style="margin: 0; font-size: 12px;">${location.address}</p>
+          <p style="margin: 5px 0 0 0; font-size: 11px; color: #666;">Arrastra el marcador para ajustar la ubicación</p>
+        </div>
+      `
+    });
+
+    newMarker.addListener('click', () => {
+      infoWindow.open(mapInstance, newMarker);
+    });
 
     // Evento cuando se arrastra el marcador
-    newMarker.on('dragend', (e: { target: { getLatLng: () => { lat: number; lng: number } } }) => {
+    newMarker.addListener('dragend', async () => {
+      const position = newMarker.getPosition();
       const draggedLocation = {
-        lat: e.target.getLatLng().lat,
-        lng: e.target.getLatLng().lng,
+        lat: position.lat(),
+        lng: position.lng(),
         address: 'Ubicación ajustada en el mapa'
       };
+
+      // Obtener dirección con reverse geocoding
+      if (geocoder) {
+        try {
+          const response = await geocoder.geocode({ location: { lat: draggedLocation.lat, lng: draggedLocation.lng } });
+          if (response.results.length > 0) {
+            draggedLocation.address = response.results[0].formatted_address;
+          }
+        } catch (err) {
+          console.error('Error en reverse geocoding:', err);
+        }
+      }
+
       setSelectedLocation(draggedLocation);
+      
+      // Actualizar infoWindow
+      infoWindow.setContent(`
+        <div style="padding: 10px;">
+          <h3 style="margin: 0 0 5px 0; font-size: 14px;">Ubicación seleccionada</h3>
+          <p style="margin: 0; font-size: 12px;">${draggedLocation.address}</p>
+          <p style="margin: 5px 0 0 0; font-size: 11px; color: #666;">Arrastra el marcador para ajustar la ubicación</p>
+        </div>
+      `);
     });
 
     setMarker(newMarker);
   };
 
-  // Función separada para manejar clics en el mapa
-  const handleMapClick = (e: LeafletMouseEvent, mapInstance: Map) => {
-    const clickedLocation = {
-      lat: e.latlng.lat,
-      lng: e.latlng.lng,
-      address: 'Ubicación seleccionada en el mapa'
-    };
+  const initializeMap = useCallback(() => {
+    if (!window.google || !mapRef.current) return;
 
-    setSelectedLocation(clickedLocation);
-    addMarkerToMap(clickedLocation, mapInstance);
-  };
+    const google = window.google;
+    
+    // Crear mapa centrado en Villavicencio
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const newMap = new google.maps.Map(mapRef.current, {
+      center: { lat: STORE_LOCATION.lat, lng: STORE_LOCATION.lng },
+      zoom: 13,
+      mapTypeControl: true,
+      streetViewControl: true,
+      fullscreenControl: true,
+      zoomControl: true,
+      styles: [
+        {
+          featureType: 'poi',
+          elementType: 'labels',
+          stylers: [{ visibility: 'off' }]
+        }
+      ]
+    });
+
+    // Agregar marcador de la tienda
+    new google.maps.Marker({
+      position: { lat: STORE_LOCATION.lat, lng: STORE_LOCATION.lng },
+      map: newMap,
+      title: 'Nuestra tienda',
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 10,
+        fillColor: '#dc2626',
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 2
+      }
+    });
+
+    // Crear geocoder
+    const newGeocoder = new google.maps.Geocoder();
+    setGeocoder(newGeocoder);
+
+    setMap(newMap);
+
+    // Buscar dirección inicial si se proporciona
+    if (initialAddress) {
+      searchAddress(initialAddress, newMap, newGeocoder);
+    }
+
+    // Obtener ubicación actual del usuario
+    getUserLocation(newMap);
+  }, [initialAddress, searchAddress, getUserLocation, addMarkerToMap]);
+
+  // Cargar Google Maps API
+  useEffect(() => {
+    if (!isLoaded && !isLoading) {
+      loadGoogleMaps().then(() => {
+        if (isOpen) {
+          initializeMap();
+        }
+      }).catch((err) => {
+        console.error('Error loading Google Maps:', err);
+      });
+    } else if (isLoaded && isOpen) {
+      initializeMap();
+    }
+  }, [isLoaded, isLoading, loadGoogleMaps, isOpen, initializeMap]);
+
+  // Inicializar mapa cuando se abre el modal
+  useEffect(() => {
+    if (isOpen && mapRef.current && window.google) {
+      initializeMap();
+    }
+  }, [isOpen, initializeMap]);
+
+      // Evento de clic en el mapa
+    useEffect(() => {
+      if (map && !marker) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const clickListener = map.addListener('click', async (e: any) => {
+        const clickedLocation = {
+          lat: e.latLng.lat(),
+          lng: e.latLng.lng(),
+          address: 'Ubicación seleccionada en el mapa'
+        };
+
+        // Obtener dirección con reverse geocoding
+        if (geocoder) {
+          try {
+            const response = await geocoder.geocode({ location: { lat: clickedLocation.lat, lng: clickedLocation.lng } });
+            if (response.results.length > 0) {
+              clickedLocation.address = response.results[0].formatted_address;
+            }
+          } catch (err) {
+            console.error('Error en reverse geocoding:', err);
+          }
+        }
+
+        setSelectedLocation(clickedLocation);
+        addMarkerToMap(clickedLocation, map);
+      });
+
+             return () => {
+         window.google.maps.event.removeListener(clickListener);
+       };
+    }
+  }, [map, marker, geocoder]);
 
   const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
     const R = 6371;
@@ -256,7 +309,8 @@ export default function InteractiveMap({
       };
       setSelectedLocation(location);
       addMarkerToMap(location, map);
-      map.setView([userLocation.lat, userLocation.lng], 16);
+      map.setCenter({ lat: userLocation.lat, lng: userLocation.lng });
+      map.setZoom(16);
     }
   };
 
@@ -312,28 +366,27 @@ export default function InteractiveMap({
             >
               Usar ubicación actual
             </button>
-            {initialAddress && map && (
+            {initialAddress && map && geocoder && (
               <button
-                onClick={() => searchAddress(initialAddress, map)}
-                disabled={isLoading}
+                onClick={() => searchAddress(initialAddress, map, geocoder)}
+                disabled={isLoadingMap}
                 className="px-3 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:bg-gray-300 text-sm"
               >
-                {isLoading ? 'Buscando...' : 'Buscar dirección'}
+                {isLoadingMap ? 'Buscando...' : 'Buscar dirección'}
               </button>
             )}
           </div>
 
           {/* Error */}
-          {error && (
+          {mapError && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
-              {error}
+              {mapError}
             </div>
           )}
 
           {/* Mapa */}
           <div 
-            id="leaflet-map"
-            ref={mapRef} 
+            ref={mapRef}
             className="w-full h-64 sm:h-80 rounded-lg border border-gray-200"
             style={{ minHeight: '250px' }}
           />
@@ -369,13 +422,4 @@ export default function InteractiveMap({
       </div>
     </div>
   );
-}
-
-// Declaración global para TypeScript
-declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    L: any;
-    confirmLocation: () => void;
-  }
 } 

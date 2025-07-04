@@ -37,22 +37,27 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Estilos para el mapa de Leaflet */
-.leaflet-container {
-  z-index: 1;
+/* Estilos para Google Maps */
+.gm-style {
+  font-family: Arial, Helvetica, sans-serif;
 }
 
-.custom-div-icon {
-  background: transparent;
-  border: none;
+.gm-style .gm-style-iw-c {
+  padding: 0 !important;
 }
 
-.leaflet-popup-content {
-  margin: 8px 12px;
-  line-height: 1.4;
+.gm-style .gm-style-iw-d {
+  overflow: hidden !important;
 }
 
-.leaflet-popup-content button {
-  margin-top: 8px;
-  cursor: pointer;
+.gm-style .gm-style-iw-t::after {
+  background: linear-gradient(45deg, rgba(255,255,255,1) 50%, rgba(255,255,255,0) 51%, rgba(255,255,255,0) 100%);
+  box-shadow: -2px 2px 2px 0 rgba(178,178,178,.4);
+  content: "";
+  height: 15px;
+  left: 50%;
+  position: absolute;
+  top: 100%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 15px;
 } 

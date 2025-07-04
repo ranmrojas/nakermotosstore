@@ -16,23 +16,35 @@ export default function DistanceInfo({ distance, cost, address, className = '' }
 
   // Determinar la zona de envío basada en la distancia
   const getZoneInfo = (dist: number) => {
-    if (dist <= 2) {
+    if (dist <= 0.5) {
       return {
-        zone: 'Zona 1 - Centro',
+        zone: 'Zona 1 - Muy Cerca',
         color: 'bg-green-100 text-green-800 border-green-200',
+        description: 'Envío súper rápido (30-60 min)'
+      };
+    } else if (dist <= 1.2) {
+      return {
+        zone: 'Zona 2 - Cerca',
+        color: 'bg-blue-100 text-blue-800 border-blue-200',
         description: 'Envío rápido (1-2 horas)'
       };
-    } else if (dist <= 5) {
+    } else if (dist <= 2.4) {
       return {
-        zone: 'Zona 2 - Media',
+        zone: 'Zona 3 - Media',
         color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
         description: 'Envío estándar (2-3 horas)'
       };
-    } else {
+    } else if (dist <= 4) {
       return {
-        zone: 'Zona 3 - Extendida',
+        zone: 'Zona 4 - Lejos',
         color: 'bg-orange-100 text-orange-800 border-orange-200',
         description: 'Envío extendido (3-4 horas)'
+      };
+    } else {
+      return {
+        zone: 'Zona 5 - Muy Lejos',
+        color: 'bg-red-100 text-red-800 border-red-200',
+        description: 'Envío especial (4-5 horas)'
       };
     }
   };

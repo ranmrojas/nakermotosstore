@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { analyticsEvents } from '../../../hooks/useAnalytics';
+import { useGoogleMaps } from '../../../hooks/useGoogleMaps';
 import InteractiveMap from './InteractiveMap';
 
 interface Address {
@@ -29,12 +30,23 @@ const STORE_LOCATION = {
   lon: -73.632540
 };
 
-const SHIPPING_RATES = {
-  BASE_COST: 5000,
-  PER_KM: 1000,
-  MAX_COST: 15000,
-  FREE_SHIPPING_THRESHOLD: 100000
-};
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const FREE_SHIPPING_THRESHOLD = 100000;
+
+// Rangos de distancia y costos de envío
+const SHIPPING_ZONES = [
+  { min: 0, max: 0.5, cost: 4500 },
+  { min: 0.5, max: 0.750, cost: 5000 },
+  { min: 0.750, max: 1.2, cost: 6000 },
+  { min: 1.2, max: 1.8, cost: 7000 },
+  { min: 1.8, max: 2.4, cost: 9000 },
+  { min: 2.4, max: 3, cost: 10000 },
+  { min: 3, max: 4, cost: 11000 },
+  { min: 4, max: 6, cost: 12000 },
+  { min: 7, max: 8, cost: 14000 }
+];
+
+
 
 export default function ShippingCalculator({ 
   onShippingCalculated, 
@@ -48,6 +60,73 @@ export default function ShippingCalculator({
   const [showMapModal, setShowMapModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [finalAddress, setFinalAddress] = useState('');
+  const [hasSelectedSuggestion, setHasSelectedSuggestion] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { isLoaded, isLoading, loadGoogleMaps } = useGoogleMaps();
+
+  const initializeAutocomplete = useCallback(() => {
+    if (!window.google || !inputRef.current) return;
+
+    const autocompleteInstance = new window.google.maps.places.Autocomplete(inputRef.current, {
+      componentRestrictions: { country: 'co' },
+      types: ['address'],
+      fields: ['formatted_address', 'geometry', 'place_id'],
+      bounds: new window.google.maps.LatLngBounds(
+        new window.google.maps.LatLng(4.0, -73.7), // Suroeste de Villavicencio
+        new window.google.maps.LatLng(4.3, -73.5)  // Noreste de Villavicencio
+      ),
+      strictBounds: true
+    });
+
+    autocompleteInstance.addListener('place_changed', () => {
+      const place = autocompleteInstance.getPlace();
+      if (place.geometry && place.geometry.location) {
+        const location = {
+          lat: place.geometry.location.lat(),
+          lng: place.geometry.location.lng(),
+          address: place.formatted_address
+        };
+        
+        setAddress(place.formatted_address);
+        setSelectedAddress({
+          display_name: place.formatted_address,
+          lat: location.lat.toString(),
+          lon: location.lng.toString()
+        });
+        setHasSelectedSuggestion(true);
+        
+        // Calcular envío
+        const distance = calculateDistance(
+          STORE_LOCATION.lat,
+          STORE_LOCATION.lon,
+          location.lat,
+          location.lng
+        );
+        const cost = calculateShippingCost(distance);
+        setShippingCost(cost);
+        
+        onAddressChange(place.formatted_address);
+        onShippingCalculated(place.formatted_address, cost, distance);
+        
+        analyticsEvents.addressSelected(place.formatted_address, distance, cost);
+      }
+    });
+
+    // Autocomplete instance is stored in the DOM element
+  }, [onAddressChange, onShippingCalculated]);
+
+  // Cargar Google Maps API
+  useEffect(() => {
+    if (!isLoaded && !isLoading) {
+      loadGoogleMaps().then(() => {
+        initializeAutocomplete();
+      }).catch((err) => {
+        console.error('Error loading Google Maps:', err);
+      });
+    } else if (isLoaded) {
+      initializeAutocomplete();
+    }
+  }, [isLoaded, isLoading, loadGoogleMaps, initializeAutocomplete]);
 
   // Calcular distancia usando la fórmula de Haversine
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -64,26 +143,32 @@ export default function ShippingCalculator({
 
   // Calcular costo de envío basado en la distancia
   const calculateShippingCost = (distance: number): number => {
-    if (distance <= 2) {
-      return SHIPPING_RATES.BASE_COST;
+    // Buscar la zona correspondiente a la distancia
+    const zone = SHIPPING_ZONES.find(z => distance >= z.min && distance <= z.max);
+    
+    if (zone) {
+      return zone.cost;
     }
-    const additionalKm = distance - 2;
-    const cost = SHIPPING_RATES.BASE_COST + (additionalKm * SHIPPING_RATES.PER_KM);
-    return Math.min(cost, SHIPPING_RATES.MAX_COST);
+    
+    // Si la distancia es mayor a 8km, usar el costo máximo
+    if (distance > 8) {
+      return SHIPPING_ZONES[SHIPPING_ZONES.length - 1].cost;
+    }
+    
+    // Si la distancia es menor a 0km, usar el costo mínimo
+    return SHIPPING_ZONES[0].cost;
   };
 
   // Geocodificación inversa para obtener dirección textual
   const reverseGeocode = async (lat: number, lon: number): Promise<string> => {
     try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`);
-      if (!response.ok) throw new Error('Error al obtener la dirección');
-      const data = await response.json();
+      const geocoder = new window.google.maps.Geocoder();
+      const response = await geocoder.geocode({ location: { lat, lng: lon } });
       
-      // Extraer solo la parte relevante de la dirección (primeras 2 partes)
-      const addressParts = data.display_name.split(', ');
-      const relevantParts = addressParts.slice(0, 2).join(', ');
-      
-      return relevantParts || `${lat}, ${lon}`;
+      if (response.results.length > 0) {
+        return response.results[0].formatted_address;
+      }
+      return `${lat}, ${lon}`;
     } catch {
       return `${lat}, ${lon}`;
     }
@@ -133,13 +218,16 @@ export default function ShippingCalculator({
     }
   };
 
-  // El input solo abre el modal
-  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    setShowMapModal(true);
+  // Manejar cambios en el input
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAddress(e.target.value);
+    setHasSelectedSuggestion(false);
   };
 
-
+  // Abrir modal del mapa
+  const handleOpenMap = () => {
+    setShowMapModal(true);
+  };
 
   return (
     <div className="space-y-4">
@@ -149,15 +237,26 @@ export default function ShippingCalculator({
         </label>
         <div className="relative">
           <input
+            ref={inputRef}
             type="text"
             id="shipping-address"
             value={address}
-            readOnly
-            onFocus={handleInputFocus}
-            placeholder="Haz clic para seleccionar tu dirección en el mapa..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer bg-gray-50"
+            onChange={handleInputChange}
+            placeholder="Escribe tu dirección en Villavicencio..."
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
           />
         </div>
+        
+        {/* Botón para confirmar dirección manualmente */}
+        {address && !hasSelectedSuggestion && (
+          <button
+            type="button"
+            onClick={handleOpenMap}
+            className="mt-2 px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 text-sm font-medium"
+          >
+            Confirmar dirección en el mapa
+          </button>
+        )}
       </div>
 
       {shippingCost > 0 && (

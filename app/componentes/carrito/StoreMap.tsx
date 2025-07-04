@@ -1,17 +1,68 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
+import { useGoogleMaps } from '../../../hooks/useGoogleMaps';
 
 interface StoreMapProps {
   className?: string;
 }
 
+
+
 export default function StoreMap({ className = '' }: StoreMapProps) {
+  const mapRef = useRef<HTMLDivElement>(null);
   const storeLat = 4.126551;
   const storeLon = -73.632540;
-  
-  // URL del mapa de OpenStreetMap centrado en la tienda
-  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${storeLon-0.01}%2C${storeLat-0.01}%2C${storeLon+0.01}%2C${storeLat+0.01}&layer=mapnik&marker=${storeLat}%2C${storeLon}`;
+  const { isLoaded, isLoading, loadGoogleMaps } = useGoogleMaps();
+
+  const initializeMap = useCallback(() => {
+    if (!window.google || !mapRef.current) return;
+
+    const google = window.google;
+    
+    const map = new google.maps.Map(mapRef.current, {
+      center: { lat: storeLat, lng: storeLon },
+      zoom: 15,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: false,
+      zoomControl: true,
+      styles: [
+        {
+          featureType: 'poi',
+          elementType: 'labels',
+          stylers: [{ visibility: 'off' }]
+        }
+      ]
+    });
+
+    // Agregar marcador de la tienda
+    new google.maps.Marker({
+      position: { lat: storeLat, lng: storeLon },
+      map: map,
+      title: 'Nuestra tienda',
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 12,
+        fillColor: '#dc2626',
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 3
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!isLoaded && !isLoading) {
+      loadGoogleMaps().then(() => {
+        initializeMap();
+      }).catch((err) => {
+        console.error('Error loading Google Maps:', err);
+      });
+    } else if (isLoaded) {
+      initializeMap();
+    }
+  }, [isLoaded, isLoading, loadGoogleMaps, initializeMap]);
 
   return (
     <div className={`bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden ${className}`}>
@@ -25,16 +76,10 @@ export default function StoreMap({ className = '' }: StoreMapProps) {
       </div>
       
       <div className="relative">
-        <iframe
-          width="100%"
-          height="300"
-          frameBorder="0"
-          scrolling="no"
-          marginHeight={0}
-          marginWidth={0}
-          src={mapUrl}
-          title="Ubicación de la tienda"
-          className="w-full"
+        <div 
+          ref={mapRef}
+          className="w-full h-80"
+          style={{ minHeight: '300px' }}
         />
         
         {/* Overlay con información de la tienda */}
