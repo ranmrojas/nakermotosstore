@@ -29,6 +29,8 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
   const [nombreError, setNombreError] = useState('');
   const [direccionError, setDireccionError] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+  // Estado para la nota del pedido
+  const [nota, setNota] = useState('');
   
   // Nuevo estado para modo edición
   const [editando, setEditando] = useState(false);
@@ -439,13 +441,14 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          estado: 'Pendiente',
+          estado: 'Pendientes',
           productos: cart,
           subtotal: totalPrice,
           domicilio: shippingCost,
           total: totalPrice + shippingCost,
           clienteId: session?.id,
           medioPago: medioPago,
+          nota: nota?.trim() || undefined,
         }),
       });
 
@@ -650,6 +653,20 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
                 Total a pagar: {shippingCost > 0 ? `$${(totalPrice + shippingCost).toLocaleString('es-CO')}` : `$${totalPrice.toLocaleString('es-CO')}`}
               </span>
             </div>
+            {/* Campo de nota para el pedido */}
+            <div className="mb-3">
+              <label htmlFor="nota" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Nota para el pedido (opcional)
+              </label>
+              <textarea
+                id="nota"
+                className="w-full border border-gray-300 dark:border-neutral-700 rounded px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-400"
+                rows={1}
+                placeholder="Nota, conjunto, casa, apto, barrio, etc..."
+                value={nota}
+                onChange={e => setNota(e.target.value)}
+              />
+            </div>
             
             {/* Mostrar error general */}
             {error && <div className="text-red-500 text-xs mb-2">{error}</div>}
@@ -657,7 +674,7 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
             {/* Botón para confirmar pedido */}
             <button
               type="button"
-              className="w-full bg-amber-400 hover:bg-amber-500 text-white font-semibold py-2 px-4 rounded"
+              className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded"
               onClick={handleConfirmOrder}
             >
               Confirmar pedido
