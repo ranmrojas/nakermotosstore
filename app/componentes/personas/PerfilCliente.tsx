@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useClientSession } from '@/hooks/useClientSession';
 import { useClientesApi } from '@/hooks/useClientesApi';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
-import OrderManager from '../carrito/OrderManager';
+import OrderManager from '../carrito/OrderManagerclient';
 import { DireccionGuardada } from '@/types/direcciones';
 
 interface Pedido {
