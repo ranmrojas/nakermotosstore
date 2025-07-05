@@ -19,7 +19,7 @@ import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
-type Pedido = Database['public']['Tables']['Pedido']['Row'];
+type Pedido = Database['public']['Tables']['Pedido']['Row'] & { nota?: string };
 type Producto = Database['public']['Tables']['Pedido']['Row']['productos'][number];
 
 interface PedidoAdaptado {
@@ -36,6 +36,7 @@ interface PedidoAdaptado {
   domicilio?: number;
   medioPago?: string;
   enviadoAt?: string;
+  nota?: string;
 }
 
 export default function AdminDashboardPage() {
@@ -306,21 +307,31 @@ export default function AdminDashboardPage() {
 
   // Adaptar los datos para AdminOrderManager
   const pedidosAdaptados: PedidoAdaptado[] = useMemo(() => 
-    orders.map((pedido) => ({
-      id: pedido.id,
-      cliente: pedido.cliente?.nombre || "-",
-      estado: pedido.estado,
-      total: pedido.total,
-      fecha: new Date(pedido.realizadoEn).toLocaleString("es-CO"),
-      fechaOriginal: pedido.realizadoEn,
-      productos: pedido.productos,
-      direccion: pedido.cliente?.direccion,
-      telefono: pedido.cliente?.telefono,
-      subtotal: pedido.subtotal,
-      domicilio: pedido.domicilio,
-      medioPago: pedido.medioPago,
-      enviadoAt: pedido.enviadoAt
-    })), [orders]
+    orders.map((pedido) => {
+      const pedidoAdaptado = {
+        id: pedido.id,
+        cliente: pedido.cliente?.nombre || "-",
+        estado: pedido.estado,
+        total: pedido.total,
+        fecha: new Date(pedido.realizadoEn).toLocaleString("es-CO"),
+        fechaOriginal: pedido.realizadoEn,
+        productos: pedido.productos,
+        direccion: pedido.cliente?.direccion,
+        telefono: pedido.cliente?.telefono,
+        subtotal: pedido.subtotal,
+        domicilio: pedido.domicilio,
+        medioPago: pedido.medioPago,
+        enviadoAt: pedido.enviadoAt,
+        nota: pedido.nota
+      };
+      
+      // Debug: verificar si hay notas
+      if (pedido.nota) {
+        console.log(`📝 Pedido ${pedido.id} tiene nota:`, pedido.nota);
+      }
+      
+      return pedidoAdaptado;
+    }), [orders]
   );
 
   // Filtrar pedidos
@@ -859,23 +870,40 @@ export default function AdminDashboardPage() {
             </div>
           </div>
           <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto md:items-center md:justify-end">
-            <input
-              type="text"
-              placeholder="Buscar por cliente, ID, teléfono, dirección, estado, productos, SKU..."
-              value={searchTerm}
-              onChange={(e) => {
-                const value = e.target.value;
-                setSearchTerm(value);
-                if (value.trim()) {
-                  setShowSearchResults(true);
-                  setShowTracking(false);
-                } else {
-                  setShowSearchResults(false);
-                  setShowTracking(true);
-                }
-              }}
-              className="w-full md:w-72 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white text-gray-900 dark:bg-neutral-800 dark:text-gray-100 dark:border-neutral-700"
-            />
+            <div className="relative w-full md:w-72">
+              <input
+                type="text"
+                placeholder="Buscar por cliente, ID, teléfono, dirección, estado, productos, SKU..."
+                value={searchTerm}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchTerm(value);
+                  if (value.trim()) {
+                    setShowSearchResults(true);
+                    setShowTracking(false);
+                  } else {
+                    setShowSearchResults(false);
+                    setShowTracking(true);
+                  }
+                }}
+                className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white text-gray-900 dark:bg-neutral-800 dark:text-gray-100 dark:border-neutral-700"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => {
+                    setSearchTerm("");
+                    setShowSearchResults(false);
+                    setShowTracking(true);
+                  }}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                  title="Limpiar búsqueda"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}

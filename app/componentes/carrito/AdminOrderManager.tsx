@@ -28,6 +28,7 @@ interface Pedido {
   subtotal?: number;
   domicilio?: number;
   enviadoAt?: string;
+  nota?: string;
 }
 
 interface AdminOrderCardProps {
@@ -42,6 +43,7 @@ function AdminOrderCard({ pedido, onStatusChange }: AdminOrderCardProps) {
   const [showProductModal, setShowProductModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Producto | null>(null);
   const [showAllProducts, setShowAllProducts] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [enviadoAt, setEnviadoAt] = useState<Date | null>(
     pedido.enviadoAt ? new Date(pedido.enviadoAt) : null
@@ -194,6 +196,27 @@ function AdminOrderCard({ pedido, onStatusChange }: AdminOrderCardProps) {
     setShowProductModal(true);
   };
 
+  // Función para truncar la dirección después de la segunda coma
+  const truncarDireccion = (direccion: string | undefined): string => {
+    if (!direccion) return 'No disponible';
+    
+    const comas = direccion.split(',');
+    if (comas.length <= 2) return direccion;
+    
+    return comas.slice(0, 2).join(',') + ',';
+  };
+
+  // Función para copiar al portapapeles
+  const copyToClipboard = async (text: string, field: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch (err) {
+      console.error('Error al copiar al portapapeles:', err);
+    }
+  };
+
   return (
     <div 
       className={`bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden p-0 md:p-0 ${isCollapsed ? 'cursor-pointer hover:bg-gray-50 transition-colors' : ''}`}
@@ -233,13 +256,58 @@ function AdminOrderCard({ pedido, onStatusChange }: AdminOrderCardProps) {
         </div>
         
         {/* Segunda fila: Dirección (ancho completo) */}
-        <div className="text-xs md:text-sm text-gray-700 mb-1">
-          <span className="font-medium">Dirección:</span> {pedido.direccion || 'No disponible'}
+        <div 
+          className="text-xs md:text-sm text-gray-700 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors relative group text-left"
+          onClick={() => copyToClipboard(truncarDireccion(pedido.direccion), 'direccion')}
+          title="Copiar dirección"
+        >
+          <span className="font-medium text-sm md:text-base">Dirección:</span> {truncarDireccion(pedido.direccion)}
+          <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+            {copiedField === 'direccion' ? '✓ Copiado' : '📋 Copiar'}
+          </span>
         </div>
         
-        {/* Tercera fila: Teléfono (ancho completo) */}
-        <div className="text-xs md:text-sm text-gray-700">
-          <span className="font-medium">Teléfono:</span> {pedido.telefono || 'No disponible'}
+        {/* Tercera fila: Nota del pedido (ancho completo) */}
+        {pedido.nota && (
+          <div 
+            className="text-xs md:text-sm text-gray-700 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors relative group text-left"
+            onClick={() => copyToClipboard(pedido.nota || 'No disponible', 'nota')}
+            title="Copiar nota"
+          >
+            <span className="font-bold">Nota:</span> 
+            <span className="ml-1">{pedido.nota}</span>
+            <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+              {copiedField === 'nota' ? '✓ Copiado' : '📋 Copiar'}
+            </span>
+          </div>
+        )}
+        
+        {/* Cuarta fila: Teléfono (ancho completo) */}
+        <div 
+          className="text-xs md:text-sm text-gray-700 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors relative group text-left"
+          onClick={() => copyToClipboard(pedido.telefono || 'No disponible', 'telefono')}
+          title="Copiar teléfono"
+        >
+          <span className="font-medium text-sm md:text-base">Teléfono:</span> {pedido.telefono || 'No disponible'}
+          <span className="absolute right-16 top-1/2 transform -translate-y-1/2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+            {copiedField === 'telefono' ? '✓ Copiado' : '📋 Copiar'}
+          </span>
+          {pedido.telefono && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const phoneNumber = pedido.telefono?.replace(/\s+/g, '') || '';
+                const whatsappUrl = `https://wa.me/${phoneNumber}`;
+                window.open(whatsappUrl, '_blank');
+              }}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-green-600 hover:text-green-700 transition-colors"
+              title="Abrir WhatsApp"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
@@ -410,9 +478,35 @@ function AdminOrderCard({ pedido, onStatusChange }: AdminOrderCardProps) {
                 <h4 className="font-semibold text-gray-900 mb-3">Información del Cliente</h4>
                 <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                   <p className="text-gray-900"><span className="font-medium">Nombre:</span> {pedido.cliente}</p>
-                  <p className="text-gray-900"><span className="font-medium">Teléfono:</span> {pedido.telefono || 'No disponible'}</p>
-                  <p className="text-gray-900"><span className="font-medium">Dirección:</span> {pedido.direccion || 'No disponible'}</p>
+                  <p 
+                    className="text-gray-900 cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors relative group"
+                    onClick={() => copyToClipboard(pedido.telefono || 'No disponible', 'telefono-modal')}
+                    title="Copiar teléfono"
+                  >
+                    <span className="font-medium">Teléfono:</span> {pedido.telefono || 'No disponible'}
+                    <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {copiedField === 'telefono-modal' ? '✓ Copiado' : '📋 Copiar'}
+                    </span>
+                  </p>
+                  <p 
+                    className="text-gray-900 cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors relative group"
+                    onClick={() => copyToClipboard(truncarDireccion(pedido.direccion), 'direccion-modal')}
+                    title="Copiar dirección"
+                  >
+                    <span className="font-medium">Dirección:</span> {truncarDireccion(pedido.direccion)}
+                    <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {copiedField === 'direccion-modal' ? '✓ Copiado' : '📋 Copiar'}
+                    </span>
+                  </p>
                   <p className="text-gray-900"><span className="font-medium">Fecha:</span> {pedido.fecha}</p>
+                  {pedido.nota && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                      <p className="text-gray-900">
+                        <span className="font-medium text-yellow-800">Nota del pedido:</span>
+                        <span className="text-yellow-700 ml-2 block mt-1">{pedido.nota}</span>
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
