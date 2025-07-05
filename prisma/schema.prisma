@@ -56,6 +56,7 @@ model Pedido {
   realizadoEn DateTime @default(now())
   enviadoAt   DateTime? // Fecha cuando se cambió el estado a "Enviado"
   auditoria   Json?    // Array de eventos de trazabilidad: [{fecha: string, accion: string, usuario?: string, detalles?: string}]
+  nota        String?  // Nota opcional para el pedido
   cliente     Cliente  @relation(fields: [clienteId], references: [id])
   clienteId   Int
 }
