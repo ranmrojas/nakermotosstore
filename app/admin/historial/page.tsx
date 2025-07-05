@@ -1,8 +1,7 @@
 "use client";
-import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import AdminOrderManager from "../../componentes/carrito/AdminOrderManager";
 import AdminProtected from "../../componentes/admin/AdminProtected";
-import { notificationService } from "../../../lib/notificationServiceAdmin";
 import { supabase, Database } from "../../../lib/supabase";
 import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
@@ -33,144 +32,11 @@ export default function AdminDashboardPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
 
-  // Referencias para mantener los timers persistentes
-  const activeTimersRef = useRef<Map<number, NodeJS.Timeout[]>>(new Map());
-  const pendingOrdersRef = useRef<Set<number>>(new Set());
 
-  // Inicializar servicio de notificaciones admin y suscribirse a cambios
-  const handlePendingOrderReminders = useCallback(async (orderId: number, isNewOrder: boolean = false) => {
-    const now = Date.now();
-    
-    if (isNewOrder) {
-      // Verificar si ya tenemos timers para este pedido
-      if (activeTimersRef.current.has(orderId)) {
-        console.log(`⏰ Pedido ${orderId} ya tiene timers activos, saltando...`);
-        return;
-      }
-      
-      // Nueva orden pendiente - programar recordatorios
-      const reminders = [
-        now + 1 * 60 * 1000,  // 1 minuto
-        now + 5 * 60 * 1000,  // 5 minutos
-        now + 10 * 60 * 1000  // 10 minutos
-      ];
-      
-      // Agregar a la referencia de pedidos pendientes
-      pendingOrdersRef.current.add(orderId);
-      
-      // Crear y almacenar los timers
-      const timers: NodeJS.Timeout[] = [];
-      
-      reminders.forEach((reminderTime, index) => {
-        const delay = reminderTime - now;
-        const timer = setTimeout(async () => {
-          // Verificar si el pedido sigue pendiente usando la referencia
-          if (pendingOrdersRef.current.has(orderId)) {
-            const times = ['1 minuto', '5 minutos', '10 minutos'];
-            console.log(`🔔 Recordatorio ${times[index]} para pedido ${orderId} - aún pendiente`);
-            
-            // Usar el nuevo servicio de notificaciones para recordatorios
-            await notificationService.showReminder(
-              `El pedido #${orderId} lleva ${times[index]} en estado pendiente`
-            );
-            
-            // Hacer vibrar
-            if ('vibrate' in navigator) {
-              navigator.vibrate([200, 100, 200]);
-            }
-          }
-        }, delay);
-        
-        timers.push(timer);
-      });
-      
-      // Almacenar los timers en la referencia
-      activeTimersRef.current.set(orderId, timers);
-      
-      console.log(`⏰ Programados recordatorios para pedido ${orderId}: 1min, 5min, 10min`);
-      
-    } else {
-      // Pedido ya no está pendiente - limpiar recordatorios
-      if (activeTimersRef.current.has(orderId)) {
-        // Cancelar todos los timers
-        const timers = activeTimersRef.current.get(orderId);
-        if (timers) {
-          timers.forEach((timer: NodeJS.Timeout) => clearTimeout(timer));
-        }
-        activeTimersRef.current.delete(orderId);
-        
-        // Remover de la referencia de pedidos pendientes
-        pendingOrdersRef.current.delete(orderId);
-        
-        console.log(`✅ Limpiados recordatorios para pedido ${orderId} - ya no está pendiente`);
-      }
-    }
-  }, []);
 
-  // Función para detectar nuevos pedidos pendientes
-  const checkNewPendingOrders = useCallback(async (newOrders: Pedido[], oldOrders: Pedido[]) => {
-    const newPendingOrders = newOrders.filter(p => p.estado === 'Pendiente');
-    const oldPendingOrders = oldOrders.filter(p => p.estado === 'Pendiente');
-    
-    const newPendingCount = newPendingOrders.length;
-    const oldPendingCount = oldPendingOrders.length;
-    
-    console.log(`🔍 Verificando pedidos pendientes: ${oldPendingCount} → ${newPendingCount}`);
-  }, []);
 
-  // Función para sincronizar el estado de pedidos pendientes
-  const syncPendingOrders = useCallback((currentOrders: Pedido[]) => {
-    const currentPendingIds = new Set(
-      currentOrders
-        .filter(p => p.estado === 'Pendiente')
-        .map(p => p.id)
-    );
-    
-    // Agregar nuevos pedidos pendientes
-    currentPendingIds.forEach(orderId => {
-      if (!pendingOrdersRef.current.has(orderId)) {
-        handlePendingOrderReminders(orderId, true);
-      }
-    });
-    
-    // Remover pedidos que ya no están pendientes
-    pendingOrdersRef.current.forEach(orderId => {
-      if (!currentPendingIds.has(orderId)) {
-        handlePendingOrderReminders(orderId, false);
-      }
-    });
-  }, [handlePendingOrderReminders]);
 
   useEffect(() => {
-    const initNotifications = async () => {
-      try {
-        console.log('🎵 Inicializando servicio de notificaciones...');
-        
-        // Solicitar permisos de notificación si no están concedidos
-        if ('Notification' in window) {
-          const permission = await Notification.requestPermission();
-          console.log('🔔 Estado de permisos de notificación:', permission);
-          
-          if (permission !== 'granted') {
-            console.warn('⚠️ Permisos de notificación no concedidos');
-            alert('Por favor, permite las notificaciones para recibir alertas de nuevos pedidos.');
-            return;
-          }
-        }
-
-        // Inicializar el servicio de notificaciones
-        await notificationService.initialize();
-        
-        // Probar el sistema de notificaciones
-        console.log('🧪 Probando sistema de notificaciones...');
-        await notificationService.simulateNewOrder();
-      } catch (error) {
-        console.error('❌ Error inicializando notificaciones:', error);
-      }
-    };
-
-    initNotifications();
-
     // Suscribirse a cambios en tiempo real
     const channel = supabase
       .channel('pedidos_changes')
@@ -185,39 +51,8 @@ export default function AdminDashboardPage() {
         const res = await fetch("/api/pedidos");
         const newOrders = await res.json();
         
-        // Si es un nuevo pedido pendiente
-        if (payload.eventType === 'INSERT' && payload.new.estado === 'Pendiente') {
-          console.log('🆕 Nuevo pedido pendiente detectado:', payload.new.id);
-          
-          try {
-            // Asegurarse de que el servicio esté inicializado antes de notificar
-            if (!notificationService.isInitialized()) {
-              console.log('⚠️ Servicio de notificaciones no inicializado, reinicializando...');
-              await notificationService.initialize();
-            }
-            
-            // Mostrar notificación con sonido
-            const mensaje = `Nuevo pedido #${payload.new.id} - ${payload.new.cliente?.nombre || 'Cliente'} - $${payload.new.total.toLocaleString('es-CO')}`;
-            console.log('📢 Mostrando notificación:', mensaje);
-            
-            await notificationService.notifyNewOrder(mensaje, 'nuevo');
-            
-            // Hacer vibrar
-            if ('vibrate' in navigator) {
-              navigator.vibrate([200, 100, 200]);
-            }
-            
-            handlePendingOrderReminders(payload.new.id, true);
-          } catch (error) {
-            console.error('❌ Error mostrando notificación:', error);
-          }
-        }
-        
-        // Actualizar estado y verificar cambios
-        setOrders(prevOrders => {
-          checkNewPendingOrders(newOrders, prevOrders);
-          return newOrders;
-        });
+        // Actualizar estado
+        setOrders(newOrders);
       });
 
     channel.subscribe(async (status) => {
@@ -230,7 +65,7 @@ export default function AdminDashboardPage() {
     return () => {
       channel.unsubscribe();
     };
-  }, [handlePendingOrderReminders, checkNewPendingOrders]);
+  }, []);
 
   useEffect(() => {
     const fetchPedidos = async () => {
@@ -378,12 +213,6 @@ export default function AdminDashboardPage() {
   const historyStats = useMemo(() => getHistoryStats(), [getHistoryStats]);
 
   const handleStatusChange = (orderId: number, newStatus: string) => {
-    // Si el pedido ya no está pendiente, eliminar sus recordatorios
-    if (newStatus !== 'Pendiente') {
-      handlePendingOrderReminders(orderId, false);
-      console.log(`✅ Recordatorios eliminados para pedido ${orderId} - estado cambiado a ${newStatus}`);
-    }
-    
     setOrders(prevOrders => 
       prevOrders.map(order => 
         order.id === orderId 
@@ -392,28 +221,6 @@ export default function AdminDashboardPage() {
       )
     );
   };
-
-  // Sincronizar pedidos pendientes cuando cambien las órdenes
-  useEffect(() => {
-    if (orders.length > 0) {
-      syncPendingOrders(orders);
-    }
-  }, [orders, syncPendingOrders]);
-
-  // Limpiar timers al desmontar el componente
-  useEffect(() => {
-    const timersRef = activeTimersRef.current;
-    const pOrdersRef = pendingOrdersRef.current;
-    return () => {
-      // Limpiar todos los timers pendientes
-      timersRef.forEach((timers) => {
-        timers.forEach((timer: NodeJS.Timeout) => clearTimeout(timer));
-      });
-      timersRef.clear();
-      pOrdersRef.clear();
-      console.log('🧹 Timers de recordatorios limpiados');
-    };
-  }, []);
 
   return (
     <AdminProtected>
