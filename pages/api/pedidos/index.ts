@@ -31,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
   if (req.method === 'POST') {
     // Crear pedido
-    const { estado, productos, subtotal, domicilio, total, clienteId, medioPago, usuario } = req.body;
+    const { estado, productos, subtotal, domicilio, total, clienteId, medioPago, usuario, nota } = req.body;
     if (!estado || !productos || !subtotal || !domicilio || !total || !clienteId) {
       return res.status(400).json({ error: 'Faltan campos obligatorios' });
     }
@@ -44,7 +44,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           domicilio, 
           total, 
           clienteId,
-          medioPago: medioPago || null
+          medioPago: medioPago || null,
+          nota: typeof nota === 'string' ? nota.trim() : (nota || null)
         },
       });
 
