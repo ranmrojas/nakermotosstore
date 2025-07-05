@@ -1,12 +1,30 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useAdminAuth } from '../../../hooks/useAdminAuth';
+import { useSidebar } from './AdminProtected';
 
-export default function AdminSidebar() {
-  const [open, setOpen] = useState(true);
+// Componente del botón flotante
+function FloatingButton({ onOpen }: { onOpen: () => void }) {
+  return (
+    <div className="fixed top-2 left-4 z-50">
+      <button
+        onClick={onOpen}
+        className="bg-gray-800 hover:bg-gray-900 text-white p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-gray-400"
+        aria-label="Abrir menú de administración"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12h18M3 6h18M3 18h18" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+// Componente del sidebar
+function SidebarContent() {
+  const { setIsOpen } = useSidebar();
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAdminAuth();
@@ -18,18 +36,15 @@ export default function AdminSidebar() {
     { label: "Tracking", href: "/admin/tracking" },
   ];
 
-  if (!open) return null;
-
   return (
     <aside className="h-screen w-64 bg-white border-r flex flex-col justify-between fixed top-0 left-0 z-40 shadow-lg">
       <div>
         {/* Logo, título y botón cerrar */}
         <div className="flex items-center gap-2 px-6 py-6 border-b relative">
-          <Image src="/logo.png" alt="Logo" width={32} height={32} className="h-8 w-8" />
           <span className="text-xl font-bold text-gray-900">Panel Admin</span>
           <button
-            onClick={() => setOpen(false)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-200 focus:outline-none"
+            onClick={() => setIsOpen(false)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-200 focus:outline-none transition-colors"
             aria-label="Cerrar sidebar"
           >
             <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -86,4 +101,11 @@ export default function AdminSidebar() {
       </div>
     </aside>
   );
+}
+
+// Componente principal que maneja el estado
+export default function AdminSidebar() {
+  const { isOpen, setIsOpen } = useSidebar();
+
+  return isOpen ? <SidebarContent /> : <FloatingButton onOpen={() => setIsOpen(true)} />;
 } 
