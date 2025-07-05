@@ -1,8 +1,8 @@
 "use client";
 import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { gsap } from "gsap";
-import AdminOrderManager from "../componentes/carrito/AdminOrderManager";
-import AdminProtected from "../componentes/admin/AdminProtected";
+import AdminOrderManager from "../../componentes/carrito/AdminOrderManager";
+import AdminProtected from "../../componentes/admin/AdminProtected";
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -14,8 +14,8 @@ import {
   BarElement,
   Title
 } from 'chart.js';
-import { notificationService } from "../../lib/notificationServiceAdmin";
-import { supabase, Database } from "../../lib/supabase";
+import { notificationService } from "../../../lib/notificationServiceAdmin";
+import { supabase, Database } from "../../../lib/supabase";
 import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
@@ -798,6 +798,8 @@ export default function AdminDashboardPage() {
         {/* Header con búsqueda y filtro */}
         <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-1 md:mb-0">Dashboard Administrativo</h1>
+            <p className="text-gray-600">Gestión completa de pedidos y análisis de ventas</p>
             <div className="flex items-center gap-2 mt-2">
 
               <button

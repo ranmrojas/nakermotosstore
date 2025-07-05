@@ -9,7 +9,10 @@
     "lint": "next lint",
     "truncaterecords": "node scripts/truncateRecords.js",
     "deletetables": "node scripts/truncateTables.js",
-    "insertdata": "node scripts/insertData.js"
+    "insertdata": "node scripts/insertData.js",
+    "createadmin": "node scripts/createAdminUser.js",
+    "createtestusers": "node scripts/createTestUsers.js",
+    "cleartestusers": "node scripts/clearTestUsers.js"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

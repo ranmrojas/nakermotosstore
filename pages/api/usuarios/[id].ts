@@ -3,6 +3,13 @@ import { PrismaClient } from '../../../lib/generated/prisma';
 
 const prisma = new PrismaClient();
 
+interface UpdateUserData {
+  username: string;
+  nombre: string;
+  rol: 'admin' | 'operador';
+  password?: string;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
   if (typeof id !== 'string') {
@@ -19,13 +26,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'PATCH') {
     // Actualizar datos del usuario
     const { username, password, nombre, rol } = req.body;
+    
     try {
+      // Preparar datos para actualización
+      const updateData: UpdateUserData = { username, nombre, rol };
+      
+      // Solo incluir password si se proporciona (para permitir actualizaciones sin cambiar contraseña)
+      if (password && password.trim() !== '') {
+        updateData.password = password;
+      }
+      
       const usuario = await prisma.usuario.update({
         where: { id: Number(id) },
-        data: { username, password, nombre, rol },
+        data: updateData,
       });
-      return res.status(200).json(usuario);
-    } catch {
+      
+      // No retornar la contraseña en la respuesta
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: _password, ...usuarioSinPassword } = usuario;
+      return res.status(200).json(usuarioSinPassword);
+    } catch (error: unknown) {
+      if (error instanceof Error && 'code' in error && error.code === 'P2002') {
+        return res.status(400).json({ error: 'El nombre de usuario ya existe' });
+      }
       return res.status(500).json({ error: 'Error al actualizar usuario' });
     }
   }

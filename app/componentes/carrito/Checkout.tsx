@@ -441,7 +441,7 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          estado: 'Pendientes',
+          estado: 'Pendiente',
           productos: cart,
           subtotal: totalPrice,
           domicilio: shippingCost,
