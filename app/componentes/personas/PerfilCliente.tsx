@@ -64,6 +64,7 @@ export default function PerfilCliente() {
   const [direccionModal, setDireccionModal] = useState('');
   const [shippingCostModal, setShippingCostModal] = useState(0);
   const [selectedAddressModal, setSelectedAddressModal] = useState<{ lat: number; lng: number } | null>(null);
+  const [activeTab, setActiveTab] = useState<'en_curso' | 'historial'>('en_curso');
   
   // Ref para el input de dirección
   const addressInputRef = useRef<HTMLInputElement | null>(null);
@@ -385,6 +386,17 @@ export default function PerfilCliente() {
     medioPago: pedido.medioPago,
   }));
 
+  // Filtrar pedidos según la pestaña activa
+  const pedidosEnCurso = pedidosAdaptados.filter(pedido => {
+    const estado = pedido.estado.toLowerCase();
+    return !['completado', 'completed', 'finalizado', 'cancelado', 'canceled'].includes(estado);
+  });
+  
+  const pedidosHistorial = pedidosAdaptados.filter(pedido => {
+    const estado = pedido.estado.toLowerCase();
+    return ['completado', 'completed', 'finalizado', 'cancelado', 'canceled'].includes(estado);
+  });
+
   const handleShowAddDireccionInput = async () => {
     setShowAddDireccionInput(true);
     if (!isLoaded && !isLoading) {
@@ -485,14 +497,48 @@ export default function PerfilCliente() {
     <div className="min-h-screen w-full bg-gradient-to-br from-gray-100 via-white to-blue-100 flex items-center justify-center py-0">
       <main className="w-full max-w-md mx-auto flex flex-col gap-4 px-0 pt-2 pb-8">
         {/* Sección de pedidos realizados */}
-        <section className="bg-white rounded-2xl shadow-sm p-5 flex flex-col gap-2">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">Pedidos realizados</h3>
+        <section className="bg-white rounded-2xl shadow-sm p-3 flex flex-col gap-1">
+          <h3 className="text-lg font-semibold text-gray-800 my-0">Mis Pedidos</h3>
+          
+          {/* Pestañas */}
+          <div className="flex bg-gray-100 rounded-lg p-1 mb-2">
+            <button
+              onClick={() => setActiveTab('en_curso')}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'en_curso'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Pedidos en curso ({pedidosEnCurso.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('historial')}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'historial'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Historial ({pedidosHistorial.length})
+            </button>
+          </div>
+
+          {/* Contenido de las pestañas */}
           {loadingPedidos ? (
             <div className="text-sm text-gray-500">Cargando pedidos...</div>
-          ) : pedidosAdaptados.length === 0 ? (
-            <div className="text-sm text-gray-500">No tienes pedidos realizados.</div>
+          ) : activeTab === 'en_curso' ? (
+            pedidosEnCurso.length === 0 ? (
+              <div className="text-sm text-gray-500 text-center py-8">No tienes pedidos en curso.</div>
+            ) : (
+              <OrderManager orders={pedidosEnCurso} onCancelOrder={handleCancelOrder} />
+            )
           ) : (
-            <OrderManager orders={pedidosAdaptados} onCancelOrder={handleCancelOrder} />
+            pedidosHistorial.length === 0 ? (
+              <div className="text-sm text-gray-500 text-center py-8">No tienes pedidos en el historial.</div>
+            ) : (
+              <OrderManager orders={pedidosHistorial} onCancelOrder={handleCancelOrder} />
+            )
           )}
         </section>
 

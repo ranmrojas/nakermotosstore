@@ -42,7 +42,7 @@ export function OrderCard({ pedido, onCancelOrder, isAdmin = false }: OrderCardP
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          estado: 'cancelado'
+          estado: 'Cancelado'
         }),
       });
 
@@ -57,19 +57,32 @@ export function OrderCard({ pedido, onCancelOrder, isAdmin = false }: OrderCardP
   };
 
   const getEstadoColor = (estado: string) => {
-    switch (estado) {
+    console.log('Estado recibido:', estado);
+    switch (estado.toLowerCase()) {
       case 'sin_aceptar':
-        return 'bg-gray-50 text-gray-700 border border-gray-200 shadow-[0_0_15px_rgba(239,68,68,0.7)]';
+      case 'sin aceptar':
+      case 'pendiente':
+        return 'bg-yellow-50 text-yellow-700 border border-yellow-200 shadow-[0_0_15px_rgba(234,179,8,0.7)]';
       case 'cancelado':
+      case 'canceled':
         return 'bg-red-50 text-red-700 border border-red-200 shadow-[0_0_15px_rgba(239,68,68,0.7)]';
       case 'completado':
-        return 'bg-green-50 text-green-700 border border-green-200 shadow-[0_0_15px_rgba(239,68,68,0.7)]';
+      case 'completed':
+      case 'finalizado':
+        return 'bg-gray-50 text-gray-700 border border-gray-200 shadow-[0_0_15px_rgba(75,85,99,0.7)]';
       case 'en_proceso':
-        return 'bg-yellow-50 text-yellow-700 border border-yellow-200 shadow-[0_0_15px_rgba(239,68,68,0.7)]';
-      case 'pendiente':
-        return 'bg-orange-50 text-orange-700 border border-orange-200 shadow-[0_0_15px_rgba(239,68,68,0.7)]';
+      case 'en proceso':
+      case 'procesando':
+        return 'bg-blue-50 text-blue-700 border border-blue-200 shadow-[0_0_15px_rgba(59,130,246,0.7)]';
+      case 'aceptado':
+      case 'acepted':
+        return 'bg-purple-50 text-purple-700 border border-purple-200 shadow-[0_0_15px_rgba(147,51,234,0.7)]';
+      case 'enviado':
+      case 'enviado':
+      case 'shipped':
+        return 'bg-green-50 text-green-700 border border-green-200 shadow-[0_0_15px_rgba(34,197,94,0.7)]';
       default:
-        return 'bg-blue-50 text-blue-700 border border-blue-200 shadow-[0_0_15px_rgba(239,68,68,0.7)]';
+        return 'bg-gray-50 text-gray-700 border border-gray-200 shadow-[0_0_15px_rgba(107,114,128,0.7)]';
     }
   };
 
