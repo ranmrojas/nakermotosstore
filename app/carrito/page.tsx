@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useCart } from '../../hooks/useCart';
 import Image from 'next/image';
 import { getProductImageUrl } from '@/app/services/productService';
@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useClientSession } from '@/hooks/useClientSession';
 import { useClientesApi } from '@/hooks/useClientesApi';
 import Checkout from '../componentes/carrito/Checkout';
+import { gsap } from 'gsap';
 
 export default function CarritoPage() {
   const { cart, removeFromCart, updateQuantity, clearCart, totalItems, totalPrice } = useCart();
@@ -19,6 +20,10 @@ export default function CarritoPage() {
   const [telefonoError, setTelefonoError] = useState('');
   const [showCheckout, setShowCheckout] = useState(false);
 
+  // Referencias para los botones de medio de pago
+  const efectivoButtonRef = useRef<HTMLButtonElement>(null);
+  const qrButtonRef = useRef<HTMLButtonElement>(null);
+
   // URL para imágenes utilizando el servicio centralizado
   const getImageUrl = (id: number | null, ext: string | null) => {
     if (!id || !ext) return '/file.svg';
@@ -27,6 +32,34 @@ export default function CarritoPage() {
 
   // Validar número de celular colombiano
   const validarTelefono = (num: string) => /^3\d{9}$/.test(num);
+
+  // Efecto para animar los botones cuando no hay medio de pago seleccionado
+  useEffect(() => {
+    // Verificar que los elementos existan en el DOM
+    if (!efectivoButtonRef.current || !qrButtonRef.current) {
+      return;
+    }
+
+    if (!selectedPayment) {
+      // Crear timeline para animación sutil
+      const tl = gsap.timeline({ repeat: -1, yoyo: true });
+      
+      // Animación sutil para ambos botones
+      tl.to([efectivoButtonRef.current, qrButtonRef.current], {
+        scale: 1.02,
+        duration: 1.5,
+        ease: "power2.inOut"
+      });
+      
+      return () => {
+        tl.kill();
+      };
+    } else {
+      // Si hay medio de pago seleccionado, detener animaciones
+      gsap.killTweensOf([efectivoButtonRef.current, qrButtonRef.current]);
+      gsap.set([efectivoButtonRef.current, qrButtonRef.current], { scale: 1 });
+    }
+  }, [selectedPayment]);
 
   return (
     <div className="bg-white min-h-screen w-full">
@@ -205,22 +238,24 @@ export default function CarritoPage() {
                     <div className="text-xs font-semibold text-gray-700 mb-1">
                       Medio de pago <span className="text-red-500">*</span>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex justify-between">
                       <button
+                        ref={efectivoButtonRef}
                         type="button"
                         onClick={() => setSelectedPayment('contraentrega')}
-                        className={`inline-block px-3 py-1 rounded-full border text-sm font-semibold transition-colors
+                        className={`inline-block px-3 py-1 rounded-lg border text-sm font-semibold transition-colors
                           ${selectedPayment === 'contraentrega'
                             ? 'bg-blue-600 text-white border-blue-700 shadow'
                             : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'}
                         `}
                       >
-                        Contra entrega
+                        Efectivo
                       </button>
                       <button
+                        ref={qrButtonRef}
                         type="button"
                         onClick={() => setSelectedPayment('qr')}
-                        className={`inline-block px-3 py-1 rounded-full border text-sm font-semibold transition-colors
+                        className={`inline-block px-3 py-1 rounded-lg border text-sm font-semibold transition-colors
                           ${selectedPayment === 'qr'
                             ? 'bg-blue-600 text-white border-blue-700 shadow'
                             : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'}
@@ -252,18 +287,24 @@ export default function CarritoPage() {
                     Realizar pedido
                   </button>
 
-                  <button
-                    onClick={clearCart}
-                    className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    Vaciar carrito
-                  </button>
-                  <Link
-                    href="/productos"
-                    className="w-full flex items-center justify-center px-4 py-2 text-amber-600 font-medium hover:text-amber-700 transition-colors"
-                  >
-                    Seguir comprando
-                  </Link>
+                  <div className="border-t border-gray-100 pt-3 mt-3">
+                    <div className="flex gap-2">
+                    <Link
+                      href="/productos"
+                      className="flex-1 flex items-center justify-center px-4 py-2 font-medium transition-colors"
+                      style={{ color: 'var(--primary-lighter)' }}
+                    >
+                      Seguir comprando
+                    </Link>
+
+                    <button
+                      onClick={clearCart}
+                      className="flex items-center justify-center px-2 py-1 border border-gray-300 text-gray-500 text-xs font-medium rounded hover:bg-gray-50 transition-colors"
+                    >
+                      Vaciar carrito
+                    </button>
+                  </div>
+                  </div>
                 </div>
               </div>
             </div>
