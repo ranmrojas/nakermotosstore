@@ -46,8 +46,8 @@ export default function RootLayout({
               <HeaderWrapper />
               {children}
             </PreloadOptimizer>
-            {/* ButtonNav global para todas las páginas excepto productos */}
-            <ButtonNav accentColor="amber" hideOnProducts={true} />
+            {/* ButtonNav global para todas las páginas excepto productos y admin */}
+            <ButtonNavWrapper />
             {/* CartManager global para todas las páginas */}
             <CartManager showCheckoutButton={true} />
           </ClientSessionProvider>
@@ -81,4 +81,32 @@ function HeaderWrapper() {
 
   if (pathname === "/ageverification") return null;
   return <Header onToggleSidebar={toggleSidebar} />;
+}
+
+// Este wrapper permite condicionar ButtonNav según la ruta y el tamaño de pantalla
+function ButtonNavWrapper() {
+  const pathname = usePathname();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768); // md breakpoint
+    };
+
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
+  // No mostrar ButtonNav en admin o en ageverification
+  if (pathname === "/admin" || pathname === "/ageverification") {
+    return null;
+  }
+
+  // Solo mostrar en móvil
+  if (!isMobile) {
+    return null;
+  }
+
+  return <ButtonNav accentColor="amber" hideOnProducts={true} />;
 }
