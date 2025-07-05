@@ -7,6 +7,9 @@ import Header from "./componentes/ui/Header";
 import CartManager from "./componentes/carrito/CartManager";
 import { useAnalytics } from "../hooks/useAnalytics";
 import { CartProvider } from "../hooks/useCart";
+import { ClientSessionProvider } from "../hooks/useClientSession";
+import 'react-notifications-component/dist/theme.css';
+import { ReactNotifications } from 'react-notifications-component';
 
 const geist = Geist({
   subsets: ["latin"],
@@ -36,15 +39,18 @@ export default function RootLayout({
         <title>Licorera Zona Frank</title>
       </head>
       <body className={geist.className}>
+        <ReactNotifications />
         <CartProvider>
-          <PreloadOptimizer autoStart={true}>
-            <HeaderWrapper />
-            {children}
-          </PreloadOptimizer>
-          {/* ButtonNav global para todas las páginas excepto productos */}
-          <ButtonNav accentColor="amber" hideOnProducts={true} />
-          {/* CartManager global para todas las páginas */}
-          <CartManager showCheckoutButton={true} />
+          <ClientSessionProvider>
+            <PreloadOptimizer autoStart={true}>
+              <HeaderWrapper />
+              {children}
+            </PreloadOptimizer>
+            {/* ButtonNav global para todas las páginas excepto productos */}
+            <ButtonNav accentColor="amber" hideOnProducts={true} />
+            {/* CartManager global para todas las páginas */}
+            <CartManager showCheckoutButton={true} />
+          </ClientSessionProvider>
         </CartProvider>
       </body>
     </html>

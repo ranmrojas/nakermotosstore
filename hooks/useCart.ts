@@ -10,6 +10,7 @@ interface CartItem {
   sku: string;
   categoria: string;
   marca: string;
+  nota?: string;
 }
 
 interface UseCartReturn {
@@ -22,9 +23,12 @@ interface UseCartReturn {
   totalPrice: number;
   isInCart: (id: number) => boolean;
   getItemQuantity: (id: number) => number;
+  medioPago: string;
+  setMedioPago: (medio: string) => void;
 }
 
 const CART_STORAGE_KEY = 'lzf_cart';
+const MEDIO_PAGO_STORAGE_KEY = 'lzf_medio_pago';
 
 const CartContext = createContext<UseCartReturn | undefined>(undefined);
 
@@ -38,6 +42,7 @@ export const useCart = (): UseCartReturn => {
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [medioPago, setMedioPagoState] = useState<string>('efectivo');
 
   useEffect(() => {
     try {
@@ -45,6 +50,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       if (savedCart) {
         const parsedCart = JSON.parse(savedCart);
         setCart(parsedCart);
+      }
+      
+      const savedMedioPago = localStorage.getItem(MEDIO_PAGO_STORAGE_KEY);
+      if (savedMedioPago) {
+        setMedioPagoState(savedMedioPago);
       }
     } catch (error) {
       console.error('Error cargando carrito desde localStorage:', error);
@@ -58,6 +68,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       console.error('Error guardando carrito en localStorage:', error);
     }
   }, [cart]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(MEDIO_PAGO_STORAGE_KEY, medioPago);
+    } catch (error) {
+      console.error('Error guardando medio de pago en localStorage:', error);
+    }
+  }, [medioPago]);
 
   const addToCart = useCallback((item: Omit<CartItem, 'cantidad'> & { cantidad?: number }) => {
     setCart(prevCart => {
@@ -105,6 +123,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return item ? item.cantidad : 0;
   }, [cart]);
 
+  const setMedioPago = useCallback((medio: string) => {
+    setMedioPagoState(medio);
+  }, []);
+
   const totalItems = cart.reduce((total, item) => total + item.cantidad, 0);
   const totalPrice = cart.reduce((total, item) => total + (item.precio * item.cantidad), 0);
 
@@ -117,7 +139,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     totalItems,
     totalPrice,
     isInCart,
-    getItemQuantity
+    getItemQuantity,
+    medioPago,
+    setMedioPago
   };
 
   return React.createElement(CartContext.Provider, { value }, children);

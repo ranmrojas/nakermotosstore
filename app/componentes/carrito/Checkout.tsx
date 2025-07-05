@@ -1,500 +1,670 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useCart } from '../../../hooks/useCart';
-import { useShipping } from '../../../hooks/useShipping';
 import { analyticsEvents } from '../../../hooks/useAnalytics';
-import Image from 'next/image';
-import { getProductImageUrl } from '@/app/services/productService';
-import ShippingCalculator from './ShippingCalculator';
-import Link from 'next/link';
+import { useGoogleMaps } from '../../../hooks/useGoogleMaps';
+import { useClientSession } from '@/hooks/useClientSession';
+import { useClientesApi } from '@/hooks/useClientesApi';
+import { DireccionGuardada } from '@/types/direcciones';
+import { useRouter } from 'next/navigation';
 
-export default function Checkout() {
-  const { cart, clearCart, totalItems, totalPrice } = useCart();
-  const { shippingInfo, updateShippingInfo, updateAddress } = useShipping();
-  const [formData, setFormData] = useState({
-    nombre: '',
-    apellido: '',
-    email: '',
-    telefono: '',
-    direccion: '',
-    ciudad: 'Villavicencio',
-    departamento: 'Meta',
-    codigoPostal: '',
-    metodoPago: 'efectivo',
-    notasAdicionales: ''
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [orderComplete, setOrderComplete] = useState(false);
+interface CheckoutProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
 
-  // URL para imágenes utilizando el servicio centralizado
-  const getImageUrl = (id: number | null, ext: string | null) => {
-    if (!id || !ext) return '/file.svg';
-    return getProductImageUrl(id, ext);
+export default function Checkout({ isOpen, onClose }: CheckoutProps) {
+  const router = useRouter();
+  const { cart, clearCart, totalPrice, medioPago } = useCart();
+  const { isLoaded, isLoading, loadGoogleMaps } = useGoogleMaps();
+  const { session, saveSession } = useClientSession();
+  const { createOrUpdateCliente } = useClientesApi();
+  
+  // Estados del formulario
+  const [nombre, setNombre] = useState('');
+  const [direccion, setDireccion] = useState('');
+  const [error, setError] = useState('');
+  const [shippingCost, setShippingCost] = useState(0);
+  const [nombreError, setNombreError] = useState('');
+  const [direccionError, setDireccionError] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
+  
+  // Nuevo estado para modo edición
+  const [editando, setEditando] = useState(false);
+  
+  // Estados para el dropdown de direcciones guardadas
+  const [showDireccionesDropdown, setShowDireccionesDropdown] = useState(false);
+  const [direccionesGuardadas, setDireccionesGuardadas] = useState<DireccionGuardada[]>([]);
+  const [loadingDirecciones, setLoadingDirecciones] = useState(false);
+
+  // Variables para la gestión de direcciones y ubicación
+  const [selectedAddress, setSelectedAddress] = useState<{
+    display_name: string;
+    lat: string;
+    lon: string;
+  } | null>(null);
+
+  // Coordenadas de la tienda en Villavicencio
+  const STORE_LOCATION = {
+    lat: 4.126551,
+    lon: -73.632540
   };
 
-  // Manejar cambios en el formulario
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  // Rangos de distancia y costos de envío - memoizado para evitar recreaciones
+  const SHIPPING_ZONES = useCallback(() => [
+    { min: 0, max: 0.5, cost: 4500 },
+    { min: 0.5, max: 0.750, cost: 5000 },
+    { min: 0.750, max: 1.2, cost: 6000 },
+    { min: 1.2, max: 1.8, cost: 7000 },
+    { min: 1.8, max: 2.4, cost: 9000 },
+    { min: 2.4, max: 3, cost: 10000 },
+    { min: 3, max: 4, cost: 11000 },
+    { min: 4, max: 6, cost: 12000 },
+    { min: 7, max: 8, cost: 14000 },
+    { min: 8, max: Infinity, cost: 15000 }
+  ], []);
 
-  // Generar mensaje de WhatsApp con el pedido
-  const generateWhatsAppMessage = () => {
-    const itemsList = cart.map(item => 
-      `${item.cantidad} ${item.nombre} - $${item.precio.toLocaleString('es-CO')} c/u = $${(item.precio * item.cantidad).toLocaleString('es-CO')}`
-    ).join('\n');
+  // Calcular distancia usando la fórmula de Haversine - memoizada para evitar recreaciones
+  const calculateDistance = useCallback((lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }, []);
 
-    const subtotal = totalPrice;
-    const totalConEnvio = subtotal + shippingInfo.cost;
-
-    const customerInfo = `*DATOS DEL CLIENTE:*
-Nombre: ${formData.nombre} ${formData.apellido}
-Email: ${formData.email}
-Teléfono: ${formData.telefono}
-Dirección: ${shippingInfo.address || formData.direccion}
-Ciudad: ${formData.ciudad}
-Departamento: ${formData.departamento}
-${formData.codigoPostal ? `Código Postal: ${formData.codigoPostal}` : ''}
-
-*MÉTODO DE PAGO:* ${formData.metodoPago.toUpperCase()}
-
-${formData.notasAdicionales ? `*NOTAS ADICIONALES:*
-${formData.notasAdicionales}
-
-` : ''}*PEDIDO:*
-${itemsList}
-
-*RESUMEN DE COSTOS:*
-Subtotal: $${subtotal.toLocaleString('es-CO')}
-${shippingInfo.cost > 0 ? `Envío: $${shippingInfo.cost.toLocaleString('es-CO')}` : 'Envío: Gratis'}
-*TOTAL A PAGAR: $${totalConEnvio.toLocaleString('es-CO')}*
-
-${shippingInfo.address ? `*DIRECCIÓN CONFIRMADA:* ${shippingInfo.address}` : ''}`;
-
-    return customerInfo;
-  };
-
-  // Manejar envío del formulario
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Calcular costo de envío basado en la distancia - memoizado para evitar recreaciones
+  const calculateShippingCost = useCallback((distance: number): number => {
+    const zones = SHIPPING_ZONES();
+    const zone = zones.find(z => distance >= z.min && distance <= z.max);
     
-    if (cart.length === 0) {
-      setError('Tu carrito está vacío. Agrega productos antes de realizar el pedido.');
-      return;
-    }
-
-    // Verificar que se haya calculado el envío si hay productos
-    if (!shippingInfo.confirmed && cart.length > 0) {
-      setError('Por favor, calcula el costo de envío antes de continuar.');
-      return;
+    if (zone) {
+      return zone.cost;
     }
     
-    setLoading(true);
-    setError(null);
+    if (distance > 8) {
+      return zones[zones.length - 1].cost;
+    }
+    
+    return zones[0].cost;
+  }, [SHIPPING_ZONES]);
+
+  // Inicializar autocompletado de direcciones
+  const initializeAutocomplete = useCallback(() => {
+    if (!window.google || !addressInputRef.current) return;
+
+    const autocompleteInstance = new window.google.maps.places.Autocomplete(addressInputRef.current, {
+      componentRestrictions: { country: 'co' },
+      fields: ['formatted_address', 'geometry', 'place_id', 'name'],
+      bounds: new window.google.maps.LatLngBounds(
+        new window.google.maps.LatLng(4.0, -73.7), // Suroeste de Villavicencio
+        new window.google.maps.LatLng(4.3, -73.5)  // Noreste de Villavicencio
+      ),
+      strictBounds: true
+    });
+
+    autocompleteInstance.addListener('place_changed', () => {
+      const place = autocompleteInstance.getPlace();
+      if (place.geometry && place.geometry.location) {
+        const location = {
+          lat: place.geometry.location.lat(),
+          lng: place.geometry.location.lng(),
+          address: place.formatted_address
+        };
+        
+        setDireccion(place.formatted_address);
+        setSelectedAddress({
+          display_name: place.formatted_address,
+          lat: location.lat.toString(),
+          lon: location.lng.toString()
+        });
+        
+        // Calcular envío
+        const distance = calculateDistance(
+          STORE_LOCATION.lat,
+          STORE_LOCATION.lon,
+          location.lat,
+          location.lng
+        );
+        const cost = calculateShippingCost(distance);
+        setShippingCost(cost);
+        
+        analyticsEvents.addressSelected(place.formatted_address, distance, cost);
+      }
+    });
+  }, [calculateDistance, calculateShippingCost, STORE_LOCATION.lat, STORE_LOCATION.lon]);
+
+  // Determinar si hay datos guardados (nombre y dirección no vacíos) - mover antes de los useEffect
+  const datosGuardados = Boolean(session?.nombre && session?.direccion);
+
+  // Cargar Google Maps API
+  useEffect(() => {
+    if (!isLoaded && !isLoading) {
+      loadGoogleMaps().then(() => {
+        if (isOpen && !datosGuardados) {
+          initializeAutocomplete();
+        }
+      }).catch((err) => {
+        console.error('Error loading Google Maps:', err);
+      });
+    } else if (isLoaded && isOpen && !datosGuardados) {
+      initializeAutocomplete();
+    }
+  }, [isLoaded, isLoading, loadGoogleMaps, isOpen, initializeAutocomplete, datosGuardados]);
+
+  // Agregar un useEffect para inicializar el autocompletado cuando se cambie a modo editable
+  useEffect(() => {
+    if (isLoaded && editando && addressInputRef.current) {
+      // Pequeño delay para asegurar que el DOM se haya actualizado
+      setTimeout(() => {
+        initializeAutocomplete();
+      }, 100);
+    }
+  }, [editando, isLoaded, initializeAutocomplete]);
+
+  // Cerrar dropdown cuando se hace clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.direcciones-dropdown')) {
+        setShowDireccionesDropdown(false);
+      }
+    };
+
+    if (showDireccionesDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDireccionesDropdown]);
+
+  // Manejar cambios en el input de dirección
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDireccion(e.target.value);
+    setSelectedAddress(null);
+  };
+
+  // Función para seleccionar una dirección guardada
+  const handleSelectDireccionGuardada = (direccionGuardada: DireccionGuardada) => {
+    setDireccion(direccionGuardada.direccion);
+    setShippingCost(direccionGuardada.valordomicilio || 0);
+    setShowDireccionesDropdown(false);
+    if (direccionGuardada.lat && direccionGuardada.lng) {
+      const distance = calculateDistance(
+        STORE_LOCATION.lat,
+        STORE_LOCATION.lon,
+        direccionGuardada.lat,
+        direccionGuardada.lng
+      );
+      const cost = calculateShippingCost(distance);
+      setShippingCost(cost);
+    }
+  };
+
+  // Función para guardar dirección actual antes de editar
+  const handleSaveCurrentAddressAndEdit = async () => {
+    console.log('Iniciando guardado de dirección...', { session, direccion, shippingCost });
+    
+    if (session && direccion.trim() && shippingCost > 0) {
+      try {
+        // Obtener las direcciones guardadas actuales
+        const direccionesActuales = session.direccionesGuardadas?.direcciones || [];
+        console.log('Direcciones actuales:', direccionesActuales);
+        
+        // Verificar si la dirección actual ya existe en las guardadas
+        const direccionYaExiste = direccionesActuales.some(
+          (dir: DireccionGuardada) => dir.direccion === direccion.trim()
+        );
+        console.log('¿Dirección ya existe?', direccionYaExiste);
+        
+        // Solo guardar si no existe ya
+        if (!direccionYaExiste) {
+          const nuevaDireccionGuardada = {
+            id: Date.now().toString(),
+            direccion: direccion.trim(),
+            valordomicilio: shippingCost,
+            lat: selectedAddress?.lat ? parseFloat(selectedAddress.lat) : undefined,
+            lng: selectedAddress?.lon ? parseFloat(selectedAddress.lon) : undefined,
+            nombre: 'Dirección guardada',
+            esPrincipal: false,
+            fechaCreacion: new Date().toISOString()
+          };
+          
+          console.log('Nueva dirección a guardar:', nuevaDireccionGuardada);
+          
+          // Actualizar cliente con la nueva dirección guardada
+          const clienteData: {
+            telefono: string;
+            nombre: string;
+            direccion: string;
+            valordomicilio: number;
+            direccionesGuardadas?: {
+              direcciones: DireccionGuardada[];
+              direccionPrincipal: string;
+            };
+          } = {
+            telefono: session.telefono,
+            nombre: session.nombre,
+            direccion: session.direccion,
+            valordomicilio: session.valordomicilio,
+          };
+          
+          console.log('Datos del cliente a actualizar:', clienteData);
+          
+          const clienteActualizado = await createOrUpdateCliente(clienteData);
+          console.log('Cliente actualizado:', clienteActualizado);
+          
+          if (clienteActualizado) {
+            // Actualizar la sesión
+            saveSession({
+              id: clienteActualizado.id,
+              telefono: clienteActualizado.telefono,
+              nombre: clienteActualizado.nombre,
+              direccion: clienteActualizado.direccion,
+              valordomicilio: clienteActualizado.valordomicilio,
+              direccionesGuardadas: clienteActualizado.direccionesGuardadas
+            });
+            console.log('Sesión actualizada con nuevas direcciones guardadas');
+          }
+        } else {
+          console.log('La dirección ya existe, no se guarda');
+        }
+      } catch (error) {
+        console.error('Error al guardar dirección:', error);
+        // Continuar con la edición aunque falle el guardado
+      }
+    } else {
+      console.log('No se cumplen las condiciones para guardar:', { 
+        tieneSession: !!session, 
+        direccionValida: !!direccion.trim(), 
+        shippingCostValido: shippingCost > 0 
+      });
+    }
+    
+    // Cambiar a modo editable
+    setEditando(true);
+  };
+
+  // Función para obtener direcciones guardadas del cliente
+  const obtenerDireccionesGuardadas = useCallback(async () => {
+    if (!session?.id) return;
+    setLoadingDirecciones(true);
+    try {
+      const response = await fetch(`/api/clientes/${session.id}`);
+      if (response.ok) {
+        const cliente = await response.json();
+        const direcciones: DireccionGuardada[] = cliente.direccionesGuardadas?.direcciones || [];
+        setDireccionesGuardadas(direcciones);
+        console.log('Direcciones guardadas obtenidas:', direcciones);
+      }
+    } catch (error) {
+      console.error('Error al obtener direcciones guardadas:', error);
+    } finally {
+      setLoadingDirecciones(false);
+    }
+  }, [session?.id]);
+
+  // Verificar si hay direcciones guardadas disponibles
+  const direccionesGuardadasDisponibles = direccionesGuardadas.filter(
+    (dir) => dir.direccion !== direccion
+  );
+  
+  // Debug: Log de direcciones guardadas
+  console.log('Direcciones guardadas del estado:', direccionesGuardadas);
+  console.log('Direcciones guardadas disponibles:', direccionesGuardadasDisponibles);
+  console.log('Dirección actual:', direccion);
+
+  // Sincronizar nombre y dirección con la sesión si existen
+  useEffect(() => {
+    if (session) {
+      if (session.nombre) setNombre(session.nombre);
+      if (session.direccion) setDireccion(session.direccion);
+      if (session.valordomicilio && session.valordomicilio > 0) {
+        setShippingCost(session.valordomicilio);
+      }
+    }
+  }, [session, isOpen]);
+
+  // Cargar direcciones guardadas cuando se abre el modal
+  useEffect(() => {
+    if (isOpen && session?.id) {
+      obtenerDireccionesGuardadas();
+    }
+  }, [isOpen, session?.id, obtenerDireccionesGuardadas]);
+
+  // Función para manejar el cierre del checkout
+  const handleClose = () => {
+    onClose();
+    // Limpiar estados
+    setNombre('');
+    setDireccion('');
+    setShippingCost(0);
+    setSelectedAddress(null);
+    setNombreError('');
+    setDireccionError('');
+    setError('');
+  };
+
+  // Función para confirmar pedido
+  const handleConfirmOrder = async () => {
+    let hasError = false;
+    if (!nombre.trim()) {
+      setNombreError('Este campo es obligatorio');
+      hasError = true;
+    } else {
+      setNombreError('');
+    }
+    if (!direccion.trim()) {
+      setDireccionError('Este campo es obligatorio');
+      hasError = true;
+    } else {
+      setDireccionError('');
+    }
+    if (hasError) return;
+    setError('');
+    
+    // Cerrar el modal de checkout inmediatamente y mostrar el modal de éxito
+    handleClose();
+    setShowSuccess(true);
+    
+    // Actualizar cliente en la base de datos y sesión
+    if (session) {
+      try {
+        // Preparar los datos del cliente
+        const clienteData: {
+          telefono: string;
+          nombre: string;
+          direccion: string;
+          valordomicilio: number;
+          direccionesGuardadas?: {
+            direcciones: DireccionGuardada[];
+            direccionPrincipal: string;
+          };
+        } = {
+          telefono: session.telefono,
+          nombre: nombre.trim(),
+          direccion: direccion.trim(),
+          valordomicilio: shippingCost,
+        };
+
+        // Si el cliente ya tiene una dirección principal, moverla a direccionesGuardadas
+        if (session.direccion && session.direccion !== direccion.trim()) {
+          // Obtener las direcciones guardadas actuales
+          const direccionesActuales = session.direccionesGuardadas?.direcciones || [];
+          
+          // Agregar la dirección actual como guardada
+          const nuevaDireccionGuardada = {
+            id: Date.now().toString(),
+            direccion: session.direccion,
+            valordomicilio: session.valordomicilio || 0,
+            lat: undefined,
+            lng: undefined,
+            nombre: 'Dirección anterior',
+            esPrincipal: false,
+            fechaCreacion: new Date().toISOString()
+          };
+          
+          clienteData.direccionesGuardadas = {
+            direcciones: [...direccionesActuales, nuevaDireccionGuardada],
+            direccionPrincipal: nuevaDireccionGuardada.id
+          };
+        }
+
+        const clienteActualizado = await createOrUpdateCliente(clienteData);
+        
+        if (clienteActualizado) {
+          saveSession({
+            id: clienteActualizado.id,
+            telefono: clienteActualizado.telefono,
+            nombre: clienteActualizado.nombre,
+            direccion: clienteActualizado.direccion,
+            valordomicilio: clienteActualizado.valordomicilio,
+            direccionesGuardadas: clienteActualizado.direccionesGuardadas
+          });
+        }
+      } catch (error) {
+        console.error('Error al actualizar cliente:', error);
+      }
+    }
     
     try {
-      const totalConEnvio = totalPrice + shippingInfo.cost;
-      
-      // Rastrear evento de checkout
-      analyticsEvents.checkout(
-        totalItems,
-        totalConEnvio,
-        formData.metodoPago
-      );
-      
-      // Generar mensaje de WhatsApp
-      const whatsappMessage = generateWhatsAppMessage();
-      const encodedMessage = encodeURIComponent(whatsappMessage);
-      const whatsappUrl = `https://wa.me/573043668910?text=${encodedMessage}`;
-      
-      // Rastrear evento de compra completada
-      analyticsEvents.purchase(
-        'WHATSAPP_ORDER',
-        totalItems,
-        totalConEnvio,
-        formData.metodoPago
-      );
-      
-      // Abrir WhatsApp en nueva pestaña
-      window.open(whatsappUrl, '_blank');
-      
-      // Limpiar carrito y mostrar confirmación
+      const response = await fetch('/api/pedidos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          estado: 'Pendiente',
+          productos: cart,
+          subtotal: totalPrice,
+          domicilio: shippingCost,
+          total: totalPrice + shippingCost,
+          clienteId: session?.id,
+          medioPago: medioPago,
+        }),
+      });
+
+      if (!response.ok) {
+        setError('No se pudo registrar el pedido. Intenta de nuevo.');
+        return;
+      }
+
+      await response.json(); // Solo para consumir la respuesta
       clearCart();
-      setOrderComplete(true);
-    } catch (err) {
-      setError('Ocurrió un error al procesar tu pedido. Por favor intenta nuevamente.');
-      console.error('Error al procesar el pedido:', err);
-    } finally {
-      setLoading(false);
+      
+      // Cerrar el modal de éxito después de 2 segundos y redirigir
+      setTimeout(() => {
+        setShowSuccess(false);
+        // Redirigir a /cuenta después de cerrar el modal
+        router.push('/cuenta');
+      }, 2000);
+
+    } catch {
+      setError('Ocurrió un error al registrar el pedido.');
+      setShowSuccess(false);
     }
   };
 
-  // Si el pedido está completo, mostrar confirmación
-  if (orderComplete) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
-          <div className="mb-4 text-green-600">
-            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">¡Pedido enviado por WhatsApp!</h2>
-          <p className="text-gray-600 mb-4">
-            Tu pedido ha sido enviado a nuestro WhatsApp. Te contactaremos pronto para confirmar los detalles y coordinar la entrega.
-          </p>
-          <p className="text-gray-600 mb-6">
-            Si no se abrió WhatsApp automáticamente, puedes contactarnos directamente al <strong>+57 304 366 8910</strong>
-          </p>
-          <div className="space-y-3">
-            <Link
-              href="/"
-              className="inline-block px-6 py-3 bg-amber-600 text-white font-medium rounded-lg hover:bg-amber-700 transition-colors"
-            >
-              Volver a la tienda
-            </Link>
-            <button
-              onClick={() => {
-                const whatsappMessage = generateWhatsAppMessage();
-                const encodedMessage = encodeURIComponent(whatsappMessage);
-                const whatsappUrl = `https://wa.me/573043668910?text=${encodedMessage}`;
-                window.open(whatsappUrl, '_blank');
-              }}
-              className="block mx-auto px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
-            >
-              Abrir WhatsApp nuevamente
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Justo después de los otros estados y hooks:
+  const addressInputRef = useRef<HTMLInputElement | null>(null);
+
+  if (!isOpen && !showSuccess) return null;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Checkout</h1>
-      
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-          {error}
-        </div>
-      )}
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Formulario de checkout */}
-        <div className="lg:col-span-2">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Información de contacto</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1">
-                    Nombre
-                  </label>
-                  <input
-                    type="text"
-                    id="nombre"
-                    name="nombre"
-                    value={formData.nombre}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="apellido" className="block text-sm font-medium text-gray-700 mb-1">
-                    Apellido
-                  </label>
-                  <input
-                    type="text"
-                    id="apellido"
-                    name="apellido"
-                    value={formData.apellido}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-              </div>
-              
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="telefono" className="block text-sm font-medium text-gray-700 mb-1">
-                    Teléfono
-                  </label>
-                  <input
-                    type="tel"
-                    id="telefono"
-                    name="telefono"
-                    value={formData.telefono}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Dirección de envío</h2>
-              
-              {/* Calculadora de envío */}
-              <ShippingCalculator
-                onShippingCalculated={updateShippingInfo}
-                onAddressChange={updateAddress}
-                currentAddress={shippingInfo.address}
-                currentShippingCost={shippingInfo.cost}
-              />
-              
-              <div className="mt-4 space-y-4">
-                <div>
-                  <label htmlFor="direccion" className="block text-sm font-medium text-gray-700 mb-1">
-                    Dirección adicional (opcional)
-                  </label>
-                  <input
-                    type="text"
-                    id="direccion"
-                    name="direccion"
-                    value={formData.direccion}
-                    onChange={handleChange}
-                    placeholder="Detalles adicionales de la dirección..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label htmlFor="ciudad" className="block text-sm font-medium text-gray-700 mb-1">
-                      Ciudad
-                    </label>
-                    <input
-                      type="text"
-                      id="ciudad"
-                      name="ciudad"
-                      value={formData.ciudad}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="departamento" className="block text-sm font-medium text-gray-700 mb-1">
-                      Departamento
-                    </label>
-                    <input
-                      type="text"
-                      id="departamento"
-                      name="departamento"
-                      value={formData.departamento}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="codigoPostal" className="block text-sm font-medium text-gray-700 mb-1">
-                      Código Postal
-                    </label>
-                    <input
-                      type="text"
-                      id="codigoPostal"
-                      name="codigoPostal"
-                      value={formData.codigoPostal}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Método de pago</h2>
-              
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <input
-                    type="radio"
-                    id="efectivo"
-                    name="metodoPago"
-                    value="efectivo"
-                    checked={formData.metodoPago === 'efectivo'}
-                    onChange={handleChange}
-                    className="h-4 w-4 text-amber-600 focus:ring-amber-500"
-                  />
-                  <label htmlFor="efectivo" className="ml-2 text-sm text-gray-700">
-                    Efectivo contra entrega
-                  </label>
-                </div>
-                
-                <div className="flex items-center">
-                  <input
-                    type="radio"
-                    id="transferencia"
-                    name="metodoPago"
-                    value="transferencia"
-                    checked={formData.metodoPago === 'transferencia'}
-                    onChange={handleChange}
-                    className="h-4 w-4 text-amber-600 focus:ring-amber-500"
-                  />
-                  <label htmlFor="transferencia" className="ml-2 text-sm text-gray-700">
-                    Transferencia bancaria
-                  </label>
-                </div>
-                
-                <div className="flex items-center">
-                  <input
-                    type="radio"
-                    id="nequi"
-                    name="metodoPago"
-                    value="nequi"
-                    checked={formData.metodoPago === 'nequi'}
-                    onChange={handleChange}
-                    className="h-4 w-4 text-amber-600 focus:ring-amber-500"
-                  />
-                  <label htmlFor="nequi" className="ml-2 text-sm text-gray-700">
-                    Nequi
-                  </label>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Notas adicionales</h2>
-              
-              <textarea
-                id="notasAdicionales"
-                name="notasAdicionales"
-                value={formData.notasAdicionales}
-                onChange={handleChange}
-                rows={3}
-                placeholder="Instrucciones especiales para la entrega, referencias, etc."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
-              ></textarea>
-            </div>
-            
+    <>
+      {/* Modal principal de checkout */}
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-emerald-100/70 via-white/80 to-amber-100/70">
+          <div className="bg-white dark:bg-neutral-900 rounded-lg shadow-lg p-6 w-full max-w-xs relative animate-fade-in">
             <button
-              type="submit"
-              disabled={loading || cart.length === 0}
-              className={`w-full py-3 px-4 rounded-lg font-medium text-white ${
-                loading || cart.length === 0
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-green-600 hover:bg-green-700'
-              } transition-colors flex items-center justify-center gap-2`}
+              className="absolute top-2 right-2 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-xl"
+              onClick={handleClose}
+              aria-label="Cerrar"
             >
-              {loading ? (
-                <>
-                  <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Procesando...
-                </>
-              ) : (
-                <>
-                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
-                  </svg>
-                  Enviar pedido por WhatsApp
-                </>
-              )}
+              ×
             </button>
-          </form>
-        </div>
-        
-        {/* Resumen del pedido */}
-        <div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-4">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Resumen del pedido</h2>
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Completa tu pedido</h3>
             
-            {cart.length === 0 ? (
-              <div className="text-center py-4">
-                <p className="text-gray-500">Tu carrito está vacío</p>
-                <Link
-                  href="/productos"
-                  className="mt-4 inline-block text-amber-600 hover:text-amber-700"
+            {/* Input para nombre */}
+            {datosGuardados && !editando ? (
+              <div className="flex items-center mb-3">
+                <span className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded bg-gray-50 dark:bg-neutral-800 text-gray-900 dark:text-gray-100">{nombre}</span>
+                <button
+                  type="button"
+                  className="ml-2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  onClick={() => setEditando(true)}
                 >
-                  Continuar comprando
-                </Link>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
               </div>
             ) : (
-              <>
-                <ul className="divide-y divide-gray-200 mb-4">
-                  {cart.map((item) => (
-                    <li key={item.id} className="py-3 flex items-center space-x-3">
-                      <div className="relative w-12 h-12 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden">
-                        <Image
-                          src={getImageUrl(item.imagen, item.extension)}
-                          alt={item.nombre}
-                          fill
-                          className="object-cover"
-                          unoptimized={true}
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = '/file.svg';
-                          }}
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {item.nombre}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {item.cantidad} x ${item.precio.toLocaleString('es-CO')}
-                        </p>
-                      </div>
-                      <span className="text-sm font-medium text-gray-900">
-                        ${(item.precio * item.cantidad).toLocaleString('es-CO')}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                
-                <div className="border-t border-gray-200 pt-4 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Subtotal</span>
-                    <span className="text-gray-900 font-medium">
-                      ${totalPrice.toLocaleString('es-CO')}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Envío</span>
-                    <span className="text-gray-900 font-medium">
-                      Por calcular
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-base pt-2 border-t border-gray-200 mt-2">
-                    <span className="font-semibold text-gray-900">Total</span>
-                    <span className="font-bold text-gray-900">
-                      ${totalPrice.toLocaleString('es-CO')}
-                    </span>
-                  </div>
-                </div>
-              </>
+              <input
+                type="text"
+                className="w-full mb-3 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-neutral-800 dark:text-gray-100"
+                value={nombre}
+                onChange={e => {
+                  setNombre(e.target.value);
+                  if (e.target.value.trim()) setNombreError('');
+                }}
+                placeholder="Nombre"
+                readOnly={datosGuardados && !editando}
+              />
             )}
+            {nombreError && <div className="text-red-500 text-xs mb-2">{nombreError}</div>}
+            
+            {/* Input para dirección */}
+            {datosGuardados && !editando ? (
+              <div className="relative w-full mb-1 flex items-start">
+                <span className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded bg-gray-50 dark:bg-neutral-800 text-gray-900 dark:text-gray-100 max-h-12 overflow-hidden text-sm leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{direccion}</span>
+                <button
+                  type="button"
+                  className="ml-2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mt-1"
+                  onClick={handleSaveCurrentAddressAndEdit}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <div className="relative w-full mb-1">
+                <input
+                  ref={addressInputRef}
+                  type="text"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-neutral-800 dark:text-gray-100 pr-10"
+                  value={direccion}
+                  onChange={e => {
+                    handleAddressChange(e);
+                    if (e.target.value.trim()) setDireccionError('');
+                  }}
+                  placeholder="Escribe tu dirección en Villavicencio..."
+                  readOnly={datosGuardados && !editando}
+                />
+                {direccion && editando && (
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-lg focus:outline-none"
+                    style={{ zIndex: 2 }}
+                    onClick={() => setDireccion('')}
+                    tabIndex={-1}
+                    aria-label="Limpiar dirección"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            )}
+            {direccionError && <div className="text-red-500 text-xs mb-2">{direccionError}</div>}
+            
+            {/* Tag de ciudad/departamento y dropdown de direcciones guardadas */}
+            <div className="mb-2 flex items-center gap-2">
+              <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold border border-gray-300 dark:bg-neutral-700 dark:text-gray-200 dark:border-neutral-600">
+                Villavicencio
+              </span>
+              
+              {/* Botón para mostrar direcciones guardadas */}
+              <div className="relative direcciones-dropdown">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      console.log('Clic en botón Otra dirección');
+                      console.log('Estado actual del dropdown:', showDireccionesDropdown);
+                      
+                      // Recargar direcciones guardadas antes de abrir el dropdown
+                      await obtenerDireccionesGuardadas();
+                      
+                      console.log('Direcciones disponibles después de recargar:', direccionesGuardadasDisponibles);
+                      setShowDireccionesDropdown(!showDireccionesDropdown);
+                    }}
+                    className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold border border-gray-300 hover:bg-gray-200 dark:bg-neutral-700 dark:text-gray-200 dark:border-neutral-600 dark:hover:bg-neutral-600 transition-colors"
+                  >
+                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                    Otra dirección
+                  </button>
+                  
+                  {/* Dropdown de direcciones guardadas */}
+                  {showDireccionesDropdown && (
+                    <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg shadow-lg z-10">
+                      <div className="p-2">
+                        <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 px-2">
+                          Direcciones guardadas:
+                        </div>
+                        {loadingDirecciones ? (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 px-2 py-2">
+                            Cargando direcciones...
+                          </div>
+                        ) : direccionesGuardadasDisponibles.length > 0 ? (
+                          direccionesGuardadasDisponibles.map((direccionGuardada: DireccionGuardada) => (
+                          <button
+                            key={direccionGuardada.id}
+                            type="button"
+                            onClick={() => handleSelectDireccionGuardada(direccionGuardada)}
+                            className="w-full text-left p-2 hover:bg-gray-50 dark:hover:bg-neutral-700 rounded text-xs text-gray-700 dark:text-gray-300 transition-colors"
+                          >
+                            <div className="font-medium truncate">
+                              {direccionGuardada.nombre || 'Dirección guardada'}
+                            </div>
+                            <div className="text-gray-500 dark:text-gray-400 truncate">
+                              {direccionGuardada.direccion}
+                            </div>
+                            <div className="text-amber-600 dark:text-amber-400 font-medium">
+                              Costo domicilio: ${direccionGuardada.valordomicilio?.toLocaleString('es-CO') || 'Por calcular'}
+                            </div>
+                          </button>
+                        ))
+                        ) : (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 px-2 py-2">
+                            No hay direcciones guardadas
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+            </div>
+            
+            {/* Resumen clásico debajo del campo de dirección */}
+            <div className="flex items-center justify-between gap-2 mb-3 mt-2">
+              <div className="flex items-center gap-4 flex-wrap">
+                <span className="text-xs text-gray-600 dark:text-gray-300">
+                  Total productos: <span className="font-bold text-gray-900 dark:text-gray-100">{`$${totalPrice.toLocaleString('es-CO')}`}</span>
+                </span>
+                <span className="text-xs text-gray-600 dark:text-gray-300">
+                  Valor domicilio: <span className="font-bold text-gray-900 dark:text-gray-100">{shippingCost > 0 ? `$${shippingCost.toLocaleString('es-CO')}` : 'Por calcular'}</span>
+                </span>
+              </div>
+            </div>
+            
+            {/* Total a pagar destacado */}
+            <div className="mb-3">
+              <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                Total a pagar: {shippingCost > 0 ? `$${(totalPrice + shippingCost).toLocaleString('es-CO')}` : `$${totalPrice.toLocaleString('es-CO')}`}
+              </span>
+            </div>
+            
+            {/* Mostrar error general */}
+            {error && <div className="text-red-500 text-xs mb-2">{error}</div>}
+            
+            {/* Botón para confirmar pedido */}
+            <button
+              type="button"
+              className="w-full bg-amber-400 hover:bg-amber-500 text-white font-semibold py-2 px-4 rounded"
+              onClick={handleConfirmOrder}
+            >
+              Confirmar pedido
+            </button>
           </div>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }

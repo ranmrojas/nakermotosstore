@@ -13,7 +13,7 @@ interface CartManagerProps {
 }
 
 export default function CartManager({ showCheckoutButton = true }: CartManagerProps) {
-  const { cart, removeFromCart, updateQuantity, clearCart, totalItems, totalPrice } = useCart();
+  const { cart, removeFromCart, updateQuantity, clearCart, totalItems, totalPrice, medioPago, setMedioPago } = useCart();
   const [isOpen, setIsOpen] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -223,6 +223,57 @@ export default function CartManager({ showCheckoutButton = true }: CartManagerPr
                     ))}
                   </ul>
 
+                  {/* Selección de medio de pago */}
+                  <div className="mt-6 border-t border-gray-200 pt-4">
+                    <h3 className="text-sm font-medium text-gray-900 mb-3">Medio de pago</h3>
+                    <div className="space-y-2">
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="medioPago"
+                          value="efectivo"
+                          checked={medioPago === 'efectivo'}
+                          onChange={(e) => setMedioPago(e.target.value)}
+                          className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Efectivo</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="medioPago"
+                          value="transferencia"
+                          checked={medioPago === 'transferencia'}
+                          onChange={(e) => setMedioPago(e.target.value)}
+                          className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Transferencia bancaria</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="medioPago"
+                          value="nequi"
+                          checked={medioPago === 'nequi'}
+                          onChange={(e) => setMedioPago(e.target.value)}
+                          className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Nequi</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="medioPago"
+                          value="daviplata"
+                          checked={medioPago === 'daviplata'}
+                          onChange={(e) => setMedioPago(e.target.value)}
+                          className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">DaviPlata</span>
+                      </label>
+                    </div>
+                  </div>
+
                   {/* Resumen del carrito */}
                   <div className="mt-6 border-t border-gray-200 pt-4">
                     <div className="flex justify-between items-center mb-2">
@@ -232,7 +283,7 @@ export default function CartManager({ showCheckoutButton = true }: CartManagerPr
                       </span>
                     </div>
                     <p className="text-xs text-gray-500 mb-4">
-                      El envío y los impuestos se calcularán en el checkout
+                      El envío se calculará en el checkout
                     </p>
                     
                     {/* Botones de acción */}

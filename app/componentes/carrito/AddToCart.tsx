@@ -21,6 +21,7 @@ interface Producto {
   ext2: string | null;
   nombre_categoria: string;
   nombre_marca: string;
+  nota?: string;
   [key: string]: unknown;
 }
 
@@ -88,7 +89,8 @@ export default function AddToCart({
       extension: producto.ext1 || producto.ext2,
       sku: producto.sku || '',
       categoria: producto.nombre_categoria,
-      marca: producto.nombre_marca
+      marca: producto.nombre_marca,
+      nota: producto.nota
     });
     
     // Ejecutar callback si existe

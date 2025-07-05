@@ -27,7 +27,7 @@ export default function AgeVerification() {
       setFadeOut(true);
       // Establecer cookie con expiración de 24 horas
       Cookies.set('age_verified', 'true', { 
-        expires: 30 // 30 días
+        expires: 120 // 120 días
       });
       await new Promise(resolve => setTimeout(resolve, 1000));
       // Redirigir a la URL original o a productos por defecto

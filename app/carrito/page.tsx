@@ -1,56 +1,23 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState } from 'react';
 import { useCart } from '../../hooks/useCart';
-import { analyticsEvents } from '../../hooks/useAnalytics';
-import { useGoogleMaps } from '../../hooks/useGoogleMaps';
 import Image from 'next/image';
 import { getProductImageUrl } from '@/app/services/productService';
 import Link from 'next/link';
+import { useClientSession } from '@/hooks/useClientSession';
+import { useClientesApi } from '@/hooks/useClientesApi';
+import Checkout from '../componentes/carrito/Checkout';
 
 export default function CarritoPage() {
   const { cart, removeFromCart, updateQuantity, clearCart, totalItems, totalPrice } = useCart();
-  const { isLoaded, isLoading, loadGoogleMaps } = useGoogleMaps();
+  const { session, saveSession } = useClientSession();
+  const { getClienteByTelefono, createCliente } = useClientesApi();
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false);
-  const [nombre, setNombre] = useState('');
-  const [direccion, setDireccion] = useState('');
-  const [error, setError] = useState('');
-  const [nota, setNota] = useState('');
-  const [shippingCost, setShippingCost] = useState(0);
-  
-  // Variables para la gestión de direcciones y ubicación
-  /* eslint-disable @typescript-eslint/no-unused-vars */
-  const [selectedAddress, setSelectedAddress] = useState<{
-    display_name: string;
-    lat: string;
-    lon: string;
-  } | null>(null);
-  const [hasSelectedSuggestion, setHasSelectedSuggestion] = useState(false);
-  /* eslint-enable @typescript-eslint/no-unused-vars */
-  const addressInputRef = useRef<HTMLInputElement>(null);
-  const [nombreError, setNombreError] = useState('');
-  const [direccionError, setDireccionError] = useState('');
-
-  // Coordenadas de la tienda en Villavicencio
-  const STORE_LOCATION = {
-    lat: 4.126551,
-    lon: -73.632540
-  };
-
-  // Rangos de distancia y costos de envío - memoizado para evitar recreaciones
-  const SHIPPING_ZONES = useCallback(() => [
-    { min: 0, max: 0.5, cost: 4500 },
-    { min: 0.5, max: 0.750, cost: 5000 },
-    { min: 0.750, max: 1.2, cost: 6000 },
-    { min: 1.2, max: 1.8, cost: 7000 },
-    { min: 1.8, max: 2.4, cost: 9000 },
-    { min: 2.4, max: 3, cost: 10000 },
-    { min: 3, max: 4, cost: 11000 },
-    { min: 4, max: 6, cost: 12000 },
-    { min: 7, max: 8, cost: 14000 },
-    { min: 8, max: Infinity, cost: 15000 }
-  ], []);
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [telefono, setTelefono] = useState('');
+  const [telefonoError, setTelefonoError] = useState('');
+  const [showCheckout, setShowCheckout] = useState(false);
 
   // URL para imágenes utilizando el servicio centralizado
   const getImageUrl = (id: number | null, ext: string | null) => {
@@ -58,127 +25,8 @@ export default function CarritoPage() {
     return getProductImageUrl(id, ext);
   };
 
-  // Calcular distancia usando la fórmula de Haversine - memoizada para evitar recreaciones
-  const calculateDistance = useCallback((lat1: number, lon1: number, lat2: number, lon2: number): number => {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  }, []);
-
-  // Calcular costo de envío basado en la distancia - memoizada para evitar recreaciones
-  const calculateShippingCost = useCallback((distance: number): number => {
-    const zones = SHIPPING_ZONES();
-    const zone = zones.find(z => distance >= z.min && distance <= z.max);
-    
-    if (zone) {
-      return zone.cost;
-    }
-    
-    if (distance > 8) {
-      return zones[zones.length - 1].cost;
-    }
-    
-    return zones[0].cost;
-  }, [SHIPPING_ZONES]);
-
-  // Función para eliminar un producto del carrito
-  const handleRemoveItem = (id: number) => {
-    removeFromCart(id);
-    
-    // Rastrear evento de eliminación de producto
-    analyticsEvents.removeFromCart(id.toString());
-  };
-
-  // Función para actualizar la cantidad de un producto
-  const handleUpdateQuantity = (id: number, newQuantity: number) => {
-    if (newQuantity > 0) {
-      updateQuantity(id, newQuantity);
-      
-      // Rastrear evento de actualización de cantidad
-      analyticsEvents.updateCartQuantity(id.toString(), newQuantity);
-    }
-  };
-
-  // Inicializar autocompletado de direcciones
-  const initializeAutocomplete = useCallback(() => {
-    if (!window.google || !addressInputRef.current) return;
-
-    const autocompleteInstance = new window.google.maps.places.Autocomplete(addressInputRef.current, {
-      componentRestrictions: { country: 'co' },
-      fields: ['formatted_address', 'geometry', 'place_id', 'name'],
-      bounds: new window.google.maps.LatLngBounds(
-        new window.google.maps.LatLng(4.0, -73.7), // Suroeste de Villavicencio
-        new window.google.maps.LatLng(4.3, -73.5)  // Noreste de Villavicencio
-      ),
-      strictBounds: true
-    });
-
-    autocompleteInstance.addListener('place_changed', () => {
-      const place = autocompleteInstance.getPlace();
-      if (place.geometry && place.geometry.location) {
-        const location = {
-          lat: place.geometry.location.lat(),
-          lng: place.geometry.location.lng(),
-          address: place.formatted_address
-        };
-        
-        setDireccion(place.formatted_address);
-        setSelectedAddress({
-          display_name: place.formatted_address,
-          lat: location.lat.toString(),
-          lon: location.lng.toString()
-        });
-        setHasSelectedSuggestion(true);
-        
-        // Calcular envío
-        const distance = calculateDistance(
-          STORE_LOCATION.lat,
-          STORE_LOCATION.lon,
-          location.lat,
-          location.lng
-        );
-        const cost = calculateShippingCost(distance);
-        setShippingCost(cost);
-        
-        analyticsEvents.addressSelected(place.formatted_address, distance, cost);
-      }
-    });
-  }, [calculateDistance, calculateShippingCost, STORE_LOCATION.lat, STORE_LOCATION.lon]);
-
-  // Cargar Google Maps API
-  useEffect(() => {
-    if (!isLoaded && !isLoading) {
-      loadGoogleMaps().then(() => {
-        if (showModal) {
-          initializeAutocomplete();
-        }
-      }).catch((err) => {
-        console.error('Error loading Google Maps:', err);
-      });
-    } else if (isLoaded && showModal) {
-      initializeAutocomplete();
-    }
-  }, [isLoaded, isLoading, loadGoogleMaps, showModal, initializeAutocomplete]);
-
-  // Manejar cambios en el input de dirección
-  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDireccion(e.target.value);
-    setHasSelectedSuggestion(false);
-    setShippingCost(0);
-    setSelectedAddress(null);
-  };
-
-  // Rastrear vista de la página del carrito (solo una vez al montar)
-  React.useEffect(() => {
-    analyticsEvents.cartOpened(totalItems, totalPrice);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Sin dependencias para que solo se ejecute una vez
+  // Validar número de celular colombiano
+  const validarTelefono = (num: string) => /^3\d{9}$/.test(num);
 
   return (
     <div className="bg-white min-h-screen w-full">
@@ -267,7 +115,7 @@ export default function CarritoPage() {
                           {/* Controles de cantidad y eliminar */}
                           <div className="flex items-center justify-center mt-1 pr-6">
                             <button
-                              onClick={() => handleRemoveItem(item.id)}
+                              onClick={() => removeFromCart(item.id)}
                               className="text-red-500 hover:text-red-700 transition-colors mr-2"
                               aria-label="Eliminar producto"
                             >
@@ -276,7 +124,7 @@ export default function CarritoPage() {
                               </svg>
                             </button>
                             <button
-                              onClick={() => handleUpdateQuantity(item.id, item.cantidad - 1)}
+                              onClick={() => updateQuantity(item.id, item.cantidad - 1)}
                               className="w-8 h-8 flex items-center justify-center bg-gray-200 text-gray-600 rounded-l-md hover:bg-gray-300 transition-colors"
                               aria-label="Disminuir cantidad"
                             >
@@ -288,7 +136,7 @@ export default function CarritoPage() {
                               {item.cantidad}
                             </span>
                             <button
-                              onClick={() => handleUpdateQuantity(item.id, item.cantidad + 1)}
+                              onClick={() => updateQuantity(item.id, item.cantidad + 1)}
                               className="w-8 h-8 flex items-center justify-center bg-gray-200 text-gray-600 rounded-r-md hover:bg-gray-300 transition-colors"
                               aria-label="Aumentar cantidad"
                             >
@@ -317,10 +165,24 @@ export default function CarritoPage() {
                       ${totalPrice.toLocaleString('es-CO')}
                     </span>
                   </div>
+                  
+                  {/* Mostrar dirección guardada si existe */}
+                  {session?.direccion && (
+                    <div className="text-sm">
+                      <span className="text-gray-600">Dirección de entrega:</span>
+                      <div className="text-gray-900 font-medium mt-1 p-2 bg-gray-50 rounded border border-gray-200">
+                        {session.direccion}
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Envío</span>
                     <span className="text-gray-900 font-medium">
-                      Por calcular
+                      {session?.valordomicilio && session.valordomicilio > 0 
+                        ? `$${session.valordomicilio.toLocaleString('es-CO')}` 
+                        : 'Por calcular'
+                      }
                     </span>
                   </div>
                   <div className="border-t border-gray-200 pt-3">
@@ -375,7 +237,11 @@ export default function CarritoPage() {
                     disabled={!selectedPayment || cart.length === 0}
                     onClick={() => {
                       if (!selectedPayment || cart.length === 0) return;
-                      setShowModal(true);
+                      if (!session || !session.telefono || !/^3\d{9}$/.test(session.telefono)) {
+                        setShowPhoneModal(true);
+                        return;
+                      }
+                      setShowCheckout(true);
                     }}
                     className={`w-full flex items-center justify-center px-4 py-3 font-medium rounded-lg transition-colors mb-3
                       ${!selectedPayment || cart.length === 0
@@ -385,121 +251,6 @@ export default function CarritoPage() {
                   >
                     Realizar pedido
                   </button>
-
-                  {/* Modal para nombre y dirección */}
-                  {showModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-emerald-100/70 via-white/80 to-amber-100/70">
-                      <div className="bg-white dark:bg-neutral-900 rounded-lg shadow-lg p-6 w-full max-w-xs relative animate-fade-in">
-                        <button
-                          className="absolute top-2 right-2 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-xl"
-                          onClick={() => setShowModal(false)}
-                          aria-label="Cerrar"
-                        >
-                          ×
-                        </button>
-                        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Completa tu pedido</h3>
-                        {/* Input para nombre */}
-                        <input
-                          type="text"
-                          className="w-full mb-3 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-neutral-800 dark:text-gray-100"
-                          value={nombre}
-                          onChange={e => {
-                            setNombre(e.target.value);
-                            if (e.target.value.trim()) setNombreError('');
-                          }}
-                          placeholder="Nombre"
-                        />
-                        {nombreError && <div className="text-red-500 text-xs mb-2">{nombreError}</div>}
-                        {/* Input para dirección */}
-                        <input
-                          ref={addressInputRef}
-                          type="text"
-                          className="w-full mb-1 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-neutral-800 dark:text-gray-100"
-                          value={direccion}
-                          onChange={e => {
-                            handleAddressChange(e);
-                            if (e.target.value.trim()) setDireccionError('');
-                          }}
-                          placeholder="Escribe tu dirección en Villavicencio..."
-                        />
-                        {direccionError && <div className="text-red-500 text-xs mb-2">{direccionError}</div>}
-                        {/* Tag de ciudad/departamento */}
-                        <div className="mb-2">
-                          <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold border border-gray-300 dark:bg-neutral-700 dark:text-gray-200 dark:border-neutral-600">
-                            Villavicencio-Meta
-                          </span>
-                        </div>
-                        {/* Resumen clásico debajo del campo de dirección */}
-                        <div className="flex items-center justify-between gap-2 mb-3 mt-2">
-                          <div className="flex items-center gap-4 flex-wrap">
-                            <span className="text-xs text-gray-600 dark:text-gray-300">
-                              Total productos: <span className="font-bold text-gray-900 dark:text-gray-100">{`$${totalPrice.toLocaleString('es-CO')}`}</span>
-                            </span>
-                            <span className="text-xs text-gray-600 dark:text-gray-300">
-                              Valor domicilio: <span className="font-bold text-gray-900 dark:text-gray-100">{shippingCost > 0 ? `$${shippingCost.toLocaleString('es-CO')}` : 'Por calcular'}</span>
-                            </span>
-                          </div>
-                        </div>
-                        {/* Total a pagar destacado */}
-                        <div className="mb-3">
-                          <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                            Total a pagar: {shippingCost > 0 ? `$${(totalPrice + shippingCost).toLocaleString('es-CO')}` : `$${totalPrice.toLocaleString('es-CO')}`}
-                          </span>
-                        </div>
-                        {/* Input para nota opcional (movido aquí) */}
-                        <input
-                          type="text"
-                          className="w-full mb-1 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-neutral-800 dark:text-gray-100"
-                          value={nota}
-                          onChange={e => setNota(e.target.value)}
-                          placeholder="Nota, Apto, Casa, Barrio, etc."
-                        />
-                        {error && <div className="text-red-500 text-xs mb-2">{error}</div>}
-                        <button
-                          className="w-full bg-green-600 text-white font-semibold py-2 rounded hover:bg-green-700 transition-colors"
-                          onClick={() => {
-                            let hasError = false;
-                            if (!nombre.trim()) {
-                              setNombreError('Este campo es obligatorio');
-                              hasError = true;
-                            } else {
-                              setNombreError('');
-                            }
-                            if (!direccion.trim()) {
-                              setDireccionError('Este campo es obligatorio');
-                              hasError = true;
-                            } else {
-                              setDireccionError('');
-                            }
-                            if (hasError) return;
-                            setError('');
-                            setShowModal(false);
-                            const metodo = selectedPayment === 'contraentrega' ? 'Contra entrega' : 'QR o Transferencia';
-                            const productos = cart.map(item => `${item.cantidad} ${item.nombre} = $${(item.precio * item.cantidad).toLocaleString('es-CO')}
-sku: ${item.sku}`).join('\n');
-                            const total = `$${totalPrice.toLocaleString('es-CO')}`;
-                            const totalConEnvio = totalPrice + shippingCost;
-                            const valorDomicilio = shippingCost > 0 ? `$${shippingCost.toLocaleString('es-CO')}` : 'Por calcular';
-                            const direccionProcesada = direccion.includes(',') 
-                              ? direccion.split(',')[0].trim() 
-                              : direccion;
-                            const mensaje = `¡Hola! Realice este pedido:\n${productos}\n\nSubtotal: ${total}\nValor domicilio: ${valorDomicilio}\nTotal a Pagar: $${totalConEnvio.toLocaleString('es-CO')}\nMedio de Pago: ${metodo}\nNombre: ${nombre}\nDirección: ${direccionProcesada}${nota ? `\nNota: ${nota}` : ''}`;
-                            const url = `https://wa.me/573043668910?text=${encodeURIComponent(mensaje)}`;
-                            window.open(url, '_blank');
-                            clearCart();
-                            setNombre('');
-                            setDireccion('');
-                            setNota('');
-                            setShippingCost(0);
-                            setSelectedAddress(null);
-                            setHasSelectedSuggestion(false);
-                          }}
-                        >
-                          Confirmar pedido
-                        </button>
-                      </div>
-                    </div>
-                  )}
 
                   <button
                     onClick={clearCart}
@@ -519,6 +270,94 @@ sku: ${item.sku}`).join('\n');
           </div>
         )}
       </div>
+
+      {/* Componente Checkout */}
+      <Checkout
+        isOpen={showCheckout}
+        onClose={() => setShowCheckout(false)}
+      />
+
+      {/* Modal para ingresar número de celular */}
+      {showPhoneModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white dark:bg-neutral-900 rounded-lg shadow-lg p-6 w-full max-w-xs relative animate-fade-in">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Ingrese su número de celular</h3>
+            <input
+              type="tel"
+              className="w-full mb-2 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-neutral-800 dark:text-gray-100"
+              value={telefono}
+              onChange={e => {
+                setTelefono(e.target.value);
+                if (telefonoError) setTelefonoError('');
+              }}
+              placeholder="Ej: 3001234567"
+              maxLength={10}
+            />
+            {telefonoError && <div className="text-red-500 text-xs mb-2">{telefonoError}</div>}
+            <button
+              className="w-full bg-green-600 text-white font-semibold py-2 rounded hover:bg-green-700 transition-colors"
+              onClick={async () => {
+                if (!validarTelefono(telefono)) {
+                  setTelefonoError('Ingrese un número de celular colombiano válido');
+                  return;
+                }
+                
+                try {
+                  // Primero buscar si el cliente ya existe
+                  const clienteExistente = await getClienteByTelefono(telefono);
+                  
+                  if (clienteExistente) {
+                    // Cliente existe, cargar sus datos
+                    saveSession({ 
+                      id: clienteExistente.id, 
+                      telefono: clienteExistente.telefono, 
+                      nombre: clienteExistente.nombre, 
+                      direccion: clienteExistente.direccion,
+                      valordomicilio: clienteExistente.valordomicilio
+                    });
+                    
+                    // Si el cliente ya tiene nombre y dirección, ir directamente al checkout
+                    if (clienteExistente.nombre && clienteExistente.direccion) {
+                      setShowPhoneModal(false);
+                      setShowCheckout(true);
+                    } else {
+                      // Si faltan datos, ir al modal de completar información
+                      setShowPhoneModal(false);
+                      setShowCheckout(true);
+                    }
+                  } else {
+                    // Cliente no existe, crear uno nuevo
+                    const nuevoCliente = await createCliente({
+                      telefono,
+                      nombre: '',
+                      direccion: '',
+                      valordomicilio: 0
+                    });
+                    
+                    if (nuevoCliente) {
+                      saveSession({ 
+                        id: nuevoCliente.id, 
+                        telefono, 
+                        nombre: nuevoCliente.nombre, 
+                        direccion: nuevoCliente.direccion,
+                        valordomicilio: nuevoCliente.valordomicilio
+                      });
+                      setShowPhoneModal(false);
+                      setShowCheckout(true);
+                    } else {
+                      setTelefonoError('Error al crear el cliente. Intente nuevamente.');
+                    }
+                  }
+                } catch {
+                  setTelefonoError('Error al procesar el teléfono. Intente nuevamente.');
+                }
+              }}
+            >
+              Confirmar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -34,4 +34,43 @@ model Categoria {
   @@index([activa])
 }
 
+model Cliente {
+  id            Int      @id @default(autoincrement())
+  telefono      String   @unique
+  nombre        String
+  direccion     String
+  valordomicilio Int?    @default(0)  // Valor del domicilio para este cliente
+  direccionesGuardadas Json?    // Array de direcciones guardadas con sus costos
+  creadoEn      DateTime @default(now())
+  pedidos       Pedido[]
+}
+
+model Pedido {
+  id          Int      @id @default(autoincrement()) // Secuencia inicia en 1032
+  estado      String
+  productos   Json
+  subtotal    Int
+  domicilio   Int
+  total       Int
+  medioPago   String?  // Medio de pago utilizado
+  realizadoEn DateTime @default(now())
+  enviadoAt   DateTime? // Fecha cuando se cambió el estado a "Enviado"
+  auditoria   Json?    // Array de eventos de trazabilidad: [{fecha: string, accion: string, usuario?: string, detalles?: string}]
+  cliente     Cliente  @relation(fields: [clienteId], references: [id])
+  clienteId   Int
+}
+
+enum RolUsuario {
+  admin
+  operador
+}
+
+model Usuario {
+  id       Int    @id @default(autoincrement())
+  username String @unique
+  password String
+  nombre   String
+  rol      RolUsuario @default(admin)
+}
+
 

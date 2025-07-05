@@ -570,7 +570,8 @@ export default function ProductGrid({
                                   extension: product.ext1 || product.ext2,
                                   sku: product.sku || '',
                                   categoria: product.nombre_categoria,
-                                  marca: product.nombre_marca
+                                  marca: product.nombre_marca,
+                                  nota: product.nota
                                 });
                               }}
                               className="ml-2 p-1 text-emerald-600 hover:text-emerald-700 transition-colors relative"
@@ -764,7 +765,8 @@ export default function ProductGrid({
                                 extension: product.ext1 || product.ext2,
                                 sku: product.sku || '',
                                 categoria: product.nombre_categoria,
-                                marca: product.nombre_marca
+                                marca: product.nombre_marca,
+                                nota: product.nota
                               });
                             }}
                             className="ml-2 p-1 text-emerald-600 hover:text-emerald-700 transition-colors relative"
@@ -946,7 +948,8 @@ export default function ProductGrid({
                           extension: selectedProduct.ext1 || selectedProduct.ext2,
                           sku: selectedProduct.sku || '',
                           categoria: selectedProduct.nombre_categoria,
-                          marca: selectedProduct.nombre_marca
+                          marca: selectedProduct.nombre_marca,
+                          nota: selectedProduct.nota
                         });
                         
                         // Cerrar modal después de agregar
