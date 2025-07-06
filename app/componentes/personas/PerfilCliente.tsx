@@ -66,6 +66,11 @@ export default function PerfilCliente() {
   const [shippingCostModal, setShippingCostModal] = useState(0);
   const [selectedAddressModal, setSelectedAddressModal] = useState<{ lat: number; lng: number } | null>(null);
   const [activeTab, setActiveTab] = useState<'en_curso' | 'historial'>('en_curso');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editNombre, setEditNombre] = useState(session?.nombre || '');
+  const [editTelefono, setEditTelefono] = useState(session?.telefono || '');
+  const [editError, setEditError] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
   
   // Ref para el input de dirección
   const addressInputRef = useRef<HTMLInputElement | null>(null);
@@ -445,7 +450,7 @@ export default function PerfilCliente() {
           <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">Mi cuenta</h2>
           {/* Modal para ingresar número de celular (idéntico al del carrito) */}
           {showPhoneModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-transparent">
               <div className="bg-white dark:bg-neutral-900 rounded-lg shadow-lg p-6 w-full max-w-xs relative animate-fade-in">
                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Ingrese su número de celular</h3>
                 <input
@@ -567,7 +572,22 @@ export default function PerfilCliente() {
         </section>
 
         {/* Datos del usuario */}
-        <section className="bg-white rounded-2xl shadow-sm p-5 flex flex-col gap-2">
+        <section className="bg-white rounded-2xl shadow-sm p-5 flex flex-col gap-2 relative">
+          {/* Ícono editar */}
+          <button
+            className="absolute top-3 right-3 text-gray-400 hover:text-blue-600 transition-colors"
+            title="Editar datos"
+            onClick={() => {
+              setEditNombre(session.nombre);
+              setEditTelefono(session.telefono);
+              setEditError('');
+              setShowEditModal(true);
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.1 2.1 0 1 1 2.97 2.97L7.5 19.788l-4 1 1-4 13.362-13.3z" />
+            </svg>
+          </button>
           <div className="text-base text-gray-500">Nombre</div>
           <div className="text-lg font-semibold text-gray-900 mb-2">{session.nombre}</div>
           <div className="text-base text-gray-500">Teléfono</div>
@@ -582,6 +602,17 @@ export default function PerfilCliente() {
           </button>
           <div className="text-base text-gray-500">Valor domicilio</div>
           <div className="text-base font-medium text-gray-800 mb-2">${session.valordomicilio.toLocaleString('es-CO')}</div>
+          <button
+            onClick={() => {
+              // Eliminar la sesión del cliente
+              localStorage.removeItem('clienteSession');
+              localStorage.removeItem('client_session');
+              window.location.reload();
+            }}
+            className="w-full mt-4 py-2 rounded-lg bg-red-50 text-red-700 font-semibold text-sm hover:bg-red-100 transition border border-red-200"
+          >
+            Cerrar sesión
+          </button>
         </section>
 
         {/* Modal para agregar dirección */}
@@ -679,6 +710,82 @@ export default function PerfilCliente() {
               >
                 Cerrar
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Modal editar datos */}
+        {showEditModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white dark:bg-neutral-900 rounded-lg shadow-lg p-6 w-full max-w-xs relative animate-fade-in">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Editar datos</h3>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Nombre</label>
+              <input
+                type="text"
+                className="w-full mb-2 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-neutral-800 dark:text-gray-100"
+                value={editNombre}
+                onChange={e => setEditNombre(e.target.value)}
+                placeholder="Nombre completo"
+              />
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Teléfono</label>
+              <input
+                type="tel"
+                className="w-full mb-2 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-neutral-800 dark:text-gray-100"
+                value={editTelefono}
+                onChange={e => setEditTelefono(e.target.value)}
+                placeholder="Ej: 3001234567"
+                maxLength={10}
+              />
+              {editError && <div className="text-red-500 text-xs mb-2">{editError}</div>}
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 py-2 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-100 font-semibold text-base hover:bg-gray-200 dark:hover:bg-neutral-700 transition"
+                  disabled={editLoading}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={async () => {
+                    setEditError('');
+                    if (!editNombre.trim()) {
+                      setEditError('El nombre no puede estar vacío');
+                      return;
+                    }
+                    if (!/^3\d{9}$/.test(editTelefono)) {
+                      setEditError('Ingrese un número de celular colombiano válido');
+                      return;
+                    }
+                    setEditLoading(true);
+                    try {
+                      const response = await fetch(`/api/clientes/${session.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nombre: editNombre.trim(), telefono: editTelefono.trim() })
+                      });
+                      if (response.ok) {
+                        const clienteActualizado = await response.json();
+                        saveSession({
+                          ...session,
+                          nombre: clienteActualizado.nombre,
+                          telefono: clienteActualizado.telefono
+                        });
+                        setShowEditModal(false);
+                      } else {
+                        setEditError('Error al guardar los cambios');
+                      }
+                    } catch {
+                      setEditError('Error al guardar los cambios');
+                    } finally {
+                      setEditLoading(false);
+                    }
+                  }}
+                  className="flex-1 py-2 rounded-lg bg-blue-600 text-white font-semibold text-base hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={editLoading}
+                >
+                  {editLoading ? 'Guardando...' : 'Guardar'}
+                </button>
+              </div>
             </div>
           </div>
         )}

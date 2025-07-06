@@ -185,10 +185,10 @@ export function OrderCard({ pedido, onCancelOrder, isAdmin = false }: OrderCardP
       {/* Botones de acción */}
       <div className="p-4 border-t border-gray-100 bg-gray-50">
         <div className="flex gap-2">
-          {!isAdmin && pedido.estado !== 'cancelado' && (
+          {!isAdmin && (pedido.estado.toLowerCase() === 'pendiente' || pedido.estado.toLowerCase() === 'aceptado') && (
             <button 
               onClick={() => handleCancelOrder(pedido.id)}
-              className="flex-1 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold text-sm hover:bg-gray-200 transition border border-gray-300"
+              className="w-auto min-w-[64px] px-2 py-1 rounded-lg bg-gray-100 text-gray-700 font-semibold text-xs leading-tight hover:bg-gray-200 transition border border-gray-300"
             >
               Cancelar
             </button>
