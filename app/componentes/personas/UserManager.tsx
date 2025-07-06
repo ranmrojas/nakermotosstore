@@ -31,6 +31,7 @@ export default function UserManager() {
   });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const fetchUsuarios = async () => {
     try {
@@ -62,6 +63,14 @@ export default function UserManager() {
     setError(null);
     setSuccess(null);
 
+    // Validar confirmación de contraseña
+    if ((showForm && !editingUser) || (editingUser && formData.password)) {
+      if (formData.password !== confirmPassword) {
+        setError('Las contraseñas no coinciden');
+        return;
+      }
+    }
+
     try {
       if (editingUser) {
         // Actualizar usuario existente
@@ -75,6 +84,7 @@ export default function UserManager() {
 
       // Limpiar formulario y recargar usuarios
       setFormData({ username: '', password: '', nombre: '', rol: 'operador' });
+      setConfirmPassword('');
       setShowForm(false);
       setEditingUser(null);
       fetchUsuarios();
@@ -217,6 +227,7 @@ export default function UserManager() {
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-500 bg-white border-gray-300 !important"
                   required
+                  disabled={!!editingUser}
                 />
               </div>
 
@@ -233,6 +244,22 @@ export default function UserManager() {
                 />
               </div>
 
+              {/* Confirmar contraseña solo si se está creando o si se está editando y se ingresa una nueva contraseña */}
+              {((!editingUser) || (editingUser && formData.password)) && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Confirmar contraseña
+                  </label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-500 bg-white border-gray-300 !important"
+                    required={!editingUser || (!!editingUser && !!formData.password)}
+                  />
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Nombre Completo
@@ -243,6 +270,7 @@ export default function UserManager() {
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-500 bg-white border-gray-300 !important"
                   required
+                  disabled={!!editingUser}
                 />
               </div>
 
@@ -254,6 +282,7 @@ export default function UserManager() {
                   value={formData.rol}
                   onChange={(e) => setFormData({ ...formData, rol: e.target.value as 'admin' | 'operador' })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-500 bg-white border-gray-300 !important"
+                  disabled={!!editingUser}
                 >
                   <option value="operador">Operador</option>
                   <option value="admin">Administrador</option>

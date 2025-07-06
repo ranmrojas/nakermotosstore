@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '../../../lib/generated/prisma';
+import { hashPassword } from '../../../lib/authUtils';
 
 const prisma = new PrismaClient();
 
@@ -23,8 +24,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Faltan campos obligatorios' });
     }
     try {
+      const hashedPassword = await hashPassword(password);
       const usuario = await prisma.usuario.create({
-        data: { username, password, nombre, rol },
+        data: { username, password: hashedPassword, nombre, rol },
       });
       
       // No retornar la contraseña en la respuesta

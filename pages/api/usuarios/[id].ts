@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '../../../lib/generated/prisma';
+import { hashPassword } from '../../../lib/authUtils';
 
 const prisma = new PrismaClient();
 
@@ -33,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       // Solo incluir password si se proporciona (para permitir actualizaciones sin cambiar contraseña)
       if (password && password.trim() !== '') {
-        updateData.password = password;
+        updateData.password = await hashPassword(password);
       }
       
       const usuario = await prisma.usuario.update({
