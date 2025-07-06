@@ -14,7 +14,7 @@ import {
   BarElement,
   Title
 } from 'chart.js';
-import { notificationService } from "../../../lib/notificationServiceAdmin";
+
 import { supabase, Database } from "../../../lib/supabase";
 import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
@@ -45,12 +45,11 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>("todos");
   const [searchTerm, setSearchTerm] = useState("");
-  const [showTracking, setShowTracking] = useState(true);
   const [showSearchResults, setShowSearchResults] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
-  const [selectedPeriod] = useState<string>("mes");
-  const [customStartDate] = useState<string>("");
-  const [customEndDate] = useState<string>("");
+
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("mes");
+  const [customStartDate, setCustomStartDate] = useState<string>("");
+  const [customEndDate, setCustomEndDate] = useState<string>("");
   const [newPendingAlert, setNewPendingAlert] = useState(false);
   const [pendingOrderTimers, setPendingOrderTimers] = useState<Map<number, { firstAlert: number, reminders: number[] }>>(new Map());
   
@@ -117,9 +116,7 @@ export default function AdminDashboardPage() {
             console.log(`🔔 Recordatorio ${times[index]} para pedido ${orderId} - aún pendiente`);
             
             // Usar el nuevo servicio de notificaciones para recordatorios
-            await notificationService.showReminder(
-              `El pedido #${orderId} lleva ${times[index]} en estado pendiente`
-            );
+
             
             // Hacer vibrar
             if ('vibrate' in navigator) {
@@ -196,34 +193,7 @@ export default function AdminDashboardPage() {
   }, [handlePendingOrderReminders]);
 
   useEffect(() => {
-    const initNotifications = async () => {
-      try {
-        console.log('🎵 Inicializando servicio de notificaciones...');
-        
-        // Solicitar permisos de notificación si no están concedidos
-        if ('Notification' in window) {
-          const permission = await Notification.requestPermission();
-          console.log('🔔 Estado de permisos de notificación:', permission);
-          
-          if (permission !== 'granted') {
-            console.warn('⚠️ Permisos de notificación no concedidos');
-            alert('Por favor, permite las notificaciones para recibir alertas de nuevos pedidos.');
-            return;
-          }
-        }
 
-        // Inicializar el servicio de notificaciones
-        await notificationService.initialize();
-        
-        // Probar el sistema de notificaciones
-        console.log('🧪 Probando sistema de notificaciones...');
-        await notificationService.simulateNewOrder();
-      } catch (error) {
-        console.error('❌ Error inicializando notificaciones:', error);
-      }
-    };
-
-    initNotifications();
 
     // Suscribirse a cambios en tiempo real
     const channel = supabase
@@ -244,17 +214,7 @@ export default function AdminDashboardPage() {
           console.log('🆕 Nuevo pedido pendiente detectado:', payload.new.id);
           
           try {
-            // Asegurarse de que el servicio esté inicializado antes de notificar
-            if (!notificationService.isInitialized()) {
-              console.log('⚠️ Servicio de notificaciones no inicializado, reinicializando...');
-              await notificationService.initialize();
-            }
-            
-            // Mostrar notificación con sonido
-            const mensaje = `Nuevo pedido #${payload.new.id} - ${payload.new.cliente?.nombre || 'Cliente'} - $${payload.new.total.toLocaleString('es-CO')}`;
-            console.log('📢 Mostrando notificación:', mensaje);
-            
-            await notificationService.notifyNewOrder(mensaje, 'nuevo');
+
             
             // Activar alerta visual y vibración
             setNewPendingAlert(true);
@@ -684,63 +644,7 @@ export default function AdminDashboardPage() {
         });
       }
 
-              // Aplicar animaciones solo si hay pedidos pendientes
-        if (stats.sinAceptar > 0 && sinAceptarRef.current) {
-          // Animación de vibración
-          gsap.to(sinAceptarRef.current, {
-            x: 2,
-            y: 1,
-            duration: 0.1,
-            ease: "none",
-            yoyo: true,
-            repeat: -1,
-            delay: 0
-          });
-
-          // Outline neón fijo y fondo de color
-          gsap.set(sinAceptarRef.current, {
-            boxShadow: "0 0 25px rgba(239, 68, 68, 0.8), 0 0 50px rgba(239, 68, 68, 0.5)",
-            backgroundColor: "rgba(239, 68, 68, 0.15)"
-          });
-        }
-
-              if (stats.aceptados > 0 && aceptadosRef.current) {
-          // Animación de vibración
-          gsap.to(aceptadosRef.current, {
-            x: 2,
-            y: 1,
-            duration: 0.1,
-            ease: "none",
-            yoyo: true,
-            repeat: -1,
-            delay: 0.5
-          });
-
-          // Outline neón fijo y fondo de color
-          gsap.set(aceptadosRef.current, {
-            boxShadow: "0 0 25px rgba(249, 115, 22, 0.8), 0 0 50px rgba(249, 115, 22, 0.5)",
-            backgroundColor: "rgba(249, 115, 22, 0.15)"
-          });
-        }
-
-              if (stats.procesando > 0 && procesandoRef.current) {
-          // Animación de vibración
-          gsap.to(procesandoRef.current, {
-            x: 2,
-            y: 1,
-            duration: 0.1,
-            ease: "none",
-            yoyo: true,
-            repeat: -1,
-            delay: 1
-          });
-
-          // Outline neón fijo y fondo de color
-          gsap.set(procesandoRef.current, {
-            boxShadow: "0 0 25px rgba(245, 158, 11, 0.8), 0 0 50px rgba(245, 158, 11, 0.5)",
-            backgroundColor: "rgba(245, 158, 11, 0.15)"
-          });
-        }
+       
     }
   }, [loading, stats.sinAceptar, stats.aceptados, stats.procesando]);
 
@@ -767,112 +671,38 @@ export default function AdminDashboardPage() {
     };
   }, []);
 
-  // Función para actualizar manualmente los datos
-  const refreshData = useCallback(async () => {
-    console.log('🔄 Actualización manual de datos...');
-    setLoading(true);
-    try {
-      const res = await fetch("/api/pedidos");
-      const data = await res.json();
-      
-      setOrders(prevOrders => {
-        if (prevOrders.length > 0) {
-          checkNewPendingOrders(data, prevOrders);
-        }
-        return data;
-      });
-    } catch (error) {
-      console.error('Error al actualizar datos:', error);
-      setOrders([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [checkNewPendingOrders]);
+
 
 
 
   return (
     <AdminProtected>
       {/* Eliminar el header propio, dejar solo el contenido principal */}
-      <main className="w-full px-4 py-6">
+      <main className="w-full px-4 py-2">
         {/* Header con búsqueda y filtro */}
-        <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-1 md:mb-0">Dashboard Administrativo</h1>
-            <p className="text-gray-600">Gestión completa de pedidos y análisis de ventas</p>
-            <div className="flex items-center gap-2 mt-2">
-
-              <button
-                onClick={refreshData}
-                disabled={loading}
-                className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-              >
-                <svg className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        <div className="mb-2 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          {/* IZQUIERDA: Alertas */}
+          <div className="flex flex-row gap-4 items-center">
+            {newPendingAlert && (
+              <div className="flex items-center gap-1 text-sm text-red-600 animate-pulse">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
-                {loading ? 'Actualizando...' : 'Actualizar'}
-              </button>
-
-              {newPendingAlert && (
-                <div className="flex items-center gap-1 text-sm text-red-600 animate-pulse">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                  <span>¡Nuevos pedidos pendientes!</span>
-                </div>
-              )}
-              {pendingOrderTimers.size > 0 && (
-                <div className="flex items-center gap-1 text-sm text-orange-600">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                  </svg>
-                  <span>{pendingOrderTimers.size} recordatorio{pendingOrderTimers.size !== 1 ? 's' : ''} activo{pendingOrderTimers.size !== 1 ? 's' : ''}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-1 text-sm text-gray-500">
-                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <span>¡Nuevos pedidos pendientes!</span>
+              </div>
+            )}
+            {pendingOrderTimers.size > 0 && (
+              <div className="flex items-center gap-1 text-sm text-orange-600">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                 </svg>
-                {/* <span>Última: {new Date().toLocaleTimeString('es-CO')} | Próxima: {new Date(Date.now() + 1 * 60 * 1000).toLocaleTimeString('es-CO')}</span> */}
+                <span>{pendingOrderTimers.size} recordatorio{pendingOrderTimers.size !== 1 ? 's' : ''} activo{pendingOrderTimers.size !== 1 ? 's' : ''}</span>
               </div>
-              
-              {/* Indicador de estado de notificaciones */}
-              <div className="flex items-center gap-2">
-                <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
-                  notificationService.getPageStatus().shouldShowNotifications 
-                    ? 'bg-green-100 text-green-700' 
-                    : 'bg-red-100 text-red-700'
-                }`}>
-                  <div className={`w-2 h-2 rounded-full ${
-                    notificationService.getPageStatus().shouldShowNotifications ? 'bg-green-500' : 'bg-red-500'
-                  }`}></div>
-                  <span>
-                    {notificationService.getPageStatus().shouldShowNotifications 
-                      ? 'Notificaciones activas' 
-                      : 'Notificaciones pausadas'
-                    }
-                  </span>
-                </div>
-                
-                <button
-                  onClick={() => notificationService.testSound()}
-                  className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-                >
-                  🔊 Probar sonido
-                </button>
-                
-                <button
-                  onClick={() => notificationService.simulateNewOrder()}
-                  className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors"
-                >
-                  🧪 Simular pedido
-                </button>
-              </div>
-
-            </div>
+            )}
           </div>
-          <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto md:items-center md:justify-end">
-            <div className="relative w-full md:w-72">
+          {/* DERECHA: Búsqueda, filtro y período */}
+          <div className="flex flex-row flex-wrap gap-1 w-full md:w-auto md:items-center md:justify-end min-h-0">
+            <div className="relative w-full md:w-64">
               <input
                 type="text"
                 placeholder="Buscar por cliente, ID, teléfono, dirección, estado, productos, SKU..."
@@ -882,20 +712,15 @@ export default function AdminDashboardPage() {
                   setSearchTerm(value);
                   if (value.trim()) {
                     setShowSearchResults(true);
-                    setShowTracking(false);
-                  } else {
-                    setShowSearchResults(false);
-                    setShowTracking(true);
                   }
                 }}
-                className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white text-gray-900 dark:bg-neutral-800 dark:text-gray-100 dark:border-neutral-700"
+                className="w-full h-9 px-3 pr-8 border border-gray-500 rounded focus:outline-none focus:ring-2 focus:ring-black bg-white text-black text-sm min-h-0 py-1 placeholder-gray-400"
               />
               {searchTerm && (
                 <button
                   onClick={() => {
                     setSearchTerm("");
                     setShowSearchResults(false);
-                    setShowTracking(true);
                   }}
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
                   title="Limpiar búsqueda"
@@ -909,7 +734,7 @@ export default function AdminDashboardPage() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full md:w-56 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white text-gray-900 dark:bg-neutral-800 dark:text-gray-100 dark:border-neutral-700"
+              className="h-9 px-3 border border-gray-500 rounded focus:outline-none focus:ring-2 focus:ring-black bg-white text-black text-sm min-h-0 py-1"
             >
               <option value="todos">Todos los estados</option>
               <option value="sin_aceptar">Sin Aceptar</option>
@@ -920,26 +745,35 @@ export default function AdminDashboardPage() {
               <option value="Completado">Completados</option>
               <option value="Cancelado">Cancelados</option>
             </select>
-            <button
-              onClick={() => {
-                setShowHistory(!showHistory);
-                setShowTracking(false);
-                setShowSearchResults(false);
-                if (searchTerm.trim()) {
-                  setSearchTerm("");
-                }
-              }}
-              className={`w-full md:w-auto px-6 py-2 rounded-lg transition-colors focus:outline-none focus:ring-2 flex items-center justify-center gap-2 ${
-                showHistory 
-                  ? 'bg-gray-800 text-white hover:bg-gray-900 focus:ring-gray-400' 
-                  : 'bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-400'
-              }`}
+            <select
+              value={selectedPeriod}
+              onChange={e => setSelectedPeriod(e.target.value)}
+              className="h-9 px-3 border border-gray-500 rounded focus:outline-none focus:ring-2 focus:ring-black bg-white text-black text-sm min-h-0 py-1"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Historial
-            </button>
+              <option value="hora">Última hora</option>
+              <option value="dia">Hoy</option>
+              <option value="semana">Esta semana</option>
+              <option value="mes">Este mes</option>
+              <option value="ano">Este año</option>
+              <option value="personalizado">Personalizado</option>
+            </select>
+            {selectedPeriod === 'personalizado' && (
+              <div className="flex gap-1 items-center">
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={e => setCustomStartDate(e.target.value)}
+                  className="h-9 px-2 border border-gray-500 rounded text-sm min-h-0 py-1 bg-white text-black focus:outline-none focus:ring-2 focus:ring-black"
+                />
+                <span className="text-gray-500">a</span>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={e => setCustomEndDate(e.target.value)}
+                  className="h-9 px-2 border border-gray-500 rounded text-sm min-h-0 py-1 bg-white text-black focus:outline-none focus:ring-2 focus:ring-black"
+                />
+              </div>
+            )}
           </div>
         </div>
 
@@ -948,11 +782,7 @@ export default function AdminDashboardPage() {
           <button 
             type="button" 
             onClick={() => {
-              setFilterStatus('sin_aceptar');
-              setShowHistory(false);
-              setShowTracking(true);
-              setShowSearchResults(false);
-              setNewPendingAlert(false);
+              window.location.href = '/admin';
             }} 
             className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 text-left transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-400"
           >
@@ -972,11 +802,7 @@ export default function AdminDashboardPage() {
           <button 
             type="button" 
             onClick={() => {
-              setFilterStatus('Aceptado');
-              setShowHistory(false);
-              setShowTracking(true);
-              setShowSearchResults(false);
-              setNewPendingAlert(false);
+              window.location.href = '/admin';
             }} 
             className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 text-left transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
@@ -996,11 +822,7 @@ export default function AdminDashboardPage() {
           <button 
             type="button" 
             onClick={() => {
-              setFilterStatus('Procesando');
-              setShowHistory(false);
-              setShowTracking(true);
-              setShowSearchResults(false);
-              setNewPendingAlert(false);
+              window.location.href = '/admin';
             }} 
             className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 text-left transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-purple-400"
           >
@@ -1020,11 +842,7 @@ export default function AdminDashboardPage() {
           <button 
             type="button" 
             onClick={() => {
-              setFilterStatus('Enviado');
-              setShowHistory(false);
-              setShowTracking(true);
-              setShowSearchResults(false);
-              setNewPendingAlert(false);
+              window.location.href = '/admin';
             }} 
             className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 text-left transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-400"
           >
@@ -1045,10 +863,6 @@ export default function AdminDashboardPage() {
             type="button" 
             onClick={() => {
               setFilterStatus('Completado');
-              setShowHistory(true);
-              setShowTracking(false);
-              setShowSearchResults(false);
-              setNewPendingAlert(false);
               // Asegurar que se muestre la sección de pedidos completados
               const completadosSection = document.querySelector('[data-section="pedidos-completados"]');
               if (completadosSection) {
@@ -1060,7 +874,7 @@ export default function AdminDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Completados</p>
-                <p className="text-2xl font-bold text-teal-600">{stats.completados}</p>
+                <p className="text-2xl font-bold text-teal-600">{historyStats.pedidosCompletados.length}</p>
               </div>
               <div className="p-2 bg-teal-50 rounded-lg">
                 <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1074,10 +888,6 @@ export default function AdminDashboardPage() {
             type="button" 
             onClick={() => {
               setFilterStatus('Cancelado');
-              setShowHistory(true);
-              setShowTracking(false);
-              setShowSearchResults(false);
-              setNewPendingAlert(false);
               // Asegurar que se muestre la sección de pedidos cancelados
               const canceladosSection = document.querySelector('[data-section="pedidos-cancelados"]');
               if (canceladosSection) {
@@ -1089,7 +899,7 @@ export default function AdminDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Cancelados</p>
-                <p className="text-2xl font-bold text-red-600">{stats.cancelados}</p>
+                <p className="text-2xl font-bold text-red-600">{historyStats.pedidosCancelados.length}</p>
               </div>
               <div className="p-2 bg-red-50 rounded-lg">
                 <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1106,7 +916,7 @@ export default function AdminDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Ventas</p>
-                <p className="text-2xl font-bold text-blue-600">${stats.totalVentas.toLocaleString('es-CO')}</p>
+                <p className="text-2xl font-bold text-blue-600">${historyStats.totalVentas.toLocaleString('es-CO')}</p>
               </div>
               <div className="p-2 bg-blue-50 rounded-lg">
                 <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1117,73 +927,7 @@ export default function AdminDashboardPage() {
           </button>
         </div>
 
-        {/* Lista de pedidos en 3 columnas */}
-        {showTracking && (
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Tracking de Pedidos
-              </h2>
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <span>Total: {orders.length}</span>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              {/* Pendientes por aceptar */}
-              <div>
-                <h3 className="text-lg font-bold text-gray-700 mb-4 text-center md:text-left">
-                  Pendientes por aceptar 
-                  <span className="ml-2 px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
-                    {stats.sinAceptar}
-                  </span>
-                </h3>
-                <AdminOrderManager 
-                  orders={pedidosAdaptados.filter(p => p.estado === 'Pendiente')} 
-                  onStatusChange={handleStatusChange}
-                />
-              </div>
-              {/* Aceptados */}
-              <div>
-                <h3 className="text-lg font-bold text-gray-700 mb-4 text-center md:text-left">
-                  Aceptados
-                  <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-medium">
-                    {stats.aceptados}
-                  </span>
-                </h3>
-                <AdminOrderManager 
-                  orders={pedidosAdaptados.filter(p => p.estado === 'Aceptado')} 
-                  onStatusChange={handleStatusChange}
-                />
-              </div>
-              {/* Procesando */}
-              <div>
-                <h3 className="text-lg font-bold text-gray-700 mb-4 text-center md:text-left">
-                  Procesando
-                  <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                    {stats.completados}
-                  </span>
-                </h3>
-                <AdminOrderManager 
-                  orders={pedidosAdaptados.filter(p => p.estado === 'Procesando')} 
-                  onStatusChange={handleStatusChange}
-                />
-              </div>
-              {/* Enviados */}
-              <div>
-                <h3 className="text-lg font-bold text-gray-700 mb-4 text-center md:text-left">
-                  Enviados
-                  <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
-                    {stats.enviados}
-                  </span>
-                </h3>
-                <AdminOrderManager 
-                  orders={pedidosAdaptados.filter(p => p.estado === 'Enviado')} 
-                  onStatusChange={handleStatusChange}
-                />
-              </div>
-            </div>
-          </div>
-        )}
+
 
         {/* Resultados de búsqueda */}
         {showSearchResults && (
@@ -1200,7 +944,6 @@ export default function AdminDashboardPage() {
                   onClick={() => {
                     setSearchTerm("");
                     setShowSearchResults(false);
-                    setShowTracking(true);
                   }}
                   className="ml-2 px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
                 >
@@ -1228,7 +971,6 @@ export default function AdminDashboardPage() {
                   onClick={() => {
                     setSearchTerm("");
                     setShowSearchResults(false);
-                    setShowTracking(true);
                   }}
                   className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
@@ -1239,15 +981,10 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* NUEVO DASHBOARD ANALÍTICO */}
-        {showHistory && (
+        {/* DASHBOARD ANALÍTICO */}
           <section className="w-full px-2 md:px-0 mt-6">
             {/* KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-              <div className="bg-white rounded-xl shadow p-4 flex flex-col items-center justify-center border-t-4 border-blue-500">
-                <span className="text-xs text-gray-500">Total Ventas</span>
-                <span className="text-2xl font-bold text-blue-600">${historyStats.totalVentas.toLocaleString('es-CO')}</span>
-              </div>
               <div className="bg-white rounded-xl shadow p-4 flex flex-col items-center justify-center border-t-4 border-green-500">
                 <span className="text-xs text-gray-500">Total Pedidos</span>
                 <span className="text-2xl font-bold text-green-600">{historyStats.totalPedidos}</span>
@@ -1569,7 +1306,6 @@ export default function AdminDashboardPage() {
               </div>
             </div>
           </section>
-        )}
       </main>
     </AdminProtected>
   );

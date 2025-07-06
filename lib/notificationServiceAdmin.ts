@@ -268,17 +268,7 @@ class NotificationServiceAdmin {
     }
   }
 
-  async testSound() {
-    console.log('🔊 Probando sonido...');
-    await this.initialize();
-    await this.playSound('nuevo');
-  }
 
-  async simulateNewOrder() {
-    console.log('🧪 Simulando nuevo pedido...');
-    const message = 'Pedido #999 - Cliente Prueba - $50,000';
-    await this.notifyNewOrder(message);
-  }
 
   getPageStatus() {
     return {

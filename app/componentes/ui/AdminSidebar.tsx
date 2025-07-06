@@ -30,10 +30,10 @@ function SidebarContent() {
   const { user, logout } = useAdminAuth();
 
   const navItems = [
-    { label: "Dashboard", href: "/admin", adminOnly: true },
-    { label: "Tracking", href: "/admin/tracking" },
+    { label: "Tracking", href: "/admin" },
+    { label: "Dashboard", href: "/admin/dashboard", adminOnly: true },
     { label: "Usuarios", href: "/admin/usuarios", adminOnly: true },
-    { label: "Historial", href: "/admin/historial" },
+    { label: "Historial pedidos", href: "/admin/historial" },
     { label: "Categorías", href: "/admin/categorias", adminOnly: true },
   ];
 

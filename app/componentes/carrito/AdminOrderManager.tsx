@@ -223,9 +223,9 @@ function AdminOrderCard({ pedido, onStatusChange }: AdminOrderCardProps) {
       onClick={isCollapsed ? () => setIsCollapsed(false) : undefined}
     >
       {/* Datos del cliente */}
-      <div className="p-4 md:p-6 pb-2">
+      <div className="p-4 md:p-2 pb-2 text-left">
         {/* Primera fila: Nombre (izquierda) + Número pedido y estado (derecha) */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-2">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-0">
           <span className="text-base md:text-lg font-bold text-gray-900 break-words">{pedido.cliente}</span>
           <div className="flex items-center gap-2">
             <span className="text-xs px-2 py-1 rounded font-semibold bg-gray-100 text-gray-700 border border-gray-200">Pedido #{pedido.id}</span>
@@ -257,7 +257,7 @@ function AdminOrderCard({ pedido, onStatusChange }: AdminOrderCardProps) {
         
         {/* Segunda fila: Dirección (ancho completo) */}
         <div 
-          className="text-xs md:text-sm text-gray-700 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors relative group text-left"
+          className="text-xs md:text-sm text-gray-700 cursor-pointer hover:bg-gray-50 rounded transition-colors relative group text-left mb-1"
           onClick={() => copyToClipboard(truncarDireccion(pedido.direccion), 'direccion')}
           title="Copiar dirección"
         >
@@ -270,7 +270,7 @@ function AdminOrderCard({ pedido, onStatusChange }: AdminOrderCardProps) {
         {/* Tercera fila: Nota del pedido (ancho completo) */}
         {pedido.nota && (
           <div 
-            className="text-xs md:text-sm text-gray-700 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors relative group text-left"
+            className="text-xs md:text-sm text-gray-700 cursor-pointer hover:bg-gray-50 rounded transition-colors relative group text-left mb-0"
             onClick={() => copyToClipboard(pedido.nota || 'No disponible', 'nota')}
             title="Copiar nota"
           >
@@ -284,7 +284,7 @@ function AdminOrderCard({ pedido, onStatusChange }: AdminOrderCardProps) {
         
         {/* Cuarta fila: Teléfono (ancho completo) */}
         <div 
-          className="text-xs md:text-sm text-gray-700 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors relative group text-left"
+          className="text-xs md:text-sm text-gray-700 cursor-pointer hover:bg-gray-50 rounded transition-colors relative group text-left mb-0"
           onClick={() => copyToClipboard(pedido.telefono || 'No disponible', 'telefono')}
           title="Copiar teléfono"
         >
@@ -313,9 +313,9 @@ function AdminOrderCard({ pedido, onStatusChange }: AdminOrderCardProps) {
 
       {/* Lista de productos compacta */}
       {!isCollapsed && (
-        <div className="px-2 md:px-6 pb-2">
-          <h4 className="font-semibold text-gray-900 mb-2 text-sm md:text-base">Productos</h4>
-          <div className="bg-gray-50 rounded-lg p-2">
+        <div className="px-2 md:px-1 pt-0 pb-0 mt-4">
+          <h4 className="font-semibold text-gray-900 mb-0 mt-0 pt-0 text-sm md:text-base ml-2 text-left">Productos</h4>
+          <div className="bg-gray-50 rounded-lg p-2 ">
             {pedido.productos && pedido.productos.length > 0 ? (
               <div className="space-y-2">
                 <div className={`${showAllProducts ? 'max-h-none' : 'max-h-48 overflow-y-auto'}`}>
@@ -396,7 +396,7 @@ function AdminOrderCard({ pedido, onStatusChange }: AdminOrderCardProps) {
               </div>
               
                           {/* Tercera línea: Botones */}
-            <div className="flex flex-col gap-2 md:flex-row md:gap-3">
+            <div className="flex flex-col gap-1 md:flex-row md:gap-1">
               {pedido.estado !== 'Enviado' && (
                 <button
                   onClick={() => handleStatusChange('Cancelado')}
@@ -417,7 +417,7 @@ function AdminOrderCard({ pedido, onStatusChange }: AdminOrderCardProps) {
                   onClick={() => handleStatusChange('Procesando')}
                   className="w-full md:w-auto px-4 py-1.5 rounded-lg bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition"
                 >
-                  Alistado
+                  Alistar
                 </button>
               ) : pedido.estado === 'Procesando' ? (
                 <button
