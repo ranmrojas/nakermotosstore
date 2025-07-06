@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '../../../lib/generated/prisma';
+import { verifyPassword } from '../../../lib/authUtils';
 
 const prisma = new PrismaClient();
 
@@ -24,8 +25,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
-    // Verificar contraseña (en un caso real deberías usar bcrypt)
-    if (usuario.password !== password) {
+    // Verificar contraseña usando bcrypt
+    const isPasswordValid = await verifyPassword(password, usuario.password);
+    
+    if (!isPasswordValid) {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 

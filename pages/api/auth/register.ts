@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '../../../lib/generated/prisma';
+import { hashPassword } from '../../../lib/authUtils';
 
 const prisma = new PrismaClient();
 
@@ -41,11 +42,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'El nombre de usuario ya está en uso' });
     }
 
-    // Crear el usuario
+    // Hashear la contraseña antes de guardarla
+    const hashedPassword = await hashPassword(password);
+
+    // Crear el usuario con la contraseña hasheada
     const usuario = await prisma.usuario.create({
       data: {
         username,
-        password, // En producción deberías usar bcrypt
+        password: hashedPassword,
         nombre,
         rol
       }

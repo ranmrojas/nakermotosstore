@@ -7,15 +7,19 @@ export function middleware(request: NextRequest) {
   const isPublicRoute = publicRoutes.some(route => request.nextUrl.pathname.startsWith(route));
 
   // Rutas de API que permiten acceso sin verificación (para preload)
-  const apiRoutes = ['/api/categorias', '/api/extract/products'];
+  const apiRoutes = ['/api/categorias', '/api/extract/products', '/api/usuarios'];
   const isApiRoute = apiRoutes.some(route => request.nextUrl.pathname.startsWith(route));
 
-  // Rutas de autenticación del admin
+  // Rutas de autenticación del admin (no requieren verificación de edad)
   const adminAuthRoutes = ['/admin/login'];
   const isAdminAuthRoute = adminAuthRoutes.some(route => request.nextUrl.pathname.startsWith(route));
 
-  // Si es una ruta de autenticación del admin, permitir acceso
-  if (isAdminAuthRoute) {
+  // Rutas de API de autenticación (no requieren verificación de edad)
+  const authApiRoutes = ['/api/auth/login', '/api/auth/register', '/api/auth/logout', '/api/auth/verify'];
+  const isAuthApiRoute = authApiRoutes.some(route => request.nextUrl.pathname.startsWith(route));
+
+  // Si es una ruta de autenticación del admin o API de auth, permitir acceso sin verificación de edad
+  if (isAdminAuthRoute || isAuthApiRoute) {
     return NextResponse.next();
   }
 
@@ -24,7 +28,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Verificar si es una ruta del admin
+  // Verificar si es una ruta del admin (excluyendo /admin/login que ya se manejó arriba)
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
   
   if (isAdminRoute) {

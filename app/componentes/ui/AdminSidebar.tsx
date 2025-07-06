@@ -3,7 +3,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAdminAuth } from '../../../hooks/useAdminAuth';
-import { useSidebar } from './AdminProtected';
+import { useSidebar } from '../admin/AdminProtected';
 
 // Componente del botón flotante
 function FloatingButton({ onOpen }: { onOpen: () => void }) {
@@ -30,10 +30,11 @@ function SidebarContent() {
   const { user, logout } = useAdminAuth();
 
   const navItems = [
+    { label: "Tracking", href: "/admin/tracking" },
     { label: "Dashboard", href: "/admin" },
     { label: "Usuarios", href: "/admin/usuarios", adminOnly: true },
     { label: "Historial", href: "/admin/historial" },
-    { label: "Tracking", href: "/admin/tracking" },
+    { label: "Categorías", href: "/admin/categorias" },
   ];
 
   return (
@@ -63,8 +64,8 @@ function SidebarContent() {
                 href={item.href}
                 className={`flex items-center px-4 py-2 rounded-lg text-base font-medium transition-colors ${
                   isActive
-                    ? "bg-purple-100 text-purple-800 font-semibold"
-                    : "text-gray-700 hover:bg-gray-100 hover:text-purple-700"
+                    ? "bg-gray-200 text-gray-800 font-semibold"
+                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                 }`}
               >
                 {item.label}
@@ -76,12 +77,12 @@ function SidebarContent() {
       {/* Usuario y logout */}
       <div className="px-6 py-4 border-t flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-full bg-purple-200 flex items-center justify-center font-bold text-purple-700">
+          <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center font-bold text-gray-800">
             {user?.nombre?.charAt(0) || '?'}
           </div>
           <div>
             <div className="text-sm font-semibold text-gray-900">{user?.nombre}</div>
-            <div className="text-xs text-purple-700 bg-purple-100 rounded px-2 py-0.5 inline-block mt-1">{user?.rol}</div>
+            <div className="text-xs text-gray-700 bg-gray-100 rounded px-2 py-0.5 inline-block mt-1">{user?.rol}</div>
           </div>
         </div>
         <button

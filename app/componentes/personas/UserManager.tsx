@@ -36,10 +36,18 @@ export default function UserManager() {
     try {
       setLoading(true);
       const response = await axios.get('/api/usuarios');
-      setUsuarios(response.data);
+      // Verificar que response.data sea un array
+      if (Array.isArray(response.data)) {
+        setUsuarios(response.data);
+      } else {
+        console.error('Response data is not an array:', response.data);
+        setUsuarios([]);
+        setError('Formato de respuesta inválido');
+      }
     } catch (error) {
       setError('Error al cargar usuarios');
       console.error('Error fetching usuarios:', error);
+      setUsuarios([]);
     } finally {
       setLoading(false);
     }
@@ -150,11 +158,10 @@ export default function UserManager() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Gestión de Usuarios</h2>
-          <p className="text-gray-600">Administra los usuarios del sistema</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+          className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
         >
           + Nuevo Usuario
         </button>
@@ -208,7 +215,7 @@ export default function UserManager() {
                   type="text"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-500 bg-white border-gray-300 !important"
                   required
                 />
               </div>
@@ -221,7 +228,7 @@ export default function UserManager() {
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-500 bg-white border-gray-300 !important"
                   required={!editingUser}
                 />
               </div>
@@ -234,7 +241,7 @@ export default function UserManager() {
                   type="text"
                   value={formData.nombre}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-500 bg-white border-gray-300 !important"
                   required
                 />
               </div>
@@ -246,7 +253,7 @@ export default function UserManager() {
                 <select
                   value={formData.rol}
                   onChange={(e) => setFormData({ ...formData, rol: e.target.value as 'admin' | 'operador' })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-500 bg-white border-gray-300 !important"
                 >
                   <option value="operador">Operador</option>
                   <option value="admin">Administrador</option>
@@ -264,7 +271,7 @@ export default function UserManager() {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
               >
                 {editingUser ? 'Actualizar' : 'Crear'}
               </button>
@@ -301,7 +308,7 @@ export default function UserManager() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {usuarios.map((usuario) => (
+              {Array.isArray(usuarios) && usuarios.map((usuario) => (
                 <tr key={usuario.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {usuario.id}
@@ -315,7 +322,7 @@ export default function UserManager() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                       usuario.rol === 'admin' 
-                        ? 'bg-purple-100 text-purple-800' 
+                        ? 'bg-gray-100 text-gray-800' 
                         : 'bg-blue-100 text-blue-800'
                     }`}>
                       {usuario.rol}
@@ -324,7 +331,7 @@ export default function UserManager() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                     <button
                       onClick={() => handleEdit(usuario)}
-                      className="text-purple-600 hover:text-purple-900 transition-colors"
+                      className="text-gray-600 hover:text-gray-900 transition-colors"
                     >
                       Editar
                     </button>
@@ -343,7 +350,7 @@ export default function UserManager() {
           </table>
         </div>
 
-        {usuarios.length === 0 && (
+        {(!Array.isArray(usuarios) || usuarios.length === 0) && (
           <div className="text-center py-8 text-gray-500">
             No hay usuarios registrados
           </div>
