@@ -5,6 +5,7 @@ import { useClientesApi } from '@/hooks/useClientesApi';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 import OrderManager from '../carrito/OrderManagerclient';
 import { DireccionGuardada } from '@/types/direcciones';
+import { supabase } from '@/lib/supabase';
 
 interface Pedido {
   id: string;
@@ -370,6 +371,29 @@ export default function PerfilCliente() {
       .then(data => setPedidos(data))
       .catch(() => setPedidos([]))
       .finally(() => setLoadingPedidos(false));
+  }, [session?.id]);
+
+  // Suscripción en tiempo real a cambios en la tabla Pedido (igual que tracking)
+  useEffect(() => {
+    if (!session?.id) return;
+    const channel = supabase
+      .channel('pedidos_changes_cliente')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'Pedido'
+      }, async () => {
+        // Siempre recargar los pedidos del cliente actual ante cualquier cambio
+        const res = await fetch(`/api/pedidos?clienteId=${session.id}`);
+        const data = await res.json();
+        setPedidos(data);
+      });
+
+    channel.subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
   }, [session?.id]);
 
   const pedidosAdaptados: PedidoAdaptado[] = pedidos.map((pedido: Pedido) => ({
