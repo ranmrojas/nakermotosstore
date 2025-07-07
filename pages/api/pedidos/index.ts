@@ -1,6 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '../../../lib/generated/prisma';
 import { AuditoriaService } from '../../../lib/auditoriaService';
+import twilio from 'twilio';
+import { config } from 'dotenv';
+config();
 
 const prisma = new PrismaClient();
 
@@ -51,6 +54,61 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Inicializar auditoría del pedido
       await AuditoriaService.inicializarAuditoria(pedido.id, usuario);
+
+      // Obtener datos del cliente para la notificación
+      const cliente = await prisma.cliente.findUnique({ where: { id: Number(clienteId) } });
+      if (cliente) {
+        // Preparar lista de productos como texto
+        let productosComoTexto = '';
+        if (Array.isArray(productos)) {
+          productosComoTexto = productos.map((p: { nombre: string; cantidad: number }) => `- ${p.cantidad}x ${p.nombre}`).join('\n');
+        } else if (typeof productos === 'string') {
+          productosComoTexto = productos;
+        }
+
+        // Construir el cuerpo del mensaje reemplazando los placeholders de la plantilla
+        const plantilla =
+          'Nuevo pedido recibido:\n\n' +
+          'Número de pedido: {{1}}\n' +
+          'Cliente: {{2}}\n' +
+          'Dirección: {{3}}\n' +
+          'Nota del pedido: {{4}}\n\n' +
+          'Productos:\n{{5}}\n\n' +
+          'Subtotal: {{6}}\n' +
+          'Valor del domicilio: {{7}}\n' +
+          'Total a pagar: {{8}}\n' +
+          'Medio de pago: {{9}}';
+
+        const body = plantilla
+          .replace('{{1}}', pedido.id.toString())
+          .replace('{{2}}', cliente.nombre)
+          .replace('{{3}}', cliente.direccion)
+          .replace('{{4}}', pedido.nota || 'Sin nota')
+          .replace('{{5}}', productosComoTexto)
+          .replace('{{6}}', pedido.subtotal.toLocaleString('es-CO'))
+          .replace('{{7}}', pedido.domicilio.toLocaleString('es-CO'))
+          .replace('{{8}}', pedido.total.toLocaleString('es-CO'))
+          .replace('{{9}}', pedido.medioPago || 'No especificado');
+
+        // Enviar notificación por WhatsApp usando Twilio
+        try {
+          const accountSid = process.env.TWILIO_ACCOUNT_SID!;
+          const authToken = process.env.TWILIO_AUTH_TOKEN!;
+          const from = process.env.TWILIO_WHATSAPP_FROM!;
+          const adminTo = process.env.ADMIN_WHATSAPP!;
+
+          const client = twilio(accountSid, authToken);
+
+          await client.messages.create({
+            to: adminTo,
+            from,
+            body
+          });
+        } catch (twilioError) {
+          console.error('Error enviando notificación por WhatsApp:', twilioError);
+          // No interrumpir el flujo si falla Twilio
+        }
+      }
 
       return res.status(201).json(pedido);
     } catch (error) {
