@@ -242,9 +242,9 @@ export default function CarritoPage() {
                       <button
                         ref={efectivoButtonRef}
                         type="button"
-                        onClick={() => setSelectedPayment('contraentrega')}
+                        onClick={() => setSelectedPayment('Efectivo')}
                         className={`inline-block px-3 py-1 rounded-lg border text-sm font-semibold transition-colors
-                          ${selectedPayment === 'contraentrega'
+                          ${selectedPayment === 'Efectivo'
                             ? 'bg-blue-600 text-white border-blue-700 shadow'
                             : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'}
                         `}

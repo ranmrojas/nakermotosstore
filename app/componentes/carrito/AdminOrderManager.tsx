@@ -2,6 +2,7 @@ import React, { useState, useCallback } from "react";
 import Image from 'next/image';
 import { getProductImageUrl } from '@/app/services/productService';
 import ProductModal from './ProductModal';
+import { useAdminAuth } from '../../../hooks/useAdminAuth';
 
 interface Producto {
   id: number;
@@ -48,6 +49,7 @@ function AdminOrderCard({ pedido, onStatusChange }: AdminOrderCardProps) {
   const [enviadoAt, setEnviadoAt] = useState<Date | null>(
     pedido.enviadoAt ? new Date(pedido.enviadoAt) : null
   );
+  const { user } = useAdminAuth();
 
   // Actualizar el tiempo cada segundo
   React.useEffect(() => {
@@ -85,10 +87,17 @@ function AdminOrderCard({ pedido, onStatusChange }: AdminOrderCardProps) {
     } else {
       // Hacer la petición en segundo plano para otros cambios de estado
       try {
+        const bodyData: { estado: string; usuario?: string } = { estado: nuevoEstado };
+        
+        // Si se está cancelando el pedido, incluir el nombre del usuario admin
+        if (nuevoEstado === 'Cancelado' && user) {
+          bodyData.usuario = `Usuario *${user.nombre}*`;
+        }
+        
         const response = await fetch(`/api/pedidos/${pedido.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ estado: nuevoEstado }),
+          body: JSON.stringify(bodyData),
         });
         if (!response.ok) {
           console.error('Error al cambiar el estado del pedido');
@@ -97,7 +106,7 @@ function AdminOrderCard({ pedido, onStatusChange }: AdminOrderCardProps) {
         console.error('Error al cambiar el estado del pedido:', error);
       }
     }
-  }, [onStatusChange, pedido.id]);
+  }, [onStatusChange, pedido.id, user]);
 
   // Cambio automático de estado después de 15 minutos cuando está enviado
   React.useEffect(() => {

@@ -128,13 +128,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             plantilla += '*Nota:* {{10}}\n';
           }
           
-          plantilla += '*Fecha de cancelación:* {{11}}\n';
-          
           if (usuario && usuario.trim() !== '') {
-            plantilla += '*Usuario que canceló:* {{12}}\n';
+            plantilla += '*Pedido Cancelado por:* {{12}}\n';
           }
           
-          plantilla += '\nEste pedido ha sido cancelado por el cliente.';
 
           const body = plantilla
             .replace('{{1}}', pedido.id.toString())
@@ -145,9 +142,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             .replace('{{6}}', (pedido.subtotal || 0).toLocaleString('es-CO'))
             .replace('{{7}}', (pedido.domicilio || 0).toLocaleString('es-CO'))
             .replace('{{8}}', (pedido.total || 0).toLocaleString('es-CO'))
-            .replace('{{9}}', pedido.medioPago || '')
+            .replace('{{9}}', (pedido.medioPago || '').toLowerCase() === 'efectivo' ? 'Efectivo' : (pedido.medioPago || ''))
             .replace('{{10}}', pedido.nota || '')
-            .replace('{{11}}', pedido.enviadoAt ? pedido.enviadoAt.toString() : '')
             .replace('{{12}}', usuario || '');
 
           try {

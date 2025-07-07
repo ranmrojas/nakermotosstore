@@ -42,7 +42,8 @@ export function OrderCard({ pedido, onCancelOrder, isAdmin = false }: OrderCardP
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          estado: 'Cancelado'
+          estado: 'Cancelado',
+          usuario: 'el *Cliente*'
         }),
       });
 
