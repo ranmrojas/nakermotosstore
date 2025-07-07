@@ -58,21 +58,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Obtener datos del cliente para la notificación
       const cliente = await prisma.cliente.findUnique({ where: { id: Number(clienteId) } });
       if (cliente) {
-        // Preparar lista de productos como texto
+        // Preparar lista de productos como texto (formato detallado con total por producto y total de unidades)
         let productosComoTexto = '';
+        let totalUnidades = 0;
         if (Array.isArray(productos)) {
-          productosComoTexto = productos.map((p: { nombre: string; cantidad: number }) => `- ${p.cantidad}x ${p.nombre}`).join('\n');
+          productosComoTexto = productos.map((p: { nombre: string; cantidad: number; precioUnitario?: number; sku?: string }) => {
+            totalUnidades += p.cantidad;
+            const linea = `- ${p.cantidad}x ${p.nombre}`;
+            const detalles = [];
+            if (typeof p.precioUnitario === 'number') {
+              const totalProducto = p.cantidad * p.precioUnitario;
+              detalles.push(`T: $${totalProducto.toLocaleString('es-CO')}`);
+            }
+            if (p.sku) {
+              detalles.push(`sku: ${p.sku}`);
+            }
+            return detalles.length > 0 ? `${linea}\n  ${detalles.join('  ')}` : linea;
+          }).join('\n');
+          productosComoTexto += `\n\nUNIDADES: *${totalUnidades}*`;
         } else if (typeof productos === 'string') {
           productosComoTexto = productos;
         }
 
+        // Recortar la dirección hasta la segunda coma
+        let direccionCorta = cliente.direccion;
+        if (typeof direccionCorta === 'string') {
+          const partes = direccionCorta.split(',');
+          if (partes.length >= 2) {
+            direccionCorta = partes.slice(0, 2).join(',').trim();
+          } else {
+            direccionCorta = direccionCorta.trim();
+          }
+        }
+
         // Construir el cuerpo del mensaje reemplazando los placeholders de la plantilla
-        const plantilla =
+        let plantilla =
           'Nuevo pedido recibido:\n\n' +
           'Número de pedido: {{1}}\n' +
           'Cliente: {{2}}\n' +
-          'Dirección: {{3}}\n' +
-          'Nota del pedido: {{4}}\n\n' +
+          'Dirección: {{3}}\n';
+        if (pedido.nota && pedido.nota.trim() !== '') {
+          plantilla += 'Nota del pedido: {{4}}\n\n';
+        } else {
+          plantilla += '\n';
+        }
+        plantilla +=
           'Productos:\n{{5}}\n\n' +
           'Subtotal: {{6}}\n' +
           'Valor del domicilio: {{7}}\n' +
@@ -82,8 +112,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const body = plantilla
           .replace('{{1}}', pedido.id.toString())
           .replace('{{2}}', cliente.nombre)
-          .replace('{{3}}', cliente.direccion)
-          .replace('{{4}}', pedido.nota || 'Sin nota')
+          .replace('{{3}}', direccionCorta)
+          .replace('{{4}}', pedido.nota ? pedido.nota : '')
           .replace('{{5}}', productosComoTexto)
           .replace('{{6}}', pedido.subtotal.toLocaleString('es-CO'))
           .replace('{{7}}', pedido.domicilio.toLocaleString('es-CO'))
