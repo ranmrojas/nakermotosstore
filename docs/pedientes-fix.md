@@ -1,0 +1,7 @@
+- que valide inventario y no deje pedir mas de las unidades que hay 
+- que no deje enviar 2 pedidos a la vez 
+- ocultar buttonNav cuando este en /carrito en movil y desktop
+- al abrir /admin mantener cerrado sidebar
+- detalle pedido en tracking grid card order 
+- colocar Cantidades de unidades en grid card order encima de subtotal
+- sms al cliente nuevo pedido y picking
