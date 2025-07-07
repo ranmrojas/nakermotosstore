@@ -58,28 +58,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Obtener datos del cliente para la notificación
       const cliente = await prisma.cliente.findUnique({ where: { id: Number(clienteId) } });
       if (cliente) {
-        // Preparar lista de productos como texto (formato detallado con total por producto y total de unidades)
-        let productosComoTexto = '';
-        let totalUnidades = 0;
-        if (Array.isArray(productos)) {
-          productosComoTexto = productos.map((p: { nombre: string; cantidad: number; precioUnitario?: number; sku?: string }) => {
-            totalUnidades += p.cantidad;
-            const linea = `- ${p.cantidad}x ${p.nombre}`;
-            const detalles = [];
-            if (typeof p.precioUnitario === 'number') {
-              const totalProducto = p.cantidad * p.precioUnitario;
-              detalles.push(`T: $${totalProducto.toLocaleString('es-CO')}`);
-            }
-            if (p.sku) {
-              detalles.push(`sku: ${p.sku}`);
-            }
-            return detalles.length > 0 ? `${linea}\n  ${detalles.join('  ')}` : linea;
-          }).join('\n');
-          productosComoTexto += `\n\nUNIDADES: *${totalUnidades}*`;
-        } else if (typeof productos === 'string') {
-          productosComoTexto = productos;
-        }
-
         // Recortar la dirección hasta la segunda coma
         let direccionCorta = cliente.direccion;
         if (typeof direccionCorta === 'string') {
@@ -93,21 +71,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Construir el cuerpo del mensaje reemplazando los placeholders de la plantilla
         let plantilla =
-          'Nuevo pedido recibido:\n\n' +
-          'Número de pedido: {{1}}\n' +
-          'Cliente: {{2}}\n' +
-          'Dirección: {{3}}\n';
+          '👉🏻 Nuevo pedido recibido:\n\n' +
+          'Número de pedido: #{{1}}\n' +
+          'Cliente: *{{2}}*\n' +
+          'Dirección: {{3}}\n' +
+          'Celular: {{11}}\n';
         if (pedido.nota && pedido.nota.trim() !== '') {
           plantilla += 'Nota del pedido: {{4}}\n\n';
         } else {
           plantilla += '\n';
         }
         plantilla +=
-          'Productos:\n{{5}}\n\n' +
+          'Productos:\n{{5}}\n' +
           'Subtotal: {{6}}\n' +
           'Valor del domicilio: {{7}}\n' +
-          'Total a pagar: {{8}}\n' +
-          'Medio de pago: {{9}}';
+          '*Total a pagar: {{8}}*\n' +
+          'Medio de pago: *{{9}}*\n' +
+          '*** ----------------Fin---------------- ***';
+
+        // Preparar lista de productos como texto (formato detallado con total por producto y total de unidades)
+        let productosComoTexto = '';
+        let totalUnidades = 0;
+        if (Array.isArray(productos)) {
+          productosComoTexto = productos.map((p: { nombre: string; cantidad: number; precioUnitario?: number; sku?: string }) => {
+            totalUnidades += p.cantidad;
+            const linea = `- ${p.cantidad}x ${p.nombre}`;
+            let detalles = '';
+            let totalProducto = '';
+            if (typeof p.precioUnitario === 'number') {
+              totalProducto = `T: $${(p.cantidad * p.precioUnitario).toLocaleString('es-CO')}`;
+            }
+            if (totalProducto && p.sku) {
+              detalles = `${totalProducto}  sku: ${p.sku}`;
+            } else if (totalProducto) {
+              detalles = totalProducto;
+            } else if (p.sku) {
+              detalles = `sku: ${p.sku}`;
+            }
+            return detalles ? `${linea}\n  ${detalles}` : linea;
+          }).join('\n');
+          productosComoTexto += `\n\nUNIDADES: *${totalUnidades}*\n`;
+        } else if (typeof productos === 'string') {
+          productosComoTexto = productos;
+        }
+
+        // Capitalizar medio de pago
+        const medioPagoFormateado = pedido.medioPago ? pedido.medioPago.charAt(0).toUpperCase() + pedido.medioPago.slice(1).toLowerCase() : 'No especificado';
 
         const body = plantilla
           .replace('{{1}}', pedido.id.toString())
@@ -118,7 +127,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           .replace('{{6}}', pedido.subtotal.toLocaleString('es-CO'))
           .replace('{{7}}', pedido.domicilio.toLocaleString('es-CO'))
           .replace('{{8}}', pedido.total.toLocaleString('es-CO'))
-          .replace('{{9}}', pedido.medioPago || 'No especificado');
+          .replace('{{9}}', medioPagoFormateado)
+          .replace('{{11}}', cliente.telefono || '');
 
         // Enviar notificación por WhatsApp usando Twilio
         try {
