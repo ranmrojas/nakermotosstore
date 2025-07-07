@@ -1,6 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '../../../lib/generated/prisma';
 import { AuditoriaService } from '../../../lib/auditoriaService';
+import twilio from 'twilio';
+import { config } from 'dotenv';
+config();
 
 const prisma = new PrismaClient();
 
@@ -38,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Obtener el estado anterior para la auditoría
       const pedidoAnterior = await prisma.pedido.findUnique({
         where: { id: Number(id) },
-        select: { estado: true }
+        select: { estado: true, clienteId: true }
       });
 
       const pedido = await prisma.pedido.update({
@@ -63,6 +66,48 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           estado,
           usuario
         );
+      }
+
+      // Enviar notificación de cancelación si el estado es 'Cancelado'
+      if (estado && typeof estado === 'string' && estado.toLowerCase() === 'cancelado') {
+        // Obtener datos del cliente
+        let cliente = null;
+        if (clienteId) {
+          cliente = await prisma.cliente.findUnique({ where: { id: Number(clienteId) } });
+        } else if (pedidoAnterior?.clienteId) {
+          cliente = await prisma.cliente.findUnique({ where: { id: Number(pedidoAnterior.clienteId) } });
+        }
+        if (cliente) {
+          // Construir el mensaje de cancelación
+          const plantilla =
+            '🚫 *PEDIDO CANCELADO* 🚫\n\n' +
+            '*Número de Pedido:* #{{1}}\n' +
+            '*Cliente:* {{2}}\n' +
+            '*Teléfono:* {{3}}\n\n' +
+            'Este pedido ha sido cancelado por el cliente.';
+
+          const body = plantilla
+            .replace('{{1}}', pedido.id.toString())
+            .replace('{{2}}', cliente.nombre)
+            .replace('{{3}}', cliente.telefono || '');
+
+          try {
+            const accountSid = process.env.TWILIO_ACCOUNT_SID!;
+            const authToken = process.env.TWILIO_AUTH_TOKEN!;
+            const from = process.env.TWILIO_WHATSAPP_FROM!;
+            const adminTo = process.env.ADMIN_WHATSAPP!;
+
+            const client = twilio(accountSid, authToken);
+
+            await client.messages.create({
+              to: adminTo,
+              from,
+              body
+            });
+          } catch (twilioError) {
+            console.error('Error enviando notificación de cancelación por WhatsApp:', twilioError);
+          }
+        }
       }
 
       return res.status(200).json(pedido);
