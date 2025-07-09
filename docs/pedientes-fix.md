@@ -5,3 +5,4 @@
 - detalle pedido en tracking grid card order 
 - colocar Cantidades de unidades en grid card order encima de subtotal
 - sms al cliente nuevo pedido y picking
+- Cambiar el valor del domi de acuerdo por zonas 
