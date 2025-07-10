@@ -120,11 +120,9 @@ export default function ProductGrid({
   // Referencias para las animaciones GSAP
   const categoryTagRef = useRef<HTMLSpanElement>(null);
   const brandTagRef = useRef<HTMLSpanElement>(null);
-  const cartIconRefs = useRef<{ [key: number]: HTMLSpanElement | null }>({});
-  const cartButtonRefs = useRef<{ [key: number]: HTMLButtonElement | null }>({});
   const { getProductosByCategoria: getProductosByCategoriaHook } = useProductos();
   const router = useRouter();
-  const { addToCart, getItemQuantity } = useCart();
+  const { addToCart, getItemQuantity, updateQuantity, removeFromCart } = useCart();
 
   // Función para validar y agregar al carrito con verificación de inventario
   const handleAddToCart = useCallback((product: Producto) => {
@@ -162,6 +160,27 @@ export default function ProductGrid({
       nota: product.nota
     });
   }, [addToCart, getItemQuantity]);
+
+  // Función para incrementar cantidad
+  const handleIncrement = useCallback((product: Producto) => {
+    const existenciasDisponibles = product.existencias_real ?? 0;
+    const cantidadEnCarrito = getItemQuantity(product.id_producto);
+    
+    if (cantidadEnCarrito < existenciasDisponibles) {
+      updateQuantity(product.id_producto, cantidadEnCarrito + 1);
+    }
+  }, [getItemQuantity, updateQuantity]);
+
+  // Función para decrementar cantidad
+  const handleDecrement = useCallback((product: Producto) => {
+    const cantidadEnCarrito = getItemQuantity(product.id_producto);
+    
+    if (cantidadEnCarrito > 1) {
+      updateQuantity(product.id_producto, cantidadEnCarrito - 1);
+    } else if (cantidadEnCarrito === 1) {
+      removeFromCart(product.id_producto);
+    }
+  }, [getItemQuantity, updateQuantity, removeFromCart]);
 
   // Nuevo estado para categorías múltiples
   const [categoriasProductos, setCategoriasProductos] = useState<CategoriaProductos[]>([]);
@@ -431,45 +450,9 @@ export default function ProductGrid({
     return precioOnline !== null && precioOnline !== undefined && precioBase !== undefined && precioOnline < precioBase;
   };
 
-  // Animación bump para el icono del carrito
-  const animateCartIcon = (productId: number) => {
-    requestAnimationFrame(() => {
-      const icon = cartIconRefs.current[productId];
-      if (icon) {
-        gsap.to(icon, {
-          scale: 1.25,
-          duration: 0.15,
-          yoyo: true,
-          repeat: 1,
-          ease: 'power1.inOut',
-          onComplete: () => {
-            gsap.to(icon, { scale: 1, duration: 0.1 });
-          }
-        });
-      }
-    });
-  };
 
-  // Animación de hundimiento para el botón del carrito
-  const animateCartButton = (productId: number) => {
-    requestAnimationFrame(() => {
-      const button = cartButtonRefs.current[productId];
-      if (button) {
-        gsap.to(button, {
-          scale: 0.9,
-          duration: 0.1,
-          ease: 'power2.out',
-          onComplete: () => {
-            gsap.to(button, {
-              scale: 1,
-              duration: 0.15,
-              ease: 'elastic.out(1, 0.3)'
-            });
-          }
-        });
-      }
-    });
-  };
+
+
 
   // Mostrar loading solo si no hay productos y está cargando inicialmente
   if (isLoading && productos.length === 0 && categoriasProductos.length === 0) {
@@ -585,28 +568,63 @@ export default function ProductGrid({
                           )}
                         </div>
                         {showAddToCart && (product.existencias_real ?? 0) > 0 ? (
-                          <button
-                            ref={el => { cartButtonRefs.current[product.id_producto] = el; }}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              animateCartIcon(product.id_producto);
-                              animateCartButton(product.id_producto);
-                              
-                              handleAddToCart(product);
-                            }}
-                            className="w-full mt-1 px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded transition-colors relative"
-                            aria-label={`Agregar ${product.nombre} al carrito`}
-                          >
-                            <ShoppingBagIcon className="h-4 w-4 inline mr-1" />
-                            Agregar
-                            <span
-                              ref={el => { cartIconRefs.current[product.id_producto] = el; }}
-                              className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center"
+                          getItemQuantity(product.id_producto) === 0 ? (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleAddToCart(product);
+                              }}
+                              className="w-full mt-1 px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded transition-colors"
+                              aria-label={`Agregar ${product.nombre} al carrito`}
                             >
-                              {getItemQuantity(product.id_producto) > 0 ? getItemQuantity(product.id_producto) : '+'}
-                            </span>
-                          </button>
+                              <ShoppingBagIcon className="h-4 w-4 inline mr-1" />
+                              Agregar
+                            </button>
+                          ) : (
+                            <div className="w-full mt-1 flex items-center justify-between bg-gray-100 rounded px-2 py-1">
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleDecrement(product);
+                                }}
+                                className="p-1 text-gray-600 hover:text-red-600 transition-colors"
+                                aria-label="Reducir cantidad"
+                              >
+                                {getItemQuantity(product.id_producto) === 1 ? (
+                                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                ) : (
+                                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                                  </svg>
+                                )}
+                              </button>
+                              <span className="text-sm font-medium text-gray-900">
+                                {getItemQuantity(product.id_producto)}
+                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleIncrement(product);
+                                }}
+                                disabled={getItemQuantity(product.id_producto) >= (product.existencias_real ?? 0)}
+                                className={`p-1 transition-colors ${
+                                  getItemQuantity(product.id_producto) >= (product.existencias_real ?? 0)
+                                    ? 'text-gray-400 cursor-not-allowed'
+                                    : 'text-gray-600 hover:text-emerald-600'
+                                }`}
+                                aria-label="Aumentar cantidad"
+                              >
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
+                              </button>
+                            </div>
+                          )
                         ) : (product.existencias_real ?? 0) <= 0 ? (
                           <div className="w-full mt-1 px-2 py-1 bg-red-100 text-red-700 text-xs rounded font-medium text-center">
                             Agotado
@@ -764,28 +782,63 @@ export default function ProductGrid({
                         )}
                       </div>
                       {showAddToCart && (product.existencias_real ?? 0) > 0 ? (
-                        <button
-                          ref={el => { cartButtonRefs.current[product.id_producto] = el; }}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            animateCartIcon(product.id_producto);
-                            animateCartButton(product.id_producto);
-                            
-                            handleAddToCart(product);
-                          }}
-                          className="w-full mt-1 px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded transition-colors relative"
-                          aria-label={`Agregar ${product.nombre} al carrito`}
-                        >
-                          <ShoppingBagIcon className="h-4 w-4 inline mr-1" />
-                          Agregar
-                          <span
-                            ref={el => { cartIconRefs.current[product.id_producto] = el; }}
-                            className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center"
+                        getItemQuantity(product.id_producto) === 0 ? (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleAddToCart(product);
+                            }}
+                            className="w-full mt-1 px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded transition-colors"
+                            aria-label={`Agregar ${product.nombre} al carrito`}
                           >
-                            {getItemQuantity(product.id_producto) > 0 ? getItemQuantity(product.id_producto) : '+'}
-                          </span>
-                        </button>
+                            <ShoppingBagIcon className="h-4 w-4 inline mr-1" />
+                            Agregar
+                          </button>
+                        ) : (
+                          <div className="w-full mt-1 flex items-center justify-between bg-gray-100 rounded px-2 py-1">
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDecrement(product);
+                              }}
+                              className="p-1 text-gray-600 hover:text-red-600 transition-colors"
+                              aria-label="Reducir cantidad"
+                            >
+                              {getItemQuantity(product.id_producto) === 1 ? (
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              ) : (
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                                </svg>
+                              )}
+                            </button>
+                            <span className="text-sm font-medium text-gray-900">
+                              {getItemQuantity(product.id_producto)}
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleIncrement(product);
+                              }}
+                              disabled={getItemQuantity(product.id_producto) >= (product.existencias_real ?? 0)}
+                              className={`p-1 transition-colors ${
+                                getItemQuantity(product.id_producto) >= (product.existencias_real ?? 0)
+                                  ? 'text-gray-400 cursor-not-allowed'
+                                  : 'text-gray-600 hover:text-emerald-600'
+                              }`}
+                              aria-label="Aumentar cantidad"
+                            >
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              </svg>
+                            </button>
+                          </div>
+                        )
                       ) : (product.existencias_real ?? 0) <= 0 ? (
                         <div className="w-full mt-1 px-2 py-1 bg-red-100 text-red-700 text-xs rounded font-medium text-center">
                           Agotado
@@ -921,12 +974,9 @@ export default function ProductGrid({
                       </span>
                     )}
                     <button
-                      ref={el => { cartButtonRefs.current[selectedProduct.id_producto] = el; }}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        animateCartIcon(selectedProduct.id_producto);
-                        animateCartButton(selectedProduct.id_producto);
                         
                         handleAddToCart(selectedProduct);
                         
@@ -949,11 +999,7 @@ export default function ProductGrid({
                         ? 'Agotado'
                         : 'Agregar'
                       }
-                      {(selectedProduct.existencias_real ?? 0) > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
-                          +1
-                        </span>
-                      )}
+
                     </button>
                   </div>
                 </div>
