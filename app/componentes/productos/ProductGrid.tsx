@@ -126,6 +126,43 @@ export default function ProductGrid({
   const router = useRouter();
   const { addToCart, getItemQuantity } = useCart();
 
+  // Función para validar y agregar al carrito con verificación de inventario
+  const handleAddToCart = useCallback((product: Producto) => {
+    const existenciasDisponibles = product.existencias_real ?? 0;
+    const cantidadEnCarrito = getItemQuantity(product.id_producto);
+    
+    // Verificar si hay suficientes existencias
+    if (cantidadEnCarrito >= existenciasDisponibles) {
+      alert(`No hay más cantidades disponibles de ${product.nombre}. Solo quedan ${existenciasDisponibles} unidades en inventario.`);
+      return;
+    }
+    
+    // Si hay existencias disponibles, agregar al carrito
+    const precio = getPrecioCorrecto(product);
+    
+    // Rastrear evento de añadir al carrito
+    analyticsEvents.addToCart(
+      product.id_producto.toString(),
+      product.nombre,
+      precio || 0,
+      1
+    );
+    
+    // Añadir al carrito
+    addToCart({
+      id: product.id_producto,
+      nombre: product.nombre,
+      precio: precio || 0,
+      cantidad: 1,
+      imagen: product.id_imagen,
+      extension: product.ext1 || product.ext2,
+      sku: product.sku || '',
+      categoria: product.nombre_categoria,
+      marca: product.nombre_marca,
+      nota: product.nota
+    });
+  }, [addToCart, getItemQuantity]);
+
   // Nuevo estado para categorías múltiples
   const [categoriasProductos, setCategoriasProductos] = useState<CategoriaProductos[]>([]);
   const [loadingAllCategories, setLoadingAllCategories] = useState(false);
@@ -550,29 +587,7 @@ export default function ProductGrid({
                                 animateCartIcon(product.id_producto);
                                 animateCartButton(product.id_producto);
                                 
-                                const precio = getPrecioCorrecto(product);
-                                
-                                // Rastrear evento de añadir al carrito
-                                analyticsEvents.addToCart(
-                                  product.id_producto.toString(),
-                                  product.nombre,
-                                  precio || 0,
-                                  1
-                                );
-                                
-                                // Añadir al carrito
-                                addToCart({
-                                  id: product.id_producto,
-                                  nombre: product.nombre,
-                                  precio: precio || 0,
-                                  cantidad: 1,
-                                  imagen: product.id_imagen,
-                                  extension: product.ext1 || product.ext2,
-                                  sku: product.sku || '',
-                                  categoria: product.nombre_categoria,
-                                  marca: product.nombre_marca,
-                                  nota: product.nota
-                                });
+                                handleAddToCart(product);
                               }}
                               className="ml-2 p-1 text-emerald-600 hover:text-emerald-700 transition-colors relative"
                               aria-label={`Agregar ${product.nombre} al carrito`}
@@ -745,29 +760,7 @@ export default function ProductGrid({
                               animateCartIcon(product.id_producto);
                               animateCartButton(product.id_producto);
                               
-                              const precio = getPrecioCorrecto(product);
-                              
-                              // Rastrear evento de añadir al carrito
-                              analyticsEvents.addToCart(
-                                product.id_producto.toString(),
-                                product.nombre,
-                                precio || 0,
-                                1
-                              );
-                              
-                              // Añadir al carrito
-                              addToCart({
-                                id: product.id_producto,
-                                nombre: product.nombre,
-                                precio: precio || 0,
-                                cantidad: 1,
-                                imagen: product.id_imagen,
-                                extension: product.ext1 || product.ext2,
-                                sku: product.sku || '',
-                                categoria: product.nombre_categoria,
-                                marca: product.nombre_marca,
-                                nota: product.nota
-                              });
+                              handleAddToCart(product);
                             }}
                             className="ml-2 p-1 text-emerald-600 hover:text-emerald-700 transition-colors relative"
                             aria-label={`Agregar ${product.nombre} al carrito`}
@@ -928,29 +921,7 @@ export default function ProductGrid({
                         animateCartIcon(selectedProduct.id_producto);
                         animateCartButton(selectedProduct.id_producto);
                         
-                        const precio = getPrecioCorrecto(selectedProduct);
-                        
-                        // Rastrear evento de añadir al carrito
-                        analyticsEvents.addToCart(
-                          selectedProduct.id_producto.toString(),
-                          selectedProduct.nombre,
-                          precio || 0,
-                          1
-                        );
-                        
-                        // Añadir al carrito
-                        addToCart({
-                          id: selectedProduct.id_producto,
-                          nombre: selectedProduct.nombre,
-                          precio: precio || 0,
-                          cantidad: 1,
-                          imagen: selectedProduct.id_imagen,
-                          extension: selectedProduct.ext1 || selectedProduct.ext2,
-                          sku: selectedProduct.sku || '',
-                          categoria: selectedProduct.nombre_categoria,
-                          marca: selectedProduct.nombre_marca,
-                          nota: selectedProduct.nota
-                        });
+                        handleAddToCart(selectedProduct);
                         
                         // Cerrar modal después de agregar
                         closeModal();
