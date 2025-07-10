@@ -567,7 +567,7 @@ export default function ProductGrid({
                             {product.nota}
                           </div>
                         )}
-                        <div className="flex items-center justify-between w-full mt-auto mb-0">
+                        <div className="flex items-center justify-between w-full mt-auto mb-1">
                           <div className="flex flex-col mb-0 pb-0">
                             <span className={`${tieneOferta(product) ? 'text-green-600 text-base font-bold' : 'text-gray-800 font-bold text-sm'}`}>
                               ${(getPrecioCorrecto(product))?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
@@ -578,34 +578,40 @@ export default function ProductGrid({
                               </span>
                             )}
                           </div>
-                          {showAddToCart && (product.existencias_real ?? 0) > 0 ? (
-                            <button
-                              ref={el => { cartButtonRefs.current[product.id_producto] = el; }}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                animateCartIcon(product.id_producto);
-                                animateCartButton(product.id_producto);
-                                
-                                handleAddToCart(product);
-                              }}
-                              className="ml-2 p-1 text-emerald-600 hover:text-emerald-700 transition-colors relative"
-                              aria-label={`Agregar ${product.nombre} al carrito`}
-                            >
-                              <ShoppingBagIcon className="h-5 w-5" />
-                              <span
-                                ref={el => { cartIconRefs.current[product.id_producto] = el; }}
-                                className="absolute -top-1 -right-1 bg-green-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center"
-                              >
-                                {getItemQuantity(product.id_producto) > 0 ? getItemQuantity(product.id_producto) : '+'}
-                              </span>
-                            </button>
-                          ) : (product.existencias_real ?? 0) <= 0 ? (
-                            <span className="ml-2 px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium">
-                              Agotado
-                            </span>
-                          ) : null}
+                          {product.sku && (
+                            <div className="text-gray-400 text-xs leading-none">
+                              sku: {product.sku}
+                            </div>
+                          )}
                         </div>
+                        {showAddToCart && (product.existencias_real ?? 0) > 0 ? (
+                          <button
+                            ref={el => { cartButtonRefs.current[product.id_producto] = el; }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              animateCartIcon(product.id_producto);
+                              animateCartButton(product.id_producto);
+                              
+                              handleAddToCart(product);
+                            }}
+                            className="w-full mt-1 px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded transition-colors relative"
+                            aria-label={`Agregar ${product.nombre} al carrito`}
+                          >
+                            <ShoppingBagIcon className="h-4 w-4 inline mr-1" />
+                            Agregar
+                            <span
+                              ref={el => { cartIconRefs.current[product.id_producto] = el; }}
+                              className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center"
+                            >
+                              {getItemQuantity(product.id_producto) > 0 ? getItemQuantity(product.id_producto) : '+'}
+                            </span>
+                          </button>
+                        ) : (product.existencias_real ?? 0) <= 0 ? (
+                          <div className="w-full mt-1 px-2 py-1 bg-red-100 text-red-700 text-xs rounded font-medium text-center">
+                            Agotado
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -740,7 +746,7 @@ export default function ProductGrid({
                           {product.nota}
                         </div>
                       )}
-                      <div className="flex items-center justify-between w-full mt-auto mb-0">
+                      <div className="flex items-center justify-between w-full mt-auto mb-1">
                         <div className="flex flex-col mb-0 pb-0">
                           <span className={`${tieneOferta(product) ? 'text-green-600 text-base font-bold' : 'text-gray-800 font-bold text-sm'}`}>
                             ${(getPrecioCorrecto(product))?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
@@ -751,39 +757,40 @@ export default function ProductGrid({
                             </span>
                           )}
                         </div>
-                        {showAddToCart && (product.existencias_real ?? 0) > 0 ? (
-                          <button
-                            ref={el => { cartButtonRefs.current[product.id_producto] = el; }}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              animateCartIcon(product.id_producto);
-                              animateCartButton(product.id_producto);
-                              
-                              handleAddToCart(product);
-                            }}
-                            className="ml-2 p-1 text-emerald-600 hover:text-emerald-700 transition-colors relative"
-                            aria-label={`Agregar ${product.nombre} al carrito`}
-                          >
-                            <ShoppingBagIcon className="h-5 w-5" />
-                            <span
-                              ref={el => { cartIconRefs.current[product.id_producto] = el; }}
-                              className="absolute -top-1 -right-1 bg-green-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center"
-                            >
-                              {getItemQuantity(product.id_producto) > 0 ? getItemQuantity(product.id_producto) : '+'}
-                            </span>
-                          </button>
-                        ) : (product.existencias_real ?? 0) <= 0 ? (
-                          <span className="ml-2 px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium">
-                            Agotado
-                          </span>
-                        ) : null}
+                        {product.sku && (
+                          <div className="text-gray-400 text-xs leading-none">
+                            sku: {product.sku}
+                          </div>
+                        )}
                       </div>
-                      {product.sku && (
-                        <div className="w-full text-right text-gray-400 text-xs leading-none" style={{marginTop: "2px", marginBottom: 0, paddingBottom: 0}}>
-                          sku: {product.sku}
+                      {showAddToCart && (product.existencias_real ?? 0) > 0 ? (
+                        <button
+                          ref={el => { cartButtonRefs.current[product.id_producto] = el; }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            animateCartIcon(product.id_producto);
+                            animateCartButton(product.id_producto);
+                            
+                            handleAddToCart(product);
+                          }}
+                          className="w-full mt-1 px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded transition-colors relative"
+                          aria-label={`Agregar ${product.nombre} al carrito`}
+                        >
+                          <ShoppingBagIcon className="h-4 w-4 inline mr-1" />
+                          Agregar
+                          <span
+                            ref={el => { cartIconRefs.current[product.id_producto] = el; }}
+                            className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center"
+                          >
+                            {getItemQuantity(product.id_producto) > 0 ? getItemQuantity(product.id_producto) : '+'}
+                          </span>
+                        </button>
+                      ) : (product.existencias_real ?? 0) <= 0 ? (
+                        <div className="w-full mt-1 px-2 py-1 bg-red-100 text-red-700 text-xs rounded font-medium text-center">
+                          Agotado
                         </div>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 </div>

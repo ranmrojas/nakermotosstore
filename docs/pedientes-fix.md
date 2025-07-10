@@ -1,8 +1,23 @@
-- que valide inventario y no deje pedir mas de las unidades que hay 
-- que no deje enviar 2 pedidos a la vez 
-- ocultar buttonNav cuando este en /carrito en movil y desktop
-- al abrir /admin mantener cerrado sidebar
-- detalle pedido en tracking grid card order 
-- colocar Cantidades de unidades en grid card order encima de subtotal
-- sms al cliente nuevo pedido y picking
-- Cambiar el valor del domi de acuerdo por zonas 
+# Tareas Pendientes - Proxylzf
+
+## 🛒 Carrito y Inventario
+- [x] ✅ Validar inventario y no permitir pedir más unidades de las disponibles
+- [ ] 🔄 Prevenir envío de múltiples pedidos simultáneos
+
+## 🎨 Interfaz de Usuario
+- [] 📱 Ocultar ButtonNav en /carrito (móvil y desktop)
+- [] 🖥️ Mantener sidebar cerrado al abrir /admin
+
+## 📋 Gestión de Pedidos
+- [ ] 📊 Mostrar detalle completo del pedido en tracking grid card order
+- [ ] 🔢 Colocar cantidades de unidades en grid card order (encima de subtotal)
+
+## 📱 Notificaciones
+- [ ] 📨 Enviar SMS al cliente para nuevo pedido
+- [ ] 📨 Enviar SMS al cliente para picking
+
+## 🚚 Envíos
+- [ ] 🗺️ Implementar cálculo de domicilio por zonas geográficas
+
+---
+*Última actualización: $(date)* 
