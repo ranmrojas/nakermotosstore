@@ -3,6 +3,7 @@
 ## 🛒 Carrito y Inventario
 - [x] ✅ Validar inventario y no permitir pedir más unidades de las disponibles
 - [ ] 🔄 Prevenir envío de múltiples pedidos simultáneos
+- [ ] 📝 Ocultar el botón "Agregar al carrito" en la vista del carrito para evitar distracciones
 
 ## 🎨 Interfaz de Usuario
 - [] 📱 Ocultar ButtonNav en /carrito (móvil y desktop)

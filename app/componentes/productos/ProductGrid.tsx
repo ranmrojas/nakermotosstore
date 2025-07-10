@@ -161,6 +161,57 @@ export default function ProductGrid({
     });
   }, [addToCart, getItemQuantity]);
 
+  // Estado local para inputs temporales de cantidad
+  const [inputQuantities, setInputQuantities] = useState<{ [id: number]: string }>({});
+
+  // Actualizar el estado local cuando cambia la cantidad en el carrito
+  useEffect(() => {
+    const newInputs: { [id: number]: string } = {};
+    productos.forEach(p => {
+      const qty = getItemQuantity(p.id_producto);
+      // Si el input está vacío, mantenerlo vacío
+      if (p.id_producto in inputQuantities && inputQuantities[p.id_producto] === "") {
+        newInputs[p.id_producto] = "";
+      } else if (qty > 0) {
+        newInputs[p.id_producto] = qty.toString();
+      }
+    });
+    setInputQuantities(newInputs);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productos, getItemQuantity]);
+
+  // Función para manejar cambios en el input del contador
+  const handleQuantityInputChange = useCallback((product: Producto, value: string) => {
+    // Permitir vacío temporalmente
+    setInputQuantities(prev => ({ ...prev, [product.id_producto]: value }));
+    if (value === "") return;
+    const existenciasDisponibles = product.existencias_real ?? 0;
+    const numericValue = parseInt(value) || 0;
+    if (numericValue <= 0) return;
+    if (numericValue > existenciasDisponibles) {
+      updateQuantity(product.id_producto, existenciasDisponibles);
+      setInputQuantities(prev => ({ ...prev, [product.id_producto]: existenciasDisponibles.toString() }));
+      return;
+    }
+    updateQuantity(product.id_producto, numericValue);
+  }, [updateQuantity]);
+
+  // Función para manejar blur (cuando el usuario sale del input)
+  const handleQuantityInputBlur = useCallback((product: Producto) => {
+    const value = inputQuantities[product.id_producto];
+    const existenciasDisponibles = product.existencias_real ?? 0;
+    if (!value || parseInt(value) <= 0) {
+      setInputQuantities(prev => ({ ...prev, [product.id_producto]: "1" }));
+      updateQuantity(product.id_producto, 1);
+      return;
+    }
+    if (parseInt(value) > existenciasDisponibles) {
+      setInputQuantities(prev => ({ ...prev, [product.id_producto]: existenciasDisponibles.toString() }));
+      updateQuantity(product.id_producto, existenciasDisponibles);
+      return;
+    }
+  }, [inputQuantities, updateQuantity]);
+
   // Función para incrementar cantidad
   const handleIncrement = useCallback((product: Producto) => {
     const existenciasDisponibles = product.existencias_real ?? 0;
@@ -541,7 +592,7 @@ export default function ProductGrid({
                           </div>
                         )}
                       </div>
-                      <div className="flex-1 w-full flex flex-col justify-between items-center p-2 pb-1">
+                      <div className="flex-1 w-full flex flex-col justify-between items-center p-2 pb-1" onClick={e => e.stopPropagation()}>
                         <h3 className="text-xs font-medium text-center text-gray-900 line-clamp-2 w-full mb-1 min-h-[2.2em]">
                           {product.nombre}
                         </h3>
@@ -552,17 +603,20 @@ export default function ProductGrid({
                         )}
                         <div className="flex items-center justify-between w-full mt-auto mb-1">
                           <div className="flex flex-col mb-0 pb-0">
-                            <span className={`${tieneOferta(product) ? 'text-green-600 text-base font-bold' : 'text-gray-800 font-bold text-sm'}`}>
+                            <span
+                              className={`${tieneOferta(product) ? 'text-green-600 text-base font-bold' : 'text-gray-800 font-bold text-sm'}`}
+                              onClick={e => e.stopPropagation()}
+                            >
                               ${(getPrecioCorrecto(product))?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                             </span>
                             {tieneOferta(product) && (
-                              <span className="text-red-400 text-xs line-through font-medium" style={{ fontSize: '0.8rem', marginTop: '-2px' }}>
+                              <span className="text-red-400 text-xs line-through font-medium" style={{ fontSize: '0.8rem', marginTop: '-2px' }} onClick={e => e.stopPropagation()}>
                                 ${getPrecioBase(product)?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                               </span>
                             )}
                           </div>
                           {product.sku && (
-                            <div className="text-gray-400 text-xs leading-none">
+                            <div className="text-gray-400 text-xs leading-none" onClick={e => e.stopPropagation()}>
                               sku: {product.sku}
                             </div>
                           )}
@@ -575,7 +629,8 @@ export default function ProductGrid({
                                 e.stopPropagation();
                                 handleAddToCart(product);
                               }}
-                              className="w-full mt-1 px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded transition-colors"
+                              style={{ backgroundColor: '#8a1a00', color: '#fff' }}
+                              className="w-full mt-1 px-2 py-1 text-xs font-medium rounded transition-colors hover:brightness-90"
                               aria-label={`Agregar ${product.nombre} al carrito`}
                             >
                               <ShoppingBagIcon className="h-4 w-4 inline mr-1" />
@@ -602,9 +657,26 @@ export default function ProductGrid({
                                   </svg>
                                 )}
                               </button>
-                              <span className="text-sm font-medium text-gray-900">
-                                {getItemQuantity(product.id_producto)}
-                              </span>
+                              <input
+                                type="number"
+                                min="1"
+                                max={product.existencias_real ?? 1}
+                                value={inputQuantities[product.id_producto] ?? getItemQuantity(product.id_producto).toString()}
+                                onChange={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleQuantityInputChange(product, e.target.value);
+                                }}
+                                onBlur={() => handleQuantityInputBlur(product)}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }}
+                                className={`w-8 text-center text-sm font-medium text-gray-900 bg-transparent border-none focus:outline-none focus:ring-0 appearance-none ${getItemQuantity(product.id_producto) === 0 ? 'pointer-events-none opacity-60' : ''}`}
+                                inputMode="numeric"
+                                style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
+                                disabled={getItemQuantity(product.id_producto) === 0}
+                              />
                               <button
                                 onClick={(e) => {
                                   e.preventDefault();
@@ -755,7 +827,7 @@ export default function ProductGrid({
                         <span className="absolute top-2 right-8 z-20 text-xs text-amber-600 bg-white/90 px-2 py-0.5 rounded shadow">¡Copiado!</span>
                       )}
                     </div>
-                    <div className="flex-1 w-full flex flex-col justify-between items-center p-2 pb-1">
+                    <div className="flex-1 w-full flex flex-col justify-between items-center p-2 pb-1" onClick={e => e.stopPropagation()}>
                       <h3 className="text-xs font-medium text-center text-gray-900 line-clamp-2 w-full mb-1 min-h-[2.2em]">
                         {product.nombre}
                       </h3>
@@ -766,17 +838,20 @@ export default function ProductGrid({
                       )}
                       <div className="flex items-center justify-between w-full mt-auto mb-1">
                         <div className="flex flex-col mb-0 pb-0">
-                          <span className={`${tieneOferta(product) ? 'text-green-600 text-base font-bold' : 'text-gray-800 font-bold text-sm'}`}>
+                          <span
+                            className={`${tieneOferta(product) ? 'text-green-600 text-base font-bold' : 'text-gray-800 font-bold text-sm'}`}
+                            onClick={e => e.stopPropagation()}
+                          >
                             ${(getPrecioCorrecto(product))?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                           </span>
                           {tieneOferta(product) && (
-                            <span className="text-red-400 text-xs line-through font-medium" style={{ fontSize: '0.8rem', marginTop: '-2px' }}>
+                            <span className="text-red-400 text-xs line-through font-medium" style={{ fontSize: '0.8rem', marginTop: '-2px' }} onClick={e => e.stopPropagation()}>
                               ${getPrecioBase(product)?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                             </span>
                           )}
                         </div>
                         {product.sku && (
-                          <div className="text-gray-400 text-xs leading-none">
+                          <div className="text-gray-400 text-xs leading-none" onClick={e => e.stopPropagation()}>
                             sku: {product.sku}
                           </div>
                         )}
@@ -789,7 +864,8 @@ export default function ProductGrid({
                               e.stopPropagation();
                               handleAddToCart(product);
                             }}
-                            className="w-full mt-1 px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded transition-colors"
+                            style={{ backgroundColor: '#8a1a00', color: '#fff' }}
+                            className="w-full mt-1 px-2 py-1 text-xs font-medium rounded transition-colors hover:brightness-90"
                             aria-label={`Agregar ${product.nombre} al carrito`}
                           >
                             <ShoppingBagIcon className="h-4 w-4 inline mr-1" />
@@ -816,9 +892,26 @@ export default function ProductGrid({
                                 </svg>
                               )}
                             </button>
-                            <span className="text-sm font-medium text-gray-900">
-                              {getItemQuantity(product.id_producto)}
-                            </span>
+                            <input
+                              type="number"
+                              min="1"
+                              max={product.existencias_real ?? 1}
+                              value={getItemQuantity(product.id_producto)}
+                              onChange={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleQuantityInputChange(product, e.target.value);
+                              }}
+                              onBlur={() => handleQuantityInputBlur(product)}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                              className={`w-8 text-center text-sm font-medium text-gray-900 bg-transparent border-none focus:outline-none focus:ring-0 appearance-none ${getItemQuantity(product.id_producto) === 0 ? 'pointer-events-none opacity-60' : ''}`}
+                              inputMode="numeric"
+                              style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
+                              disabled={getItemQuantity(product.id_producto) === 0}
+                            />
                             <button
                               onClick={(e) => {
                                 e.preventDefault();
