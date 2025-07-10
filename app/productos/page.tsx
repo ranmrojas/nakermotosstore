@@ -1,7 +1,6 @@
 'use client';
 import { useRef, useEffect, Suspense } from 'react';
 import ProductGridWithSidebar, { ProductGridWithSidebarRef } from '@/app/componentes/productos/ProductGridWithSidebar';
-import ButtonNav from '@/app/componentes/ui/ButtonNav';
 import { useCategorias } from '../../hooks/useCategorias';
 import { usePreload } from '../../hooks/usePreload';
 import { productosSyncService } from '../../lib/indexedDB/productosSyncService';
@@ -51,11 +50,6 @@ export default function ProductosPage() {
           showAddToCart={true}
           showSearch={true}
           searchPlaceholder="Buscar por nombre, marca, SKU, precio..."
-        />
-
-        {/* ButtonNav */}
-        <ButtonNav 
-          accentColor="amber" 
         />
       </div>
     </Suspense>
