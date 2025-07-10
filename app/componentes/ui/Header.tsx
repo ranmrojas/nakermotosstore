@@ -120,11 +120,11 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
           {/* Icono de menú hamburguesa fijo a la derecha */}
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="flex flex-col items-center p-1 rounded focus:outline-none focus:ring-2 focus:ring-amber-500 hover:bg-gray-50 transition-colors absolute right-2"
+            className="flex flex-col items-center p-1 rounded focus:outline-none focus:ring-2 focus:ring-amber-500 hover:bg-gray-50 transition-colors absolute right-2 -mt-1"
             aria-label="Abrir menú principal"
           >
             <Bars3Icon className="w-6 h-6 text-gray-700" />
-            <span className="text-[10px] text-gray-700 mt-0.5 leading-none">Menú</span>
+            <span className="text-[10px] text-gray-700 leading-none mt-0.5">Menú</span>
           </button>
           
           {/* Sidebar Navigation */}
