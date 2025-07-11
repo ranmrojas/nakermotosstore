@@ -120,6 +120,8 @@ export default function ProductGrid({
   // Referencias para las animaciones GSAP
   const categoryTagRef = useRef<HTMLSpanElement>(null);
   const brandTagRef = useRef<HTMLSpanElement>(null);
+  const firstCategoryTagRef = useRef<HTMLButtonElement | null>(null);
+  const [autoClicked, setAutoClicked] = useState(false);
   const { getProductosByCategoria: getProductosByCategoriaHook } = useProductos();
   const router = useRouter();
   const { addToCart, getItemQuantity, updateQuantity, removeFromCart } = useCart();
@@ -501,8 +503,13 @@ export default function ProductGrid({
     return precioOnline !== null && precioOnline !== undefined && precioBase !== undefined && precioOnline < precioBase;
   };
 
-
-
+  // Efecto para simular el clic en el primer tag de categoría cuando estén visibles
+  useEffect(() => {
+    if (!autoClicked && firstCategoryTagRef.current) {
+      firstCategoryTagRef.current.click();
+      setAutoClicked(true);
+    }
+  }, [categoriasProductos, autoClicked]);
 
 
   // Mostrar loading solo si no hay productos y está cargando inicialmente

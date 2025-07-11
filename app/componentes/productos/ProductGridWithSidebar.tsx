@@ -128,7 +128,9 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
   
   // Referencias para las animaciones de scroll
   const categoriasScrollRef = useRef<HTMLDivElement>(null);
-  
+  const firstCategoryTagRef = useRef<HTMLButtonElement | null>(null);
+  const [autoClicked, setAutoClicked] = useState(false);
+
   // Obtener categorías usando el hook
   const { categorias, loading: categoriasLoading } = useCategorias();
   const { getProductosByCategoria, searchProductos } = useProductos();
@@ -242,6 +244,14 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
       };
     }
   }, [categoriasOrdenadas]);
+
+  // Efecto para simular el clic en el primer tag de categoría cuando estén visibles
+  useEffect(() => {
+    if (!autoClicked && firstCategoryTagRef.current) {
+      firstCategoryTagRef.current.click();
+      setAutoClicked(true);
+    }
+  }, [categoriasOrdenadas, autoClicked]);
 
   // Cargar marcas de la categoría seleccionada
   const loadMarcasByCategory = useCallback(async (categoryId: number | null) => {
@@ -524,10 +534,11 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
             {/* Línea de categorías con scroll horizontal */}
             <div className="mb-2">
               <div ref={categoriasScrollRef} className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
-                {Array.isArray(categoriasOrdenadas) && categoriasOrdenadas.map((categoria) => 
+                {Array.isArray(categoriasOrdenadas) && categoriasOrdenadas.map((categoria, idx) => 
                   categoria ? (
                     <button
                       key={categoria.id}
+                      ref={idx === 0 ? firstCategoryTagRef : undefined}
                       onClick={() => handleCategoryScrollClick(categoria.id)}
                       className={`px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                         selectedCategoryId === categoria.id
