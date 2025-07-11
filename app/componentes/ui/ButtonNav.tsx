@@ -111,38 +111,38 @@ export default function ButtonNav({
     switch (accentColor) {
       case 'blue':
         return {
-          active: 'text-blue-600 dark:text-blue-400',
-          activeBg: 'bg-blue-100 dark:bg-blue-900/30',
-          hover: 'hover:text-blue-600 dark:hover:text-blue-400',
-          hoverBg: 'group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20',
-          indicator: 'bg-blue-600 dark:bg-blue-400',
+          active: 'text-blue-600',
+          activeBg: 'bg-blue-100',
+          hover: 'hover:text-blue-600',
+          hoverBg: 'group-hover:bg-blue-50',
+          indicator: 'bg-blue-600',
           gradient: 'from-blue-500 via-purple-500 to-pink-500'
         };
       case 'amber':
         return {
-          active: 'text-gray-800 dark:text-gray-200',
-          activeBg: 'bg-gray-100 dark:bg-gray-800/50',
-          hover: 'hover:text-gray-700 dark:hover:text-gray-300',
-          hoverBg: 'group-hover:bg-gray-50 dark:group-hover:bg-gray-800/30',
-          indicator: 'bg-gray-600 dark:bg-gray-400',
+          active: 'text-gray-800',
+          activeBg: 'bg-gray-100',
+          hover: 'hover:text-gray-700',
+          hoverBg: 'group-hover:bg-gray-50',
+          indicator: 'bg-gray-600',
           gradient: 'from-gray-500 via-gray-600 to-gray-700'
         };
       case 'green':
         return {
-          active: 'text-green-600 dark:text-green-400',
-          activeBg: 'bg-green-100 dark:bg-green-900/30',
-          hover: 'hover:text-green-600 dark:hover:text-green-400',
-          hoverBg: 'group-hover:bg-green-50 dark:group-hover:bg-green-900/20',
-          indicator: 'bg-green-600 dark:bg-green-400',
+          active: 'text-green-600',
+          activeBg: 'bg-green-100',
+          hover: 'hover:text-green-600',
+          hoverBg: 'group-hover:bg-green-50',
+          indicator: 'bg-green-600',
           gradient: 'from-green-500 via-emerald-500 to-teal-500'
         };
       default:
         return {
-          active: 'text-gray-800 dark:text-gray-200',
-          activeBg: 'bg-gray-100 dark:bg-gray-800/50',
-          hover: 'hover:text-gray-700 dark:hover:text-gray-300',
-          hoverBg: 'group-hover:bg-gray-50 dark:group-hover:bg-gray-800/30',
-          indicator: 'bg-gray-600 dark:bg-gray-400',
+          active: 'text-gray-800',
+          activeBg: 'bg-gray-100',
+          hover: 'hover:text-gray-700',
+          hoverBg: 'group-hover:bg-gray-50',
+          indicator: 'bg-gray-600',
           gradient: 'from-gray-500 via-gray-600 to-gray-700'
         };
     }
@@ -160,7 +160,7 @@ export default function ButtonNav({
       <Link
         href={item.href}
         className={`flex flex-col items-center justify-center w-full py-0.5 px-1 rounded-xl transition-all duration-300 ease-in-out group relative
-          ${isActive ? colors.active : 'text-gray-600 dark:text-gray-400'} ${colors.hover}`}
+          ${isActive ? colors.active : 'text-gray-600'} ${colors.hover}`}
       >
         {/* Icono */}
         <div className={`relative p-1 rounded-full transition-all duration-300
@@ -186,7 +186,7 @@ export default function ButtonNav({
         
         {/* Texto */}
         <span className={`text-xs font-medium mt-0.5 transition-all duration-300
-          ${isActive ? colors.active : 'text-gray-600 dark:text-gray-400'} ${colors.hover}`}
+          ${isActive ? colors.active : 'text-gray-600'} ${colors.hover}`}
         >
           {item.name}
         </span>
@@ -202,7 +202,7 @@ export default function ButtonNav({
       {/* Bottom Navigation Bar */}
       <nav className={`fixed bottom-0 left-0 right-0 z-50 ${className}`}>
         {/* Fondo con blur y borde superior */}
-        <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-t border-gray-200/60 dark:border-gray-700/60 shadow-lg">
+        <div className="bg-white/90 backdrop-blur-xl border-t border-gray-200/60 shadow-lg">
           <div className="flex items-center justify-around px-2 py-1">
             {items.map((item) => (
               <div key={item.name}>

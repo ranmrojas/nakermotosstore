@@ -7,7 +7,7 @@ import ProductSearch from './ProductSearch';
 import ProductSkeleton from './ProductSkeleton';
 import { useCategorias } from '../../../hooks/useCategorias';
 import { useProductos } from '../../../hooks/useProductos';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, QueueListIcon } from '@heroicons/react/24/outline';
 import { analyticsEvents } from '../../../hooks/useAnalytics';
 
 // Importar el tipo Categoria del hook
@@ -150,7 +150,7 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
     const categoriasActivas = categorias.filter(cat => cat.activa);
 
     // IDs de las primeras 4 categorías en orden específico
-    const firstFourIds = [15, 63, 17, 33]; // Cerveza, Baterías, Cigarrillos, Aguardiente
+    const firstFourIds = [15, 46, 33, 17,]; // Cerveza, Cigarrillos, Vapeadores Aguardiente
 
     // Separar las primeras 4 del resto
     const firstFour = firstFourIds
@@ -479,21 +479,21 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
       )}
       {/* Sidebar flotante */}
       <div className={`
-        fixed top-0 left-0 h-full w-80 bg-white dark:bg-gray-800 shadow-xl z-50 transform transition-transform duration-300 ease-in-out
+        fixed top-0 left-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         md:relative md:translate-x-0 md:w-64 lg:w-72 md:shadow-none md:z-auto md:flex-shrink-0
       `}>
         <div className="flex flex-col h-full">
           {/* Header del sidebar */}
-          <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">
               Categorías
             </h2>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="md:hidden p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="md:hidden p-1 rounded-lg hover:bg-gray-100"
             >
-              <XMarkIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+              <XMarkIcon className="h-5 w-5 text-gray-500" />
             </button>
           </div>
           {/* Contenedor scrollable del sidebar */}
@@ -517,14 +517,26 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
         {/* Componente de búsqueda */}
         {showSearch && (
           <div className="flex-shrink-0 p-2 border-b border-gray-200 bg-white">
-            <ProductSearch
-              onSearchResults={handleSearchResults}
-              onSearchChange={handleSearchChange}
-              onCategorySelect={handleCategorySelect}
-              placeholder={searchPlaceholder}
-              showSortOptions={false}
-              className="!py-1"
-            />
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="flex flex-col items-center p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                aria-label="Abrir categorías"
+              >
+                <QueueListIcon className="h-5 w-5 text-gray-600" />
+                <span className="text-[10px] text-gray-600 mt-0.5">Categorías</span>
+              </button>
+              <div className="flex-1">
+                <ProductSearch
+                  onSearchResults={handleSearchResults}
+                  onSearchChange={handleSearchChange}
+                  onCategorySelect={handleCategorySelect}
+                  placeholder={searchPlaceholder}
+                  showSortOptions={false}
+                  className="!py-1"
+                />
+              </div>
+            </div>
           </div>
         )}
 
@@ -540,10 +552,10 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
                       key={categoria.id}
                       ref={idx === 0 ? firstCategoryTagRef : undefined}
                       onClick={() => handleCategoryScrollClick(categoria.id)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 border focus:outline-none focus:ring-2 focus:ring-[#8a1a00] focus:ring-opacity-50 shadow-sm ${
                         selectedCategoryId === categoria.id
-                          ? 'bg-amber-500 text-white'
-                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          ? 'bg-[#8a1a00] text-white border-[#8a1a00]'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-400 border-opacity-3'
                       }`}
                       style={{fontSize:'0.85rem'}}
                       title={`Filtrar por ${categoria.nombre}`}
@@ -561,10 +573,10 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
                   <button
                     key={marca.id}
                     onClick={() => handleMarcaScrollClick(marca.nombre)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 border focus:outline-none shadow-sm ${
                       selectedMarca === marca.nombre
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        ? 'bg-blue-500 text-white border-blue-500'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-400 border-opacity-3'
                     }`}
                     style={{fontSize:'0.85rem'}}
                     title={`Buscar productos de ${marca.nombre}`}
@@ -584,7 +596,7 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
               {/* Resultados de búsqueda */}
               <div className="mb-4">
                 <h2 className="text-lg font-semibold text-gray-900">
-                  {isSearching ? 'Buscando...' : `Resultados de búsqueda (${searchResults.length})`}
+                  {isSearching ? 'Buscando...' : ''}
                 </h2>
               </div>
               

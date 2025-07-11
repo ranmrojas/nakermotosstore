@@ -134,19 +134,19 @@ export default function SidebarNav({
     switch (accentColor) {
       case 'amber':
         return {
-          active: 'text-gray-800 dark:text-gray-200',
-          activeBg: 'bg-gray-100 dark:bg-gray-800/50',
-          hover: 'hover:text-gray-700 dark:hover:text-gray-300',
-          hoverBg: 'hover:bg-gray-100 dark:hover:bg-gray-800/30',
-          indicator: 'bg-gray-600 dark:bg-gray-400',
+          active: 'text-gray-800',
+          activeBg: 'bg-gray-100',
+          hover: 'hover:text-gray-700',
+          hoverBg: 'hover:bg-gray-100',
+          indicator: 'bg-gray-600',
         };
       default:
         return {
-          active: 'text-gray-800 dark:text-gray-200',
-          activeBg: 'bg-gray-100 dark:bg-gray-800/50',
-          hover: 'hover:text-gray-700 dark:hover:text-gray-300',
-          hoverBg: 'hover:bg-gray-100 dark:hover:bg-gray-800/30',
-          indicator: 'bg-gray-600 dark:bg-gray-400',
+          active: 'text-gray-800',
+          activeBg: 'bg-gray-100',
+          hover: 'hover:text-gray-700',
+          hoverBg: 'hover:bg-gray-100',
+          indicator: 'bg-gray-600',
         };
     }
   };
@@ -165,13 +165,13 @@ export default function SidebarNav({
       />
       
       {/* Sidebar */}
-      <div className="fixed top-0 right-0 h-full w-64 max-w-[80%] bg-white dark:bg-gray-900 shadow-xl z-50 flex flex-col">
+      <div className="fixed top-0 right-0 h-full w-64 max-w-[80%] bg-white shadow-xl z-50 flex flex-col">
         {/* Encabezado */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h2 className="font-bold text-lg">Menú</h2>
           <button 
             onClick={onClose}
-            className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="p-1 rounded-full hover:bg-gray-100 transition-colors"
             aria-label="Cerrar menú"
           >
             <XMarkIcon className="w-6 h-6" />
@@ -193,10 +193,10 @@ export default function SidebarNav({
                     className={`flex items-center px-4 py-2 rounded-lg transition-colors ${
                       isActive 
                         ? `${colors.active} ${colors.activeBg}` 
-                        : `text-gray-600 dark:text-gray-400 ${colors.hover} ${colors.hoverBg}`
+                        : `text-gray-600 ${colors.hover} ${colors.hoverBg}`
                     }`}
                   >
-                    <IconComponent className={`mr-3 h-5 w-5 ${isActive ? 'text-gray-800 dark:text-white' : ''}`} />
+                    <IconComponent className={`mr-3 h-5 w-5 ${isActive ? 'text-gray-800' : ''}`} />
                     <span className="font-medium">{item.name}</span>
                     
                     {/* Badge si existe */}
@@ -208,7 +208,7 @@ export default function SidebarNav({
                     
                     {/* Indicador de página activa */}
                     {isActive && (
-                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-gray-800 dark:bg-white"></span>
+                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-gray-800"></span>
                     )}
                   </Link>
                 </li>
@@ -218,7 +218,7 @@ export default function SidebarNav({
         </nav>
         
         {/* Footer con información */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800 text-xs text-gray-500">
+        <div className="p-4 border-t border-gray-200 text-xs text-gray-500">
           <p>© {new Date().getFullYear()} Licorera Zona Frank</p>
         </div>
       </div>
