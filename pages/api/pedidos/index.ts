@@ -69,26 +69,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         }
 
-        // Construir el cuerpo del mensaje reemplazando los placeholders de la plantilla
-        let plantilla =
-          '👉🏻 Nuevo pedido recibido:\n\n' +
-          'Número de pedido: #{{1}}\n' +
-          'Cliente: *{{2}}*\n' +
-          'Dirección: {{3}}\n' +
-          'Celular: {{11}}\n';
-        if (pedido.nota && pedido.nota.trim() !== '') {
-          plantilla += 'Nota del pedido: {{4}}\n\n';
-        } else {
-          plantilla += '\n';
-        }
-        plantilla +=
-          'Productos:\n{{5}}\n' +
-          'Subtotal: {{6}}\n' +
-          'Valor del domicilio: {{7}}\n' +
-          '*Total a pagar: {{8}}*\n' +
-          'Medio de pago: *{{9}}*\n' +
-          '*** ----------------Fin---------------- ***';
-
         // Preparar lista de productos como texto (formato detallado con total por producto y total de unidades)
         let productosComoTexto = '';
         let totalUnidades = 0;
@@ -110,7 +90,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
             return detalles ? `${linea}\n  ${detalles}` : linea;
           }).join('\n');
-          productosComoTexto += `\n\nUNIDADES: *${totalUnidades}*\n`;
         } else if (typeof productos === 'string') {
           productosComoTexto = productos;
         }
@@ -118,19 +97,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Capitalizar medio de pago
         const medioPagoFormateado = pedido.medioPago ? pedido.medioPago.charAt(0).toUpperCase() + pedido.medioPago.slice(1).toLowerCase() : 'No especificado';
 
-        const body = plantilla
-          .replace('{{1}}', pedido.id.toString())
-          .replace('{{2}}', cliente.nombre)
-          .replace('{{3}}', direccionCorta)
-          .replace('{{4}}', pedido.nota ? pedido.nota : '')
-          .replace('{{5}}', productosComoTexto)
-          .replace('{{6}}', pedido.subtotal.toLocaleString('es-CO'))
-          .replace('{{7}}', pedido.domicilio.toLocaleString('es-CO'))
-          .replace('{{8}}', pedido.total.toLocaleString('es-CO'))
-          .replace('{{9}}', medioPagoFormateado)
-          .replace('{{11}}', cliente.telefono || '');
-
-        // Enviar notificación por WhatsApp usando Twilio
+        // Eliminar construcción manual del mensaje, solo enviar plantilla:
         try {
           const accountSid = process.env.TWILIO_ACCOUNT_SID!;
           const authToken = process.env.TWILIO_AUTH_TOKEN!;
@@ -139,10 +106,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
           const client = twilio(accountSid, authToken);
 
+          // Enviar usando plantilla de WhatsApp (usando contentSid y contentVariables)
           await client.messages.create({
             to: adminTo,
             from,
-            body
+            contentSid: 'HX691ff786cd22ab9770c412718456bcd7',
+            contentVariables: JSON.stringify({
+              '1': pedido.id.toString(),
+              '2': cliente.nombre,
+              '3': direccionCorta,
+              '4': cliente.telefono,
+              '5': productosComoTexto,
+              '6': totalUnidades.toString(),
+              '7': pedido.subtotal.toLocaleString('es-CO'),
+              '8': pedido.domicilio.toLocaleString('es-CO'),
+              '9': pedido.total.toLocaleString('es-CO'),
+              '10': medioPagoFormateado
+            })
           });
         } catch (twilioError) {
           console.error('Error enviando notificación por WhatsApp:', twilioError);

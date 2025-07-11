@@ -80,10 +80,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (cliente) {
           // Preparar lista de productos con formato
           let productosFormateados = '';
+          let totalUnidades = 0;
           if (pedido.productos && Array.isArray(pedido.productos)) {
-            let totalUnidades = 0;
             productosFormateados = pedido.productos.map((p) => {
-              // Validar que p sea un objeto con las propiedades necesarias
               if (typeof p === 'object' && p !== null && 'nombre' in p && 'cantidad' in p) {
                 const producto = p as { nombre: string; cantidad: number; precioUnitario?: number; sku?: string };
                 totalUnidades += producto.cantidad;
@@ -104,48 +103,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               }
               return '';
             }).filter(linea => linea !== '').join('\n');
-            productosFormateados += `\n\nUNIDADES: *${totalUnidades}*`;
+            // Ya no agregamos la línea de unidades aquí
           } else if (typeof pedido.productos === 'string') {
             productosFormateados = pedido.productos;
           }
 
-          // Construir el mensaje de cancelación
-          const plantillaBase =
-            '🚫 *PEDIDO CANCELADO* 🚫\n\n' +
-            '*Número de Pedido:* #{{1}}\n' +
-            '*Cliente:* {{2}}\n' +
-            '*Celular:* {{3}}\n\n' +
-            '*Dirección:* {{4}}\n' +
-            '*Productos:*\n{{5}}\n\n' +
-            '*Subtotal:* {{6}}\n' +
-            '*Valor del domicilio:* {{7}}\n' +
-            '*Total a pagar:* {{8}}\n' +
-            '*Medio de pago:* {{9}}\n';
-          
-          let plantilla = plantillaBase;
-          
-          if (pedido.nota && pedido.nota.trim() !== '') {
-            plantilla += '*Nota:* {{10}}\n';
-          }
-          
-          if (usuario && usuario.trim() !== '') {
-            plantilla += '*Pedido Cancelado por:* {{12}}\n';
-          }
-          
+          // Capitalizar medio de pago
+          const medioPagoFormateado = pedido.medioPago ? pedido.medioPago.charAt(0).toUpperCase() + pedido.medioPago.slice(1).toLowerCase() : 'No especificado';
 
-          const body = plantilla
-            .replace('{{1}}', pedido.id.toString())
-            .replace('{{2}}', cliente.nombre)
-            .replace('{{3}}', cliente.telefono || '')
-            .replace('{{4}}', cliente.direccion || '')
-            .replace('{{5}}', productosFormateados)
-            .replace('{{6}}', (pedido.subtotal || 0).toLocaleString('es-CO'))
-            .replace('{{7}}', (pedido.domicilio || 0).toLocaleString('es-CO'))
-            .replace('{{8}}', (pedido.total || 0).toLocaleString('es-CO'))
-            .replace('{{9}}', (pedido.medioPago || '').toLowerCase() === 'efectivo' ? 'Efectivo' : (pedido.medioPago || ''))
-            .replace('{{10}}', pedido.nota || '')
-            .replace('{{12}}', usuario || '');
-
+          // Enviar usando plantilla de WhatsApp (usando contentSid y contentVariables)
           try {
             const accountSid = process.env.TWILIO_ACCOUNT_SID!;
             const authToken = process.env.TWILIO_AUTH_TOKEN!;
@@ -157,7 +123,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             await client.messages.create({
               to: adminTo,
               from,
-              body
+              contentSid: 'HXe02e87093e81a456c1bcfb12a5b21f64',
+              contentVariables: JSON.stringify({
+                '1': pedido.id.toString(),
+                '2': cliente.nombre,
+                '3': cliente.telefono || '',
+                '4': cliente.direccion || '',
+                '5': productosFormateados,
+                '6': (pedido.subtotal || 0).toLocaleString('es-CO'),
+                '7': (pedido.domicilio || 0).toLocaleString('es-CO'),
+                '8': (pedido.total || 0).toLocaleString('es-CO'),
+                '9': medioPagoFormateado,
+                '10': pedido.nota ? `Nota: ${pedido.nota}` : '',
+                '11': usuario ? `Pedido Cancelado por: ${usuario}` : ''
+              })
             });
           } catch (twilioError) {
             console.error('Error enviando notificación de cancelación por WhatsApp:', twilioError);
