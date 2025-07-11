@@ -80,12 +80,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (cliente) {
           // Preparar lista de productos con formato
           let productosFormateados = '';
-          let totalUnidades = 0;
           if (pedido.productos && Array.isArray(pedido.productos)) {
             productosFormateados = pedido.productos.map((p) => {
               if (typeof p === 'object' && p !== null && 'nombre' in p && 'cantidad' in p) {
                 const producto = p as { nombre: string; cantidad: number; precioUnitario?: number; sku?: string };
-                totalUnidades += producto.cantidad;
                 const linea = `- ${producto.cantidad}x ${producto.nombre}`;
                 let detalles = '';
                 let totalProducto = '';

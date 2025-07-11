@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } else {
       res.status(400).json({ error: 'Código incorrecto' });
     }
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Error validando código' });
   }
 } 

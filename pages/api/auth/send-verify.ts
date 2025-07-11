@@ -15,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .create({ to: telefono, channel: 'sms' });
 
     res.status(200).json({ success: true });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Error enviando código de verificación' });
   }
 } 
