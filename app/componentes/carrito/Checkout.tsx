@@ -28,9 +28,11 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
   const [shippingCost, setShippingCost] = useState(0);
   const [nombreError, setNombreError] = useState('');
   const [direccionError, setDireccionError] = useState('');
-  const [showSuccess, setShowSuccess] = useState(false);
   // Estado para la nota del pedido
   const [nota, setNota] = useState('');
+  // Estados para el manejo del pedido
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showOrderSuccess, setShowOrderSuccess] = useState(false);
   
   // Nuevo estado para modo edición
   const [editando, setEditando] = useState(false);
@@ -372,9 +374,8 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
     if (hasError) return;
     setError('');
     
-    // Cerrar el modal de checkout inmediatamente y mostrar el modal de éxito
-    handleClose();
-    setShowSuccess(true);
+    // Inhabilitar el botón y mostrar estado de carga
+    setIsSubmitting(true);
     
     // Actualizar cliente en la base de datos y sesión
     if (session) {
@@ -460,23 +461,19 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
       await response.json(); // Solo para consumir la respuesta
       clearCart();
       
-      // Cerrar el modal de éxito después de 2 segundos y redirigir
-      setTimeout(() => {
-        setShowSuccess(false);
-        // Redirigir a /cuenta después de cerrar el modal
-        router.push('/cuenta');
-      }, 2000);
+      // Mostrar modal de éxito
+      setShowOrderSuccess(true);
 
     } catch {
       setError('Ocurrió un error al registrar el pedido.');
-      setShowSuccess(false);
+      setIsSubmitting(false);
     }
   };
 
   // Justo después de los otros estados y hooks:
   const addressInputRef = useRef<HTMLInputElement | null>(null);
 
-  if (!isOpen && !showSuccess) return null;
+  if (!isOpen && !showOrderSuccess) return null;
 
   return (
     <>
@@ -658,10 +655,10 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
               <label htmlFor="nota" className="block text-xs font-medium text-gray-700 mb-1">
                 Nota para el pedido (opcional)
               </label>
-              <textarea
+              <input
                 id="nota"
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-400"
-                rows={1}
+                type="text"
+                className="w-full border-b border-gray-300 px-0 py-2 text-sm focus:outline-none focus:border-amber-400 bg-transparent"
                 placeholder="Nota, conjunto, casa, apto, barrio, etc..."
                 value={nota}
                 onChange={e => setNota(e.target.value)}
@@ -672,12 +669,56 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
             {error && <div className="text-red-500 text-xs mb-2">{error}</div>}
             
             {/* Botón para confirmar pedido */}
+            {!isSubmitting && (
+              <button
+                type="button"
+                className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded"
+                onClick={handleConfirmOrder}
+              >
+                Confirmar pedido
+              </button>
+            )}
+            
+            {/* Estado de carga */}
+            {isSubmitting && (
+              <div className="w-full bg-gray-100 text-gray-600 font-semibold py-2 px-4 rounded flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Procesando pedido...
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal de éxito del pedido */}
+      {showOrderSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm mx-4 text-center">
+            <div className="mb-4">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              ¡Su pedido fue realizado!
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Su pedido ha sido registrado exitosamente. Pronto recibirá una confirmación.
+            </p>
             <button
-              type="button"
-              className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded"
-              onClick={handleConfirmOrder}
+              onClick={() => {
+                setShowOrderSuccess(false);
+                onClose();
+                router.push('/cuenta');
+              }}
+              className="w-full bg-green-600 text-white font-semibold py-2 px-4 rounded hover:bg-green-700 transition-colors"
             >
-              Confirmar pedido
+              Aceptar
             </button>
           </div>
         </div>

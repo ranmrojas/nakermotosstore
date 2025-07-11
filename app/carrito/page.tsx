@@ -273,37 +273,37 @@ export default function CarritoPage() {
                       Medio de pago <span className="text-red-500">*</span>
                     </div>
                     <div className="flex justify-between">
-                                              <button
-                          ref={efectivoButtonRef}
-                          type="button"
+                      <button
+                        ref={efectivoButtonRef}
+                        type="button"
                           onClick={() => {
                             setSelectedPayment('Efectivo');
                             setShowPaymentAlert(false);
                           }}
-                          className={`inline-block px-3 py-1 rounded-lg border text-sm font-semibold transition-colors
-                            ${selectedPayment === 'Efectivo'
-                              ? 'bg-blue-600 text-white border-blue-700 shadow'
-                              : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'}
-                          `}
-                        >
-                          Efectivo
-                        </button>
-                                              <button
-                          ref={qrButtonRef}
-                          type="button"
+                        className={`inline-block px-3 py-1 rounded-lg border text-sm font-semibold transition-colors
+                          ${selectedPayment === 'Efectivo'
+                            ? 'bg-blue-600 text-white border-blue-700 shadow'
+                            : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'}
+                        `}
+                      >
+                        Efectivo
+                      </button>
+                      <button
+                        ref={qrButtonRef}
+                        type="button"
                           onClick={() => {
                             setSelectedPayment('qr');
                             setShowPaymentAlert(false);
                           }}
-                          className={`inline-block px-3 py-1 rounded-lg border text-sm font-semibold transition-colors
-                            ${selectedPayment === 'qr'
-                              ? 'bg-blue-600 text-white border-blue-700 shadow'
-                              : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'}
-                          `}
-                        >
-                          QR o Transferencia
-                        </button>
-                      </div>
+                        className={`inline-block px-3 py-1 rounded-lg border text-sm font-semibold transition-colors
+                          ${selectedPayment === 'qr'
+                            ? 'bg-blue-600 text-white border-blue-700 shadow'
+                            : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'}
+                        `}
+                      >
+                        QR o Transferencia
+                      </button>
+                    </div>
                       
                       {/* Alerta de campo obligatorio */}
                       {showPaymentAlert && (
@@ -318,7 +318,7 @@ export default function CarritoPage() {
                           </div>
                         </div>
                       )}
-                    </div>
+                  </div>
 
                   <div className="border-t border-gray-100 pt-3 mt-3">
                     <div className="flex gap-2">
