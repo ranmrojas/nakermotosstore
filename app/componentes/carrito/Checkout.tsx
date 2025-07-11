@@ -483,23 +483,23 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
       {/* Modal principal de checkout */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-emerald-100/70 via-white/80 to-amber-100/70">
-          <div className="bg-white dark:bg-neutral-900 rounded-lg shadow-lg p-6 w-full max-w-xs relative animate-fade-in">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-xs relative animate-fade-in">
             <button
-              className="absolute top-2 right-2 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-xl"
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl"
               onClick={handleClose}
               aria-label="Cerrar"
             >
               ×
             </button>
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Completa tu pedido</h3>
+            <h3 className="text-lg font-semibold mb-4 text-gray-900">Completa tu pedido</h3>
             
             {/* Input para nombre */}
             {datosGuardados && !editando ? (
               <div className="flex items-center mb-3">
-                <span className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded bg-gray-50 dark:bg-neutral-800 text-gray-900 dark:text-gray-100">{nombre}</span>
+                <span className="flex-1 px-3 py-2 border border-gray-200 rounded bg-gray-50 text-gray-900">{nombre}</span>
                 <button
                   type="button"
-                  className="ml-2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="ml-2 p-1 text-gray-400 hover:text-gray-600"
                   onClick={() => setEditando(true)}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -510,7 +510,7 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
             ) : (
               <input
                 type="text"
-                className="w-full mb-3 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-neutral-800 dark:text-gray-100"
+                className="w-full mb-3 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-amber-400"
                 value={nombre}
                 onChange={e => {
                   setNombre(e.target.value);
@@ -525,10 +525,10 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
             {/* Input para dirección */}
             {datosGuardados && !editando ? (
               <div className="relative w-full mb-1 flex items-start">
-                <span className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded bg-gray-50 dark:bg-neutral-800 text-gray-900 dark:text-gray-100 max-h-12 overflow-hidden text-sm leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{direccion}</span>
+                <span className="flex-1 px-3 py-2 border border-gray-200 rounded bg-gray-50 text-gray-900 max-h-12 overflow-hidden text-sm leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{direccion}</span>
                 <button
                   type="button"
-                  className="ml-2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mt-1"
+                  className="ml-2 p-1 text-gray-400 hover:text-gray-600 mt-1"
                   onClick={handleSaveCurrentAddressAndEdit}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -541,7 +541,7 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
                 <input
                   ref={addressInputRef}
                   type="text"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-neutral-800 dark:text-gray-100 pr-10"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-amber-400 pr-10"
                   value={direccion}
                   onChange={e => {
                     handleAddressChange(e);
@@ -553,7 +553,7 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
                 {direccion && editando && (
                   <button
                     type="button"
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-lg focus:outline-none"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-700 text-lg focus:outline-none"
                     style={{ zIndex: 2 }}
                     onClick={() => setDireccion('')}
                     tabIndex={-1}
@@ -568,7 +568,7 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
             
             {/* Tag de ciudad/departamento y dropdown de direcciones guardadas */}
             <div className="mb-2 flex items-center gap-2">
-              <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold border border-gray-300 dark:bg-neutral-700 dark:text-gray-200 dark:border-neutral-600">
+              <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold border border-gray-300">
                 Villavicencio
               </span>
               
@@ -586,7 +586,7 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
                       console.log('Direcciones disponibles después de recargar:', direccionesGuardadasDisponibles);
                       setShowDireccionesDropdown(!showDireccionesDropdown);
                     }}
-                    className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold border border-gray-300 hover:bg-gray-200 dark:bg-neutral-700 dark:text-gray-200 dark:border-neutral-600 dark:hover:bg-neutral-600 transition-colors"
+                    className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold border border-gray-300 hover:bg-gray-200 transition-colors"
                   >
                     <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -596,13 +596,13 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
                   
                   {/* Dropdown de direcciones guardadas */}
                   {showDireccionesDropdown && (
-                    <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg shadow-lg z-10">
+                    <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
                       <div className="p-2">
-                        <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 px-2">
+                        <div className="text-xs font-semibold text-gray-700 mb-2 px-2">
                           Direcciones guardadas:
                         </div>
                         {loadingDirecciones ? (
-                          <div className="text-xs text-gray-500 dark:text-gray-400 px-2 py-2">
+                          <div className="text-xs text-gray-500 px-2 py-2">
                             Cargando direcciones...
                           </div>
                         ) : direccionesGuardadasDisponibles.length > 0 ? (
@@ -611,21 +611,21 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
                             key={direccionGuardada.id}
                             type="button"
                             onClick={() => handleSelectDireccionGuardada(direccionGuardada)}
-                            className="w-full text-left p-2 hover:bg-gray-50 dark:hover:bg-neutral-700 rounded text-xs text-gray-700 dark:text-gray-300 transition-colors"
+                            className="w-full text-left p-2 hover:bg-gray-50 rounded text-xs text-gray-700 transition-colors"
                           >
                             <div className="font-medium truncate">
                               {direccionGuardada.nombre || 'Dirección guardada'}
                             </div>
-                            <div className="text-gray-500 dark:text-gray-400 truncate">
+                            <div className="text-gray-500 truncate">
                               {direccionGuardada.direccion}
                             </div>
-                            <div className="text-amber-600 dark:text-amber-400 font-medium">
+                            <div className="text-amber-600 font-medium">
                               Costo domicilio: ${direccionGuardada.valordomicilio?.toLocaleString('es-CO') || 'Por calcular'}
                             </div>
                           </button>
                         ))
                         ) : (
-                          <div className="text-xs text-gray-500 dark:text-gray-400 px-2 py-2">
+                          <div className="text-xs text-gray-500 px-2 py-2">
                             No hay direcciones guardadas
                           </div>
                         )}
@@ -638,29 +638,29 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
             {/* Resumen clásico debajo del campo de dirección */}
             <div className="flex items-center justify-between gap-2 mb-3 mt-2">
               <div className="flex items-center gap-4 flex-wrap">
-                <span className="text-xs text-gray-600 dark:text-gray-300">
-                  Total productos: <span className="font-bold text-gray-900 dark:text-gray-100">{`$${totalPrice.toLocaleString('es-CO')}`}</span>
+                <span className="text-xs text-gray-600">
+                  Total productos: <span className="font-bold text-gray-900">{`$${totalPrice.toLocaleString('es-CO')}`}</span>
                 </span>
-                <span className="text-xs text-gray-600 dark:text-gray-300">
-                  Valor domicilio: <span className="font-bold text-gray-900 dark:text-gray-100">{shippingCost > 0 ? `$${shippingCost.toLocaleString('es-CO')}` : 'Por calcular'}</span>
+                <span className="text-xs text-gray-600">
+                  Valor domicilio: <span className="font-bold text-gray-900">{shippingCost > 0 ? `$${shippingCost.toLocaleString('es-CO')}` : 'Por calcular'}</span>
                 </span>
               </div>
             </div>
             
             {/* Total a pagar destacado */}
             <div className="mb-3">
-              <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
+              <span className="text-lg font-bold text-gray-900">
                 Total a pagar: {shippingCost > 0 ? `$${(totalPrice + shippingCost).toLocaleString('es-CO')}` : `$${totalPrice.toLocaleString('es-CO')}`}
               </span>
             </div>
             {/* Campo de nota para el pedido */}
             <div className="mb-3">
-              <label htmlFor="nota" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label htmlFor="nota" className="block text-xs font-medium text-gray-700 mb-1">
                 Nota para el pedido (opcional)
               </label>
               <textarea
                 id="nota"
-                className="w-full border border-gray-300 dark:border-neutral-700 rounded px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-400"
                 rows={1}
                 placeholder="Nota, conjunto, casa, apto, barrio, etc..."
                 value={nota}

@@ -19,10 +19,12 @@ export default function CarritoPage() {
   const [telefono, setTelefono] = useState('');
   const [telefonoError, setTelefonoError] = useState('');
   const [showCheckout, setShowCheckout] = useState(false);
+  const [showPaymentAlert, setShowPaymentAlert] = useState(false);
 
   // Referencias para los botones de medio de pago
   const efectivoButtonRef = useRef<HTMLButtonElement>(null);
   const qrButtonRef = useRef<HTMLButtonElement>(null);
+  const paymentSectionRef = useRef<HTMLDivElement>(null);
 
   // URL para imágenes utilizando el servicio centralizado
   const getImageUrl = (id: number | null, ext: string | null) => {
@@ -61,8 +63,40 @@ export default function CarritoPage() {
     }
   }, [selectedPayment]);
 
+  // Función para manejar el clic en realizar pedido
+  const handleRealizarPedido = () => {
+    if (cart.length === 0) return;
+    
+    if (!selectedPayment) {
+      // Si no hay medio de pago seleccionado, hacer scroll a la sección
+      if (paymentSectionRef.current) {
+        paymentSectionRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+        
+        // Mostrar alerta de campo obligatorio
+        setShowPaymentAlert(true);
+        
+        // Agregar un pequeño delay para que el scroll termine antes del focus
+        setTimeout(() => {
+          if (efectivoButtonRef.current) {
+            efectivoButtonRef.current.focus();
+          }
+        }, 500);
+      }
+      return;
+    }
+    
+    if (!session || !session.telefono || !/^3\d{9}$/.test(session.telefono)) {
+      setShowPhoneModal(true);
+      return;
+    }
+    setShowCheckout(true);
+  };
+
   return (
-    <div className="bg-white min-h-screen w-full">
+    <div className="bg-white min-h-screen w-full pb-24">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Tu Carrito</h1>
@@ -234,58 +268,57 @@ export default function CarritoPage() {
                 
                 {/* Botones de acción */}
                 <div className="space-y-3">
-                  <div className="mb-4">
+                  <div className="mb-4" ref={paymentSectionRef}>
                     <div className="text-xs font-semibold text-gray-700 mb-1">
                       Medio de pago <span className="text-red-500">*</span>
                     </div>
                     <div className="flex justify-between">
-                      <button
-                        ref={efectivoButtonRef}
-                        type="button"
-                        onClick={() => setSelectedPayment('Efectivo')}
-                        className={`inline-block px-3 py-1 rounded-lg border text-sm font-semibold transition-colors
-                          ${selectedPayment === 'Efectivo'
-                            ? 'bg-blue-600 text-white border-blue-700 shadow'
-                            : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'}
-                        `}
-                      >
-                        Efectivo
-                      </button>
-                      <button
-                        ref={qrButtonRef}
-                        type="button"
-                        onClick={() => setSelectedPayment('qr')}
-                        className={`inline-block px-3 py-1 rounded-lg border text-sm font-semibold transition-colors
-                          ${selectedPayment === 'qr'
-                            ? 'bg-blue-600 text-white border-blue-700 shadow'
-                            : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'}
-                        `}
-                      >
-                        QR o Transferencia
-                      </button>
+                                              <button
+                          ref={efectivoButtonRef}
+                          type="button"
+                          onClick={() => {
+                            setSelectedPayment('Efectivo');
+                            setShowPaymentAlert(false);
+                          }}
+                          className={`inline-block px-3 py-1 rounded-lg border text-sm font-semibold transition-colors
+                            ${selectedPayment === 'Efectivo'
+                              ? 'bg-blue-600 text-white border-blue-700 shadow'
+                              : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'}
+                          `}
+                        >
+                          Efectivo
+                        </button>
+                                              <button
+                          ref={qrButtonRef}
+                          type="button"
+                          onClick={() => {
+                            setSelectedPayment('qr');
+                            setShowPaymentAlert(false);
+                          }}
+                          className={`inline-block px-3 py-1 rounded-lg border text-sm font-semibold transition-colors
+                            ${selectedPayment === 'qr'
+                              ? 'bg-blue-600 text-white border-blue-700 shadow'
+                              : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'}
+                          `}
+                        >
+                          QR o Transferencia
+                        </button>
+                      </div>
+                      
+                      {/* Alerta de campo obligatorio */}
+                      {showPaymentAlert && (
+                        <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
+                          <div className="flex items-center">
+                            <svg className="w-4 h-4 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                            <span className="text-sm text-red-700 font-medium">
+                              Campo obligatorio
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-
-                  {/* Botón de realizar pedido por WhatsApp */}
-                  <button
-                    type="button"
-                    disabled={!selectedPayment || cart.length === 0}
-                    onClick={() => {
-                      if (!selectedPayment || cart.length === 0) return;
-                      if (!session || !session.telefono || !/^3\d{9}$/.test(session.telefono)) {
-                        setShowPhoneModal(true);
-                        return;
-                      }
-                      setShowCheckout(true);
-                    }}
-                    className={`w-full flex items-center justify-center px-4 py-3 font-medium rounded-lg transition-colors mb-3
-                      ${!selectedPayment || cart.length === 0
-                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                        : 'bg-green-600 text-white hover:bg-green-700'}
-                    `}
-                  >
-                    Realizar pedido
-                  </button>
 
                   <div className="border-t border-gray-100 pt-3 mt-3">
                     <div className="flex gap-2">
@@ -311,6 +344,46 @@ export default function CarritoPage() {
           </div>
         )}
       </div>
+
+      {/* Botón flotante para realizar pedido */}
+      {cart.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg">
+          <div className="max-w-4xl mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Total ({totalItems} items):</span>
+                  <span className="font-bold text-lg text-gray-900">
+                    ${totalPrice.toLocaleString('es-CO')}
+                  </span>
+                </div>
+                {session?.valordomicilio && session.valordomicilio > 0 && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    + ${session.valordomicilio.toLocaleString('es-CO')} envío
+                  </div>
+                )}
+              </div>
+              <div className="ml-4">
+                <button
+                  type="button"
+                  disabled={cart.length === 0}
+                  onClick={handleRealizarPedido}
+                  className={`px-8 py-3 font-semibold rounded-lg transition-colors shadow-lg
+                    ${cart.length === 0
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : !selectedPayment
+                      ? 'bg-gray-400 text-white hover:bg-gray-500 active:scale-95'
+                      : 'bg-green-600 text-white hover:bg-green-700 active:scale-95'
+                    }
+                  `}
+                >
+                  {!selectedPayment ? 'Realizar pedido' : 'Realizar pedido'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Componente Checkout */}
       <Checkout
