@@ -6,7 +6,7 @@
 - [ ] 📝 Ocultar el botón "Agregar al carrito" en la vista del carrito para evitar distracciones
 
 ## 🎨 Interfaz de Usuario
-- [] 📱 Ocultar ButtonNav en /carrito (móvil y desktop)
+- [x] 📱 Ocultar ButtonNav en /carrito (móvil y desktop)
 - [] 🖥️ Mantener sidebar cerrado al abrir /admin
 
 ## 📋 Gestión de Pedidos

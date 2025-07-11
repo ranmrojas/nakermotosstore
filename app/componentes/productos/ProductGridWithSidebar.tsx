@@ -150,7 +150,7 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
     const categoriasActivas = categorias.filter(cat => cat.activa);
 
     // IDs de las primeras 4 categorías en orden específico
-    const firstFourIds = [15, 46, 33, 17,]; // Cerveza, Cigarrillos, Vapeadores Aguardiente
+    const firstFourIds = [15, 33, 46, 61, 62, 63, 17,]; // Cerveza, Cigarrillos, Vapeadores Aguardiente
 
     // Separar las primeras 4 del resto
     const firstFour = firstFourIds
