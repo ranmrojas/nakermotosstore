@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, Suspense, useRef } from 'react';
-import ProductGrid from '../componentes/productos/ProductGrid';
-import ProductSearch from '../componentes/productos/ProductSearch';
-import ProductSkeleton from '../componentes/productos/ProductSkeleton';
-import { useProductos } from '../../hooks/useProductos';
-import { useCategorias } from '../../hooks/useCategorias';
-import { usePreload } from '../../hooks/usePreload';
-import { analyticsEvents } from '../../hooks/useAnalytics';
+import ProductGrid from '../../componentes/productos/ProductGrid';
+import ProductSearch from '../../componentes/productos/ProductSearch';
+import ProductSkeleton from '../../componentes/productos/ProductSkeleton';
+import { useProductos } from '../../../hooks/useProductos';
+import { useCategorias } from '../../../hooks/useCategorias';
+import { usePreload } from '../../../hooks/usePreload';
+import { analyticsEvents } from '../../../hooks/useAnalytics';
 
 // Importar el tipo Categoria del hook
 type Categoria = {

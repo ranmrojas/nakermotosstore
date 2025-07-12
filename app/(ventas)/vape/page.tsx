@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import ProductGrid from '../componentes/productos/ProductGrid';
-import ProductSearch from '../componentes/productos/ProductSearch';
-import { useProductos } from '../../hooks/useProductos';
-import { usePreload } from '../../hooks/usePreload';
-import { analyticsEvents } from '../../hooks/useAnalytics';
+import ProductGrid from '../../componentes/productos/ProductGrid';
+import ProductSearch from '../../componentes/productos/ProductSearch';
+import { useProductos } from '../../../hooks/useProductos';
+import { usePreload } from '../../../hooks/usePreload';
+import { analyticsEvents } from '../../../hooks/useAnalytics';
 
 // Usar la misma interfaz Producto que ProductGrid
 interface Producto {

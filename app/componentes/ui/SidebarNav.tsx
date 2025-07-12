@@ -7,12 +7,14 @@ import {
   HomeIcon,
   ShoppingBagIcon,
   MagnifyingGlassIcon,
-  XMarkIcon
+  XMarkIcon,
+  ClipboardDocumentListIcon
 } from '@heroicons/react/24/outline';
 import {
   HomeIcon as HomeIconSolid,
   ShoppingBagIcon as ShoppingBagIconSolid,
-  MagnifyingGlassIcon as MagnifyingGlassIconSolid
+  MagnifyingGlassIcon as MagnifyingGlassIconSolid,
+  ClipboardDocumentListIcon as ClipboardDocumentListIconSolid
 } from '@heroicons/react/24/solid';
 
 // Iconos personalizados importados del ButtonNav
@@ -74,6 +76,12 @@ const defaultNavigation: NavItem[] = [
     href: '/productos',
     icon: ShoppingBagIcon,
     iconSolid: ShoppingBagIconSolid,
+  },
+  {
+    name: 'Pedidos',
+    href: '/pedidos',
+    icon: ClipboardDocumentListIcon,
+    iconSolid: ClipboardDocumentListIconSolid,
   },
   {
     name: 'Buscar',

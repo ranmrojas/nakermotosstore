@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useCart } from '../../hooks/useCart';
+import { useCart } from '../../../hooks/useCart';
 import Image from 'next/image';
 import { getProductImageUrl } from '@/app/services/productService';
 import Link from 'next/link';
 import { useClientSession } from '@/hooks/useClientSession';
 import { useClientesApi } from '@/hooks/useClientesApi';
-import Checkout from '../componentes/carrito/Checkout';
+import Checkout from '../../componentes/carrito/Checkout';
 import { gsap } from 'gsap';
 
 export default function CarritoPage() {
