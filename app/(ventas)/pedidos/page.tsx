@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useClientSession } from '@/hooks/useClientSession';
 import OrderManager from '../../componentes/carrito/OrderManagerclient';
 import { supabase } from '@/lib/supabase';

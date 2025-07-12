@@ -11,6 +11,15 @@ export default function AgeVerification() {
   const searchParams = useSearchParams();
   const [redirectUrl, setRedirectUrl] = useState<string>('/productos');
 
+  // Verificar si ya está verificado al cargar el componente
+  useEffect(() => {
+    const isVerified = Cookies.get('age_verified');
+    if (isVerified === 'true') {
+      console.log('Usuario ya verificado, redirigiendo...');
+      window.location.href = redirectUrl;
+    }
+  }, [redirectUrl]);
+
   // Obtener la URL de redirección desde los parámetros de búsqueda
   useEffect(() => {
     const redirect = searchParams?.get('redirect');
@@ -25,10 +34,30 @@ export default function AgeVerification() {
       analyticsEvents.ageVerificationCompleted();
       
       setFadeOut(true);
-      // Establecer cookie con expiración de 24 horas
-      Cookies.set('age_verified', 'true', { 
-        expires: 120 // 120 días
-      });
+      
+      // Establecer cookie con expiración de 2 meses
+      try {
+        Cookies.set('age_verified', 'true', { 
+          expires: 60, // 60 días (2 meses)
+          path: '/',
+          sameSite: 'strict'
+        });
+        
+        // Verificar que la cookie se estableció correctamente
+        const cookieValue = Cookies.get('age_verified');
+        console.log('Cookie establecida:', cookieValue);
+        
+        if (!cookieValue) {
+          console.error('Error: La cookie no se estableció correctamente');
+          // Intentar establecer la cookie de nuevo con configuración más simple
+          Cookies.set('age_verified', 'true', { expires: 60 });
+        }
+      } catch (error) {
+        console.error('Error estableciendo cookie:', error);
+        // Fallback: establecer cookie sin opciones adicionales
+        Cookies.set('age_verified', 'true', { expires: 60 });
+      }
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
       // Redirigir a la URL original o a productos por defecto
       window.location.href = redirectUrl;

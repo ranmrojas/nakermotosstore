@@ -1,51 +1,12 @@
 'use client';
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import Link from 'next/link';
 import { useClientSession } from '@/hooks/useClientSession';
 import { useClientesApi } from '@/hooks/useClientesApi';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
-import OrderManager from '../carrito/OrderManagerclient';
 import { DireccionGuardada } from '@/types/direcciones';
-import { supabase } from '@/lib/supabase';
 
-interface Pedido {
-  id: string;
-  estado: string;
-  total: number;
-  realizadoEn: string;
-  productos: Producto[];
-  subtotal: number;
-  domicilio: number;
-  medioPago?: string;
-  cliente: {
-    id: number;
-    nombre: string;
-    telefono: string;
-    direccion: string;
-    valordomicilio: number;
-  } | null;
-}
 
-interface Producto {
-  id: number;
-  nombre: string;
-  precio: number;
-  cantidad: number;
-  imagen?: string;
-}
-
-interface PedidoAdaptado {
-  id: number;
-  cliente: string;
-  estado: string;
-  total: number;
-  fecha: string;
-  productos?: Producto[];
-  direccion?: string;
-  telefono?: string;
-  subtotal?: number;
-  domicilio?: number;
-  medioPago?: string;
-}
 
 export default function PerfilCliente() {
   const { session, saveSession } = useClientSession();
@@ -53,9 +14,7 @@ export default function PerfilCliente() {
   const { isLoaded, isLoading, loadGoogleMaps } = useGoogleMaps();
   
   // Estados faltantes
-  const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [direcciones, setDirecciones] = useState<{ direcciones: DireccionGuardada[] } | null>(null);
-  const [loadingPedidos, setLoadingPedidos] = useState(true);
   const [loadingDirecciones, setLoadingDirecciones] = useState(false);
   const [showAddDireccionInput, setShowAddDireccionInput] = useState(false);
   const [showPhoneModal, setShowPhoneModal] = useState(false);
@@ -65,7 +24,6 @@ export default function PerfilCliente() {
   const [direccionModal, setDireccionModal] = useState('');
   const [shippingCostModal, setShippingCostModal] = useState(0);
   const [selectedAddressModal, setSelectedAddressModal] = useState<{ lat: number; lng: number } | null>(null);
-  const [activeTab, setActiveTab] = useState<'en_curso' | 'historial'>('en_curso');
   const [showEditModal, setShowEditModal] = useState(false);
   const [editNombre, setEditNombre] = useState(session?.nombre || '');
   const [editTelefono, setEditTelefono] = useState(session?.telefono || '');
@@ -123,20 +81,6 @@ export default function PerfilCliente() {
       return;
     }
     
-    const fetchPedidos = async () => {
-      setLoadingPedidos(true);
-      try {
-        const res = await fetch(`/api/pedidos?clienteId=${session.id}`);
-        if (!res.ok) throw new Error('Error al obtener pedidos');
-        const data = await res.json();
-        setPedidos(data);
-      } catch {
-        setPedidos([]);
-      } finally {
-        setLoadingPedidos(false);
-      }
-    };
-
     const fetchDirecciones = async () => {
       setLoadingDirecciones(true);
       try {
@@ -149,7 +93,6 @@ export default function PerfilCliente() {
       }
     };
 
-    fetchPedidos();
     fetchDirecciones();
   }, [session, obtenerDireccionesGuardadas]);
 
@@ -374,64 +317,6 @@ export default function PerfilCliente() {
     }
   };
 
-  useEffect(() => {
-    if (!session?.id) return;
-    setLoadingPedidos(true);
-    fetch(`/api/pedidos?clienteId=${session.id}`)
-      .then(res => res.json())
-      .then(data => setPedidos(data))
-      .catch(() => setPedidos([]))
-      .finally(() => setLoadingPedidos(false));
-  }, [session?.id]);
-
-  // Suscripción en tiempo real a cambios en la tabla Pedido (igual que tracking)
-  useEffect(() => {
-    if (!session?.id) return;
-    const channel = supabase
-      .channel('pedidos_changes_cliente')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'Pedido'
-      }, async () => {
-        // Siempre recargar los pedidos del cliente actual ante cualquier cambio
-        const res = await fetch(`/api/pedidos?clienteId=${session.id}`);
-        const data = await res.json();
-        setPedidos(data);
-      });
-
-    channel.subscribe();
-
-    return () => {
-      channel.unsubscribe();
-    };
-  }, [session?.id]);
-
-  const pedidosAdaptados: PedidoAdaptado[] = pedidos.map((pedido: Pedido) => ({
-    id: parseInt(pedido.id) || 0,
-    cliente: session?.nombre || '-',
-    estado: pedido.estado,
-    total: pedido.total,
-    fecha: new Date(pedido.realizadoEn).toLocaleString('es-CO'),
-    productos: pedido.productos,
-    direccion: pedido.cliente?.direccion,
-    telefono: pedido.cliente?.telefono,
-    subtotal: pedido.subtotal,
-    domicilio: pedido.domicilio,
-    medioPago: pedido.medioPago,
-  }));
-
-  // Filtrar pedidos según la pestaña activa
-  const pedidosEnCurso = pedidosAdaptados.filter(pedido => {
-    const estado = pedido.estado.toLowerCase();
-    return !['completado', 'completed', 'finalizado', 'cancelado', 'canceled'].includes(estado);
-  });
-  
-  const pedidosHistorial = pedidosAdaptados.filter(pedido => {
-    const estado = pedido.estado.toLowerCase();
-    return ['completado', 'completed', 'finalizado', 'cancelado', 'canceled'].includes(estado);
-  });
-
   const handleShowAddDireccionInput = async () => {
     setShowAddDireccionInput(true);
     if (!isLoaded && !isLoading) {
@@ -439,31 +324,24 @@ export default function PerfilCliente() {
     }
   };
 
-  const handleCancelOrder = (orderId: number) => {
-    setPedidos(prevPedidos => 
-      prevPedidos.map(pedido => 
-        pedido.id === orderId.toString() 
-          ? { ...pedido, estado: 'cancelado' }
-          : pedido
-      )
-    );
-  };
-
   if (!session) {
     return (
       <div className="min-h-screen w-full bg-gradient-to-br from-gray-100 via-white to-blue-100 flex items-center justify-center py-0">
-        <div className="w-full max-w-md bg-white dark:bg-neutral-900 rounded-lg shadow p-4 sm:p-6 mx-auto overflow-y-auto min-h-[90vh] flex flex-col">
-          <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">Mi cuenta</h2>
+        <div className="w-full max-w-md bg-white rounded-lg shadow p-4 sm:p-6 mx-auto overflow-y-auto min-h-[90vh] flex flex-col">
+          <h2 className="text-2xl font-bold mb-4 text-gray-800">Mi cuenta</h2>
+          <div className="text-center text-gray-500 mb-4">
+            Inicia sesión para ver tu información
+          </div>
           {/* Modal para ingresar número de celular (idéntico al del carrito) */}
           {showPhoneModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-transparent">
-              <div className="bg-white dark:bg-neutral-900 rounded-lg shadow-lg p-6 w-full max-w-xs relative animate-fade-in">
+            <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/50">
+              <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-xs relative animate-fade-in">
                 {step === 1 && (
                   <>
-                    <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Ingrese su número de celular</h3>
+                    <h3 className="text-lg font-semibold mb-4 text-gray-900">Ingrese su número de celular</h3>
                     <input
                       type="tel"
-                      className="w-full mb-2 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-neutral-800 dark:text-gray-100"
+                      className="w-full mb-2 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-amber-400"
                       value={telefono}
                       onChange={e => {
                         setTelefono(e.target.value);
@@ -509,10 +387,10 @@ export default function PerfilCliente() {
                 )}
                 {step === 2 && (
                   <>
-                    <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Ingrese el código SMS</h3>
+                    <h3 className="text-md font-semibold mb-4 text-center text-gray-800">Ingrese el código SMS enviado a su número de celular</h3>
                     <input
                       type="text"
-                      className="w-full mb-2 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-neutral-800 dark:text-gray-100"
+                      className="w-full mb-2 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-amber-400"
                       value={codigo}
                       onChange={e => {
                         setCodigo(e.target.value);
@@ -608,54 +486,8 @@ export default function PerfilCliente() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-gray-100 via-white to-blue-100 flex items-center justify-center py-0">
+    <div className="min-h-screen w-full bg-gradient-to-br from-gray-100 via-white to-blue-100 flex items-start justify-center py-0">
       <main className="w-full max-w-md mx-auto flex flex-col gap-4 px-0 pt-2 pb-8">
-        {/* Sección de pedidos realizados */}
-        <section className="bg-white rounded-2xl shadow-sm p-3 flex flex-col gap-1">
-          <h3 className="text-lg font-semibold text-gray-800 my-0">Mis Pedidos</h3>
-          
-          {/* Pestañas */}
-          <div className="flex bg-gray-100 rounded-lg p-1 mb-2">
-            <button
-              onClick={() => setActiveTab('en_curso')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'en_curso'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              Pedidos en curso ({pedidosEnCurso.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('historial')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'historial'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              Historial ({pedidosHistorial.length})
-            </button>
-          </div>
-
-          {/* Contenido de las pestañas */}
-          {loadingPedidos ? (
-            <div className="text-sm text-gray-500">Cargando pedidos...</div>
-          ) : activeTab === 'en_curso' ? (
-            pedidosEnCurso.length === 0 ? (
-              <div className="text-sm text-gray-500 text-center py-8">No tienes pedidos en curso.</div>
-            ) : (
-              <OrderManager orders={pedidosEnCurso} onCancelOrder={handleCancelOrder} />
-            )
-          ) : (
-            pedidosHistorial.length === 0 ? (
-              <div className="text-sm text-gray-500 text-center py-8">No tienes pedidos en el historial.</div>
-            ) : (
-              <OrderManager orders={pedidosHistorial} onCancelOrder={handleCancelOrder} />
-            )
-          )}
-        </section>
-
         {/* Datos del usuario */}
         <section className="bg-white rounded-2xl shadow-sm p-5 flex flex-col gap-2 relative">
           {/* Ícono editar */}
@@ -687,6 +519,25 @@ export default function PerfilCliente() {
           </button>
           <div className="text-base text-gray-500">Valor domicilio</div>
           <div className="text-base font-medium text-gray-800 mb-2">${session.valordomicilio.toLocaleString('es-CO')}</div>
+        </section>
+
+        {/* Botón para ir a pedidos */}
+        <section className="bg-white rounded-2xl shadow-sm p-4 flex flex-col gap-2">
+          <h3 className="text-lg font-semibold text-gray-800 my-0">Mis Pedidos</h3>
+          <p className="text-sm text-gray-600 mb-3">Gestiona tus pedidos en curso y revisa tu historial</p>
+          <Link
+            href="/pedidos"
+            className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors text-center flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            </svg>
+            Ver mis pedidos
+          </Link>
+        </section>
+
+        {/* Botón de cerrar sesión */}
+        <section className="bg-white rounded-2xl shadow-sm p-4">
           <button
             onClick={() => {
               // Eliminar la sesión del cliente
@@ -694,7 +545,7 @@ export default function PerfilCliente() {
               localStorage.removeItem('client_session');
               window.location.reload();
             }}
-            className="w-full mt-4 py-2 rounded-lg bg-red-50 text-red-700 font-semibold text-sm hover:bg-red-100 transition border border-red-200"
+            className="w-full py-3 px-4 bg-red-50 text-red-700 font-semibold rounded-lg hover:bg-red-100 transition border border-red-200"
           >
             Cerrar sesión
           </button>
@@ -702,7 +553,7 @@ export default function PerfilCliente() {
 
         {/* Modal para agregar dirección */}
         {showModalAgregar && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
+          <div className="fixed inset-0 z-30 flex items-end sm:items-center justify-center bg-black/40">
             <div className="w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-xl p-6 shadow-lg max-h-[90vh] overflow-y-auto">
               <h3 className="text-lg font-semibold mb-4 text-gray-900">Direcciones guardadas</h3>
               {/* Lista de direcciones guardadas */}
@@ -801,21 +652,21 @@ export default function PerfilCliente() {
 
         {/* Modal editar datos */}
         {showEditModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-white dark:bg-neutral-900 rounded-lg shadow-lg p-6 w-full max-w-xs relative animate-fade-in">
-              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Editar datos</h3>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Nombre</label>
+          <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/40">
+            <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-xs relative animate-fade-in">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900">Editar datos</h3>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
               <input
                 type="text"
-                className="w-full mb-2 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-neutral-800 dark:text-gray-100"
+                className="w-full mb-2 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={editNombre}
                 onChange={e => setEditNombre(e.target.value)}
                 placeholder="Nombre completo"
               />
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Teléfono</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
               <input
                 type="tel"
-                className="w-full mb-2 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-neutral-800 dark:text-gray-100"
+                className="w-full mb-2 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={editTelefono}
                 onChange={e => setEditTelefono(e.target.value)}
                 placeholder="Ej: 3001234567"
@@ -825,7 +676,7 @@ export default function PerfilCliente() {
               <div className="flex gap-2 mt-4">
                 <button
                   onClick={() => setShowEditModal(false)}
-                  className="flex-1 py-2 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-100 font-semibold text-base hover:bg-gray-200 dark:hover:bg-neutral-700 transition"
+                  className="flex-1 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold text-base hover:bg-gray-200 transition"
                   disabled={editLoading}
                 >
                   Cancelar

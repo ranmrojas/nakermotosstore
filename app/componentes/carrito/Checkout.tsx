@@ -714,7 +714,7 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
               onClick={() => {
                 setShowOrderSuccess(false);
                 onClose();
-                router.push('/cuenta');
+                router.push('/pedidos');
               }}
               className="w-full bg-green-600 text-white font-semibold py-2 px-4 rounded hover:bg-green-700 transition-colors"
             >

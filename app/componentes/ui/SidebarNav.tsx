@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useClientSession } from '@/hooks/useClientSession';
 import {
   HomeIcon,
   ShoppingBagIcon,
@@ -110,9 +111,18 @@ export default function SidebarNav({
   accentColor = 'amber'
 }: SidebarNavProps) {
   const pathname = usePathname();
+  const { session } = useClientSession();
   
   // Cerrar el sidebar al hacer clic en un enlace
   const handleLinkClick = () => {
+    onClose();
+  };
+
+  // Función para cerrar sesión
+  const handleLogout = () => {
+    localStorage.removeItem('clienteSession');
+    localStorage.removeItem('client_session');
+    window.location.reload();
     onClose();
   };
 
@@ -224,6 +234,26 @@ export default function SidebarNav({
             })}
           </ul>
         </nav>
+        
+        {/* Botón de sesión */}
+        <div className="p-4 border-t border-gray-200">
+          {session ? (
+            <button
+              onClick={handleLogout}
+              className="w-full py-3 px-4 bg-red-50 text-red-700 font-semibold rounded-lg hover:bg-red-100 transition border border-red-200"
+            >
+              Cerrar sesión
+            </button>
+          ) : (
+            <Link
+              href="/cuenta"
+              onClick={handleLinkClick}
+              className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition text-center block"
+            >
+              Iniciar sesión
+            </Link>
+          )}
+        </div>
         
         {/* Footer con información */}
         <div className="p-4 border-t border-gray-200 text-xs text-gray-500">

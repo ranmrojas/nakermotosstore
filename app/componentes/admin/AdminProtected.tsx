@@ -40,7 +40,7 @@ function AdminLayout({ children }: AdminProtectedProps) {
 export default function AdminProtected({ children }: AdminProtectedProps) {
   const { isAuthenticated, isLoading } = useAdminAuth();
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {

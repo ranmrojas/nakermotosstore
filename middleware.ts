@@ -54,6 +54,7 @@ export function middleware(request: NextRequest) {
     const redirectUrl = new URL('/ageverification', request.url);
     redirectUrl.searchParams.set('redirect', originalUrl);
     
+    console.log('Middleware - Redirigiendo a verificación de edad');
     return NextResponse.redirect(redirectUrl);
   }
 
