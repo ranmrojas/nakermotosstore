@@ -390,6 +390,7 @@ useEffect(() => {
       setSidebarOpen(false);
       // Limpiar resultados de búsqueda al cambiar de categoría
       setSearchResults([]);
+      setSearchResults([]);
     }
   };
 

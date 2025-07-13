@@ -11,9 +11,6 @@ export default function ProductosPage() {
   const sidebarRef = useRef<ProductGridWithSidebarRef>(null);
   const { categorias } = useCategorias();
   const { isPreloadComplete } = usePreload();
-  const searchParams = useSearchParams();
-  const categoriaIdParam = searchParams ? searchParams.get('id') : null;
-  const categoriaId = categoriaIdParam ? parseInt(categoriaIdParam, 10) : null;
 
   // Efecto optimizado para descarga silenciosa
   useEffect(() => {
@@ -49,14 +46,25 @@ export default function ProductosPage() {
   return (
     <Suspense fallback={<ProductSkeleton count={20} />}>
       <div className="h-screen">
-        <ProductGridWithSidebar 
-          ref={sidebarRef}
-          showAddToCart={true}
-          showSearch={true}
-          searchPlaceholder="Buscar por nombre, marca, SKU, precio..."
-          defaultCategoryId={categoriaId || undefined}
-        />
+        <ProductContent sidebarRef={sidebarRef} />
       </div>
     </Suspense>
+  );
+}
+
+// Componente que usa useSearchParams dentro del límite de Suspense
+function ProductContent({ sidebarRef }: { sidebarRef: React.RefObject<ProductGridWithSidebarRef | null> }) {
+  const searchParams = useSearchParams();
+  const categoriaIdParam = searchParams ? searchParams.get('id') : null;
+  const categoriaId = categoriaIdParam ? parseInt(categoriaIdParam, 10) : null;
+
+  return (
+    <ProductGridWithSidebar 
+      ref={sidebarRef}
+      showAddToCart={true}
+      showSearch={true}
+      searchPlaceholder="Buscar por nombre, marca, SKU, precio..."
+      defaultCategoryId={categoriaId || undefined}
+    />
   );
 }
