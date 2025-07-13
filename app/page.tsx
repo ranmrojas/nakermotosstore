@@ -46,7 +46,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#f9f5f0] flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       {/* Hero Section con Carrusel */}
       <section className="relative w-full h-[40vh] sm:h-[50vh] md:h-[60vh] overflow-hidden shadow-xl">
         {carouselImages.map((img, index) => (
@@ -101,12 +101,10 @@ export default function Home() {
       </section>
       
       {/* Divisor con degradado */}
-      <div className="h-12 bg-gradient-to-b from-[#f9f5f0] to-[#f0e6d6] relative">
-        <div className="absolute inset-x-0 bottom-0 h-4 bg-[#f0e6d6] shadow-[0_-15px_15px_-15px_rgba(0,0,0,0.1)]" />
-      </div>
+      {/* Eliminado divisor degradado beige */}
 
       {/* Sección de Categorías */}
-      <section className="py-8 px-4 bg-[#f0e6d6]">
+      <section className="py-8 px-4 bg-white">
         <h2 className="text-2xl font-bold text-center mb-8 text-[#611d00]">Nuestras Categorías</h2>
         
         {categoriasLoading ? (
@@ -239,7 +237,7 @@ export default function Home() {
       </section>
 
       {/* Características destacadas */}
-      <section className="py-8 px-4 bg-[#f0e6d6]">
+      <section className="py-8 px-4 bg-white">
         <h2 className="text-2xl font-bold text-center mb-6 text-[#611d00]">¿Por qué elegirnos?</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
           {features.map((feature, idx) => (
@@ -256,9 +254,7 @@ export default function Home() {
       </section>
       
       {/* Divisor con degradado */}
-      <div className="h-12 bg-gradient-to-b from-[#f0e6d6] to-[#f9f5f0] relative">
-        <div className="absolute inset-x-0 bottom-0 h-4 bg-[#f9f5f0] shadow-[0_-15px_15px_-15px_rgba(0,0,0,0.1)]" />
-      </div>
+      {/* Eliminado divisor degradado beige */}
 
       {/* Card de advertencia - Mantenida del diseño original */}
       <section className="py-8 px-4 flex justify-center">
