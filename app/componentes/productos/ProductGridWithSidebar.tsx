@@ -386,7 +386,7 @@ useEffect(() => {
   const handleSidebarCategorySelect = (categoryId: number | null) => {
     if (categoryId !== null) {
       setSelectedCategoryId(categoryId);
-      setSelectedMarca(null);
+      setSelectedMarca(null); // Siempre limpiamos la marca al cambiar de categoría
       setSidebarOpen(false);
       // Limpiar resultados de búsqueda al cambiar de categoría
       setSearchResults([]);
@@ -536,24 +536,38 @@ useEffect(() => {
     try {
       setIsSearching(true);
       setSelectedMarca(marcaName);
-      setSelectedCategoryId(null);
+      // No reseteamos la categoría seleccionada para mantener el focus
+      // setSelectedCategoryId(null);
       
       // Rastrear clic en tag de marca del filtro
       analyticsEvents.filterBrandTagClick(marcaName, 'productos');
       
-      const resultados = await searchProductos(marcaName);
-      const productosFiltrados = resultados.filter(producto => 
-        producto.nombre_marca === marcaName
-      );
+      let resultados;
       
-      setSearchResults(productosFiltrados);
+      // Si hay una categoría seleccionada, filtramos por categoría y marca
+      if (selectedCategoryId) {
+        // Primero obtenemos los productos de la categoría
+        const productosPorCategoria = await getProductosByCategoria(selectedCategoryId);
+        // Luego filtramos por la marca seleccionada
+        resultados = productosPorCategoria.filter(producto => 
+          producto.nombre_marca === marcaName
+        );
+      } else {
+        // Si no hay categoría seleccionada, buscamos por marca y filtramos
+        resultados = await searchProductos(marcaName);
+        resultados = resultados.filter(producto => 
+          producto.nombre_marca === marcaName
+        );
+      }
+      
+      setSearchResults(resultados);
       setIsSearching(false);
       
     } catch (error) {
       console.error('Error buscando productos por marca:', error);
       setIsSearching(false);
     }
-  }, [searchProductos]);
+  }, [searchProductos, selectedCategoryId, getProductosByCategoria]);
 
   // Obtener el nombre y cantidad de productos de la categoría seleccionada
   const selectedCategory = categorias.find(cat => cat.id === selectedCategoryId);
@@ -682,7 +696,7 @@ useEffect(() => {
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-400 border-opacity-3'
                     }`}
                     style={{fontSize:'0.85rem'}}
-                    title={`Buscar productos de ${marca.nombre}`}
+                    title={`Filtrar productos de ${marca.nombre}${selectedCategoryId ? ' en esta categoría' : ''}`}
                   >
                     {marca.nombre}
                   </button>
