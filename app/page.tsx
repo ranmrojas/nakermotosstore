@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useCategorias } from '../hooks/useCategorias';
 
 // Características destacadas
 const features = [
@@ -21,6 +22,7 @@ const features = [
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const { categorias, loading: categoriasLoading } = useCategorias();
   
   // Imágenes para el carrusel
   const carouselImages = [
@@ -102,6 +104,139 @@ export default function Home() {
       <div className="h-12 bg-gradient-to-b from-[#f9f5f0] to-[#f0e6d6] relative">
         <div className="absolute inset-x-0 bottom-0 h-4 bg-[#f0e6d6] shadow-[0_-15px_15px_-15px_rgba(0,0,0,0.1)]" />
       </div>
+
+      {/* Sección de Categorías */}
+      <section className="py-8 px-4 bg-[#f0e6d6]">
+        <h2 className="text-2xl font-bold text-center mb-8 text-[#611d00]">Nuestras Categorías</h2>
+        
+        {categoriasLoading ? (
+          <div className="flex justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#8b2801]"></div>
+          </div>
+        ) : (
+          <div className="w-full">
+            <div className="flex flex-col gap-3">
+              {(() => {
+                const getCategoryIcon = (nombre: string) => {
+                  const nombreLower = nombre.toLowerCase();
+                  if (nombreLower.includes('cerveza')) return '🍺';
+                  if (nombreLower.includes('aguardiente')) return '🍶';
+                  if (nombreLower.includes('vape') || nombreLower.includes('vapeador')) return '💨';
+                  if (nombreLower.includes('cápsula') || nombreLower.includes('capsula')) return '💊';
+                  if (nombreLower.includes('whisky') || nombreLower.includes('whiskey')) return '🥃';
+                  if (nombreLower.includes('vino')) return '🍷';
+                  if (nombreLower.includes('gaseosa') || nombreLower.includes('refresco')) return '🥤';
+                  if (nombreLower.includes('cigarrillo') || nombreLower.includes('tabaco')) return '🚬';
+                  if (nombreLower.includes('snack') || nombreLower.includes('dulce')) return '🍿';
+                  if (nombreLower.includes('batería') || nombreLower.includes('bateria')) return '🔋';
+                  if (nombreLower.includes('desechable')) return '🎯';
+                  if (nombreLower.includes('licor')) return '🥃';
+                  return '📦';
+                };
+
+                // Filtrar solo categorías activas y ordenarlas
+                const categoriasOrdenadas = [...categorias]
+                  .filter(cat => cat.activa) // Solo categorías activas
+                  .sort((a, b) => {
+                    const nombreA = a.nombre.toLowerCase();
+                    const nombreB = b.nombre.toLowerCase();
+                    
+                    const prioridades = [
+                      'cerveza', 'aguardiente', 'vape', 'vapeador', 'cápsula', 'capsula', 
+                      'whisky', 'whiskey', 'vino'
+                    ];
+                    
+                    const indexA = prioridades.findIndex(p => nombreA.includes(p));
+                    const indexB = prioridades.findIndex(p => nombreB.includes(p));
+                    
+                    if (indexA !== -1 && indexB !== -1) {
+                      return indexA - indexB;
+                    }
+                    
+                    if (indexA !== -1) return -1;
+                    if (indexB !== -1) return 1;
+                    
+                    return nombreA.localeCompare(nombreB);
+                  });
+
+                // Dividir en exactamente 2 filas
+                const mitad = Math.ceil(categoriasOrdenadas.length / 2);
+                const primeraFila = categoriasOrdenadas.slice(0, mitad);
+                const segundaFila = categoriasOrdenadas.slice(mitad);
+
+                const renderCategoria = (categoria: any) => {
+                  // Mostrar "Vapes" para la categoría con ID 46
+                  const displayName = categoria.id === 46 ? "Vapes" : categoria.nombre;
+                  
+                  return (
+                    <div key={categoria.id} className="flex flex-col items-center justify-between w-16 h-16 flex-shrink-0 group cursor-pointer hover:transform hover:scale-105 transition-all duration-300">
+                      {/* Contenedor del ícono más compacto */}
+                      <div className="w-11 h-11 rounded-full bg-white shadow-md flex items-center justify-center group-hover:shadow-lg group-hover:bg-gradient-to-br group-hover:from-white group-hover:to-[#f8f4f0] transition-all duration-300 border-2 border-transparent group-hover:border-[#8b2801]">
+                        <span className="text-base filter drop-shadow-sm">{getCategoryIcon(categoria.nombre)}</span>
+                      </div>
+                      
+                      {/* Contenedor del texto más compacto */}
+                      <div className="w-full h-5 flex items-center justify-center px-0.5 mt-0.5">
+                        <span 
+                          className="text-[9px] font-semibold text-[#611d00] text-center leading-tight w-full block group-hover:text-[#8b2801] transition-colors duration-300" 
+                          title={categoria.nombre}
+                          style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            wordBreak: 'break-word',
+                            hyphens: 'auto'
+                          }}
+                        >
+                          {displayName}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                };
+
+                return (
+                  <div 
+                    className="overflow-x-auto scrollbar-hide px-2"
+                    onScroll={(e) => {
+                      // Sincronizar scroll entre las dos filas
+                      const scrollContainer = e.currentTarget;
+                      const allScrollContainers = document.querySelectorAll('.categoria-scroll');
+                      allScrollContainers.forEach(container => {
+                        if (container !== scrollContainer) {
+                          container.scrollLeft = scrollContainer.scrollLeft;
+                        }
+                      });
+                    }}
+                  >
+                    <div className="flex flex-col gap-2" style={{ minWidth: 'max-content' }}>
+                      {/* Primera fila */}
+                      <div className="flex gap-2">
+                        {primeraFila.map(renderCategoria)}
+                      </div>
+                      
+                      {/* Segunda fila */}
+                      <div className="flex gap-2">
+                        {segundaFila.map(renderCategoria)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+        <style jsx>{`
+          .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+          .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
+      </section>
 
       {/* Características destacadas */}
       <section className="py-8 px-4 bg-[#f0e6d6]">
