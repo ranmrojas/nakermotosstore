@@ -197,6 +197,34 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
       setCategoriasOrdenadas(ordenadas);
     }
   }, [categorias, getOrderedCategorias]);
+  
+  // Efecto para hacer scroll a la categoría seleccionada cuando se carga la página
+  useEffect(() => {
+    // Solo hacer scroll si hay un defaultCategoryId establecido y categorías cargadas
+    if (
+      defaultCategoryId !== null && 
+      defaultCategoryId !== undefined && 
+      Array.isArray(categoriasOrdenadas) && 
+      categoriasOrdenadas.length > 0 &&
+      categoriasScrollRef.current
+    ) {
+      // Buscar el botón de la categoría seleccionada
+      const categoryButtons = categoriasScrollRef.current.querySelectorAll('button');
+      const categoryIndex = categoriasOrdenadas.findIndex(cat => cat.id === defaultCategoryId);
+      
+      if (categoryIndex >= 0 && categoryButtons[categoryIndex]) {
+        // Usar setTimeout para asegurar que el DOM esté actualizado
+        setTimeout(() => {
+          // Hacer scroll para mostrar el botón seleccionado
+          categoryButtons[categoryIndex].scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'center'
+          });
+        }, 300);
+      }
+    }
+  }, [defaultCategoryId, categoriasOrdenadas]);
 
   // Scroll sincronizado de tags de categorías con el scroll de productos
   useEffect(() => {
@@ -280,6 +308,28 @@ useEffect(() => {
     ) {
       firstCategoryTagRef.current.click();
       setAutoClicked(true);
+    }
+    // Si hay un selectedCategoryId pero no se ha hecho autoclick, hacer scroll al botón correspondiente
+    else if (
+      selectedCategoryId !== null && 
+      selectedCategoryId !== undefined && 
+      categoriasOrdenadas.length > 0 &&
+      categoriasScrollRef.current
+    ) {
+      // Buscar el botón de la categoría seleccionada
+      const categoryIndex = categoriasOrdenadas.findIndex(cat => cat.id === selectedCategoryId);
+      const categoryButtons = categoriasScrollRef.current.querySelectorAll('button');
+      
+      if (categoryIndex >= 0 && categoryButtons[categoryIndex]) {
+        // Usar setTimeout para asegurar que el DOM esté actualizado
+        setTimeout(() => {
+          categoryButtons[categoryIndex].scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'center'
+          });
+        }, 200);
+      }
     }
   }, [categoriasOrdenadas, autoClicked, selectedCategoryId]);
 
@@ -446,6 +496,24 @@ useEffect(() => {
           categoria.nombre,
           'productos'
         );
+        
+        // Hacer scroll para mostrar el botón de la categoría seleccionada
+        if (categoriasScrollRef.current) {
+          // Buscar el botón correspondiente a esta categoría
+          const categoryIndex = categoriasOrdenadas.findIndex(cat => cat.id === categoryId);
+          const categoryButtons = categoriasScrollRef.current.querySelectorAll('button');
+          
+          if (categoryIndex >= 0 && categoryButtons[categoryIndex]) {
+            // Usar timeout para asegurar que el DOM está listo
+            setTimeout(() => {
+              categoryButtons[categoryIndex].scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'center'
+              });
+            }, 100);
+          }
+        }
       }
       
       // Cargar productos de la categoría
