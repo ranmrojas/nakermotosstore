@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useImperativeHandle, forwardRef, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import SidebarCategories from './SidebarCategories';
 import ProductGrid from './ProductGrid';
 import ProductSearch from './ProductSearch';
@@ -130,6 +131,11 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
   const categoriasScrollRef = useRef<HTMLDivElement>(null);
   const firstCategoryTagRef = useRef<HTMLButtonElement | null>(null);
   const [autoClicked, setAutoClicked] = useState(false);
+  // Estado para saber si ya se limpió la URL
+  const [urlCleaned, setUrlCleaned] = useState(false);
+
+  // Hook de router de Next.js
+  const router = useRouter();
 
   // Obtener categorías usando el hook
   const { categorias, loading: categoriasLoading } = useCategorias();
@@ -164,6 +170,25 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
 
     return [...firstFour, ...sortedRest];
   }, [categorias]);
+
+  // Efecto para limpiar el parámetro 'id' de la URL una vez aplicado el filtro
+  useEffect(() => {
+    // Solo limpiar si defaultCategoryId existe, selectedCategoryId ya está seteado, y no se ha limpiado antes
+    if (
+      defaultCategoryId !== null &&
+      defaultCategoryId !== undefined &&
+      selectedCategoryId === defaultCategoryId &&
+      !urlCleaned
+    ) {
+      // Limpiar el parámetro 'id' de la URL manteniendo la ruta actual
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('id');
+        router.replace(url.pathname + url.search, { scroll: false });
+        setUrlCleaned(true);
+      }
+    }
+  }, [defaultCategoryId, selectedCategoryId, urlCleaned, router]);
 
   // Efecto para establecer el orden de categorías una sola vez
   useEffect(() => {
