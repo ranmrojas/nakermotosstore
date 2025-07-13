@@ -1,5 +1,6 @@
 'use client';
 import { useRef, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import ProductGridWithSidebar, { ProductGridWithSidebarRef } from '@/app/componentes/productos/ProductGridWithSidebar';
 import { useCategorias } from '../../hooks/useCategorias';
 import { usePreload } from '../../hooks/usePreload';
@@ -10,6 +11,9 @@ export default function ProductosPage() {
   const sidebarRef = useRef<ProductGridWithSidebarRef>(null);
   const { categorias } = useCategorias();
   const { isPreloadComplete } = usePreload();
+  const searchParams = useSearchParams();
+  const categoriaIdParam = searchParams ? searchParams.get('id') : null;
+  const categoriaId = categoriaIdParam ? parseInt(categoriaIdParam, 10) : null;
 
   // Efecto optimizado para descarga silenciosa
   useEffect(() => {
@@ -50,6 +54,7 @@ export default function ProductosPage() {
           showAddToCart={true}
           showSearch={true}
           searchPlaceholder="Buscar por nombre, marca, SKU, precio..."
+          defaultCategoryId={categoriaId || undefined}
         />
       </div>
     </Suspense>

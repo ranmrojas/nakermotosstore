@@ -246,12 +246,17 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
   }, [categoriasOrdenadas]);
 
   // Efecto para simular el clic en el primer tag de categoría cuando estén visibles
-  useEffect(() => {
-    if (!autoClicked && firstCategoryTagRef.current) {
+useEffect(() => {
+    // Solo simular el clic si NO hay categoría seleccionada
+    if (
+      !autoClicked &&
+      firstCategoryTagRef.current &&
+      (selectedCategoryId === null || selectedCategoryId === undefined)
+    ) {
       firstCategoryTagRef.current.click();
       setAutoClicked(true);
     }
-  }, [categoriasOrdenadas, autoClicked]);
+  }, [categoriasOrdenadas, autoClicked, selectedCategoryId]);
 
   // Cargar marcas de la categoría seleccionada
   const loadMarcasByCategory = useCallback(async (categoryId: number | null) => {
@@ -283,12 +288,17 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
   }, [getProductosByCategoria]);
 
   // Efecto para seleccionar una categoría por defecto si no hay ninguna seleccionada
-  useEffect(() => {
-    if (selectedCategoryId === null && !categoriasLoading && categorias.length > 0) {
-      // Seleccionar categoría 15 (Cerveza) por defecto
+useEffect(() => {
+    // Solo asignar 15 si NO hay defaultCategoryId y tampoco selectedCategoryId
+    if (
+      selectedCategoryId === null &&
+      !categoriasLoading &&
+      categorias.length > 0 &&
+      (defaultCategoryId === null || defaultCategoryId === undefined)
+    ) {
       setSelectedCategoryId(15);
     }
-  }, [categorias, categoriasLoading, selectedCategoryId]);
+  }, [categorias, categoriasLoading, selectedCategoryId, defaultCategoryId]);
 
   // Efecto para cargar marcas cuando cambia la categoría seleccionada
   useEffect(() => {

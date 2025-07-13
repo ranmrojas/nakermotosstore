@@ -120,7 +120,7 @@ export default function Home() {
                   if (nombreLower.includes('cerveza')) return '🍺';
                   if (nombreLower.includes('aguardiente')) return '🍶';
                   if (nombreLower.includes('vape') || nombreLower.includes('vapeador')) return '💨';
-                  if (nombreLower.includes('cápsula') || nombreLower.includes('capsula')) return '💊';
+                  if (nombreLower.includes('cápsula') || nombreLower.includes('capsula')) return '🔃';
                   if (nombreLower.includes('whisky') || nombreLower.includes('whiskey')) return '🥃';
                   if (nombreLower.includes('vino')) return '🍷';
                   if (nombreLower.includes('gaseosa') || nombreLower.includes('refresco')) return '🥤';
@@ -170,18 +170,20 @@ export default function Home() {
                 const renderCategoria = (categoria: Categoria) => {
                   // Mostrar "Vapes" para la categoría con ID 46
                   const displayName = categoria.id === 46 ? "Vapes" : categoria.nombre;
-                  
                   return (
-                    <div key={categoria.id} className="flex flex-col items-center justify-between w-16 h-16 flex-shrink-0 group cursor-pointer hover:transform hover:scale-105 transition-all duration-300">
-                      {/* Contenedor del ícono más compacto */}
-                      <div className="w-11 h-11 rounded-full bg-white shadow-md flex items-center justify-center group-hover:shadow-lg group-hover:bg-gradient-to-br group-hover:from-white group-hover:to-[#f8f4f0] transition-all duration-300 border-2 border-transparent group-hover:border-[#8b2801]">
-                        <span className="text-base filter drop-shadow-sm">{getCategoryIcon(categoria.nombre)}</span>
+                    <Link 
+                      href={`/productos?id=${categoria.id}`}
+                      key={categoria.id}
+                      className="flex flex-col items-center justify-between w-18 h-18 flex-shrink-0 group cursor-pointer hover:transform hover:scale-105 transition-all duration-300"
+                    >
+                      {/* Contenedor del ícono ligeramente más grande */}
+                      <div className="w-13 h-13 rounded-full bg-white shadow-md flex items-center justify-center group-hover:shadow-lg group-hover:bg-gradient-to-br group-hover:from-white group-hover:to-[#f8f4f0] transition-all duration-300 border-2 border-transparent group-hover:border-[#8b2801]">
+                        <span className="text-lg filter drop-shadow-sm">{getCategoryIcon(categoria.nombre)}</span>
                       </div>
-                      
-                      {/* Contenedor del texto más compacto */}
-                      <div className="w-full h-5 flex items-center justify-center px-0.5 mt-0.5">
+                      {/* Contenedor del texto ligeramente más grande */}
+                      <div className="w-full h-6 flex items-center justify-center px-1 mt-1">
                         <span 
-                          className="text-[9px] font-semibold text-[#611d00] text-center leading-tight w-full block group-hover:text-[#8b2801] transition-colors duration-300" 
+                          className="text-[10px] font-semibold text-[#611d00] text-center leading-tight w-full block group-hover:text-[#8b2801] transition-colors duration-300" 
                           title={categoria.nombre}
                           style={{
                             display: '-webkit-box',
@@ -195,7 +197,7 @@ export default function Home() {
                           {displayName}
                         </span>
                       </div>
-                    </div>
+                    </Link>
                   );
                 };
 
