@@ -162,7 +162,12 @@ export default function Home() {
                 const primeraFila = categoriasOrdenadas.slice(0, mitad);
                 const segundaFila = categoriasOrdenadas.slice(mitad);
 
-                const renderCategoria = (categoria: any) => {
+                interface Categoria {
+                  id: number;
+                  nombre: string;
+                  activa: boolean;
+                }
+                const renderCategoria = (categoria: Categoria) => {
                   // Mostrar "Vapes" para la categoría con ID 46
                   const displayName = categoria.id === 46 ? "Vapes" : categoria.nombre;
                   
