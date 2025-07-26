@@ -97,7 +97,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Capitalizar medio de pago
         const medioPagoFormateado = pedido.medioPago ? pedido.medioPago.charAt(0).toUpperCase() + pedido.medioPago.slice(1).toLowerCase() : 'No especificado';
 
-        // Eliminar construcción manual del mensaje, solo enviar plantilla:
+        // Enviar notificación por WhatsApp
         try {
           const accountSid = process.env.TWILIO_ACCOUNT_SID!;
           const authToken = process.env.TWILIO_AUTH_TOKEN!;
@@ -106,23 +106,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
           const client = twilio(accountSid, authToken);
 
-          // Enviar usando plantilla de WhatsApp (usando contentSid y contentVariables)
+          // Mensaje libre personalizado
+          const mensaje = `🛒 *NUEVO PEDIDO #${pedido.id}*
+
+👤 *Cliente:* ${cliente.nombre}
+📱 *Teléfono:* ${cliente.telefono}
+📍 *Dirección:* ${direccionCorta}
+
+📦 *Productos:*
+${productosComoTexto}
+
+📊 *Resumen:*
+• Total unidades: ${totalUnidades}
+• Subtotal: $${pedido.subtotal.toLocaleString('es-CO')}
+• Domicilio: $${pedido.domicilio.toLocaleString('es-CO')}
+• *Total: $${pedido.total.toLocaleString('es-CO')}*
+
+💳 *Medio de pago:* ${medioPagoFormateado}
+
+${pedido.nota ? `📝 *Nota:* ${pedido.nota}` : ''}
+
+⏰ *Fecha:* ${new Date().toLocaleString('es-CO')}`;
+
           await client.messages.create({
             to: adminTo,
             from,
-            contentSid: 'HX691ff786cd22ab9770c412718456bcd7',
-            contentVariables: JSON.stringify({
-              '1': pedido.id.toString(),
-              '2': cliente.nombre,
-              '3': direccionCorta,
-              '4': cliente.telefono,
-              '5': productosComoTexto,
-              '6': totalUnidades.toString(),
-              '7': pedido.subtotal.toLocaleString('es-CO'),
-              '8': pedido.domicilio.toLocaleString('es-CO'),
-              '9': pedido.total.toLocaleString('es-CO'),
-              '10': medioPagoFormateado
-            })
+            body: mensaje
           });
         } catch (twilioError) {
           console.error('Error enviando notificación por WhatsApp:', twilioError);

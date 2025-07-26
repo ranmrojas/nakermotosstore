@@ -109,7 +109,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           // Capitalizar medio de pago
           const medioPagoFormateado = pedido.medioPago ? pedido.medioPago.charAt(0).toUpperCase() + pedido.medioPago.slice(1).toLowerCase() : 'No especificado';
 
-          // Enviar usando plantilla de WhatsApp (usando contentSid y contentVariables)
+          // Enviar notificación de cancelación por WhatsApp
           try {
             const accountSid = process.env.TWILIO_ACCOUNT_SID!;
             const authToken = process.env.TWILIO_AUTH_TOKEN!;
@@ -118,23 +118,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
             const client = twilio(accountSid, authToken);
 
+            // Mensaje libre de cancelación
+            const mensaje = `❌ *PEDIDO CANCELADO #${pedido.id}*
+
+👤 *Cliente:* ${cliente.nombre}
+📱 *Teléfono:* ${cliente.telefono || 'No especificado'}
+📍 *Dirección:* ${cliente.direccion || 'No especificada'}
+
+📦 *Productos:*
+${productosFormateados}
+
+📊 *Resumen:*
+• Subtotal: $${(pedido.subtotal || 0).toLocaleString('es-CO')}
+• Domicilio: $${(pedido.domicilio || 0).toLocaleString('es-CO')}
+• Total: $${(pedido.total || 0).toLocaleString('es-CO')}
+
+💳 *Medio de pago:* ${medioPagoFormateado}
+
+${pedido.nota ? `📝 *Nota:* ${pedido.nota}` : ''}
+
+👤 *Cancelado por:* ${usuario || 'Sistema'}
+
+⏰ *Fecha de cancelación:* ${new Date().toLocaleString('es-CO')}`;
+
             await client.messages.create({
               to: adminTo,
               from,
-              contentSid: 'HXe02e87093e81a456c1bcfb12a5b21f64',
-              contentVariables: JSON.stringify({
-                '1': pedido.id.toString(),
-                '2': cliente.nombre,
-                '3': cliente.telefono || '',
-                '4': cliente.direccion || '',
-                '5': productosFormateados,
-                '6': (pedido.subtotal || 0).toLocaleString('es-CO'),
-                '7': (pedido.domicilio || 0).toLocaleString('es-CO'),
-                '8': (pedido.total || 0).toLocaleString('es-CO'),
-                '9': medioPagoFormateado,
-                '10': pedido.nota ? `Nota: ${pedido.nota}` : '',
-                '11': usuario ? `Pedido Cancelado por: ${usuario}` : ''
-              })
+              body: mensaje
             });
           } catch (twilioError) {
             console.error('Error enviando notificación de cancelación por WhatsApp:', twilioError);
