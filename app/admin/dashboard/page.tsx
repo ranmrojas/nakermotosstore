@@ -353,35 +353,77 @@ export default function AdminDashboardPage() {
     let fechaInicio: Date;
     let fechaFin: Date = ahora;
 
-    // Calcular fecha de inicio según el período seleccionado
-    switch (selectedPeriod) {
-      case "hora":
-        fechaInicio = new Date(ahora.getTime() - 60 * 60 * 1000); // Última hora
-        break;
-      case "dia":
-        fechaInicio = new Date(ahora.getTime() - 24 * 60 * 60 * 1000); // Último día
-        break;
-      case "semana":
-        fechaInicio = new Date(ahora.getTime() - 7 * 24 * 60 * 60 * 1000); // Última semana
-        break;
-      case "mes":
-        fechaInicio = new Date();
-        fechaInicio.setMonth(fechaInicio.getMonth() - 1); // Último mes
-        break;
-      case "personalizado":
-        if (customStartDate && customEndDate) {
-          fechaInicio = new Date(customStartDate);
-          fechaFin = new Date(customEndDate);
-        } else {
-          // Si no hay fechas personalizadas, usar último mes por defecto
-          fechaInicio = new Date();
-          fechaInicio.setMonth(fechaInicio.getMonth() - 1);
-        }
-        break;
-      default:
-        fechaInicio = new Date();
-        fechaInicio.setMonth(fechaInicio.getMonth() - 1);
-    }
+      // Calcular fecha de inicio según el período seleccionado
+  switch (selectedPeriod) {
+    case "hora":
+      fechaInicio = new Date(ahora.getTime() - 60 * 60 * 1000); // Última hora
+      break;
+    case "dia":
+      // Hoy: desde las 00:00 hasta las 23:59
+      fechaInicio = new Date(ahora);
+      fechaInicio.setHours(0, 0, 0, 0);
+      fechaFin = new Date(ahora);
+      fechaFin.setHours(23, 59, 59, 999);
+      break;
+    case "ayer":
+      // Ayer: desde las 00:00 hasta las 23:59
+      fechaInicio = new Date(ahora);
+      fechaInicio.setDate(fechaInicio.getDate() - 1);
+      fechaInicio.setHours(0, 0, 0, 0);
+      fechaFin = new Date(fechaInicio);
+      fechaFin.setHours(23, 59, 59, 999);
+      break;
+    case "semana":
+      // Semana actual: Lunes a domingo
+      const diaSemana = ahora.getDay(); // 0 = domingo, 1 = lunes, ..., 6 = sábado
+      const diasDesdeLunes = diaSemana === 0 ? 6 : diaSemana - 1; // Si es domingo, retroceder 6 días
+      fechaInicio = new Date(ahora);
+      fechaInicio.setDate(fechaInicio.getDate() - diasDesdeLunes);
+      fechaInicio.setHours(0, 0, 0, 0);
+      fechaFin = new Date(fechaInicio);
+      fechaFin.setDate(fechaFin.getDate() + 6); // Agregar 6 días para llegar al domingo
+      fechaFin.setHours(23, 59, 59, 999);
+      break;
+    case "semanaAnterior":
+      // Semana anterior: Lunes a domingo de la semana pasada
+      const diaSemanaActual = ahora.getDay();
+      const diasDesdeLunesActual = diaSemanaActual === 0 ? 6 : diaSemanaActual - 1;
+      fechaInicio = new Date(ahora);
+      fechaInicio.setDate(fechaInicio.getDate() - diasDesdeLunesActual - 7); // Retroceder una semana completa
+      fechaInicio.setHours(0, 0, 0, 0);
+      fechaFin = new Date(fechaInicio);
+      fechaFin.setDate(fechaFin.getDate() + 6); // Agregar 6 días para llegar al domingo
+      fechaFin.setHours(23, 59, 59, 999);
+      break;
+    case "mes":
+      // Mes actual: desde el día 1 hasta el último día del mes
+      fechaInicio = new Date(ahora.getFullYear(), ahora.getMonth(), 1); // Primer día del mes actual
+      fechaFin = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0); // Último día del mes actual
+      fechaFin.setHours(23, 59, 59, 999);
+      break;
+    case "mesAnterior":
+      // Mes anterior completo
+      fechaInicio = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1); // Primer día del mes anterior
+      fechaFin = new Date(ahora.getFullYear(), ahora.getMonth(), 0); // Último día del mes anterior
+      fechaFin.setHours(23, 59, 59, 999);
+      break;
+    case "personalizado":
+      if (customStartDate && customEndDate) {
+        fechaInicio = new Date(customStartDate);
+        fechaFin = new Date(customEndDate);
+      } else {
+        // Si no hay fechas personalizadas, usar mes actual por defecto
+        fechaInicio = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+        fechaFin = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0);
+        fechaFin.setHours(23, 59, 59, 999);
+      }
+      break;
+    default:
+      // Por defecto, mes actual
+      fechaInicio = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+      fechaFin = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0);
+      fechaFin.setHours(23, 59, 59, 999);
+  }
 
     // Filtrar pedidos por período
     const pedidosFiltrados = orders.filter(p => {
@@ -752,8 +794,11 @@ export default function AdminDashboardPage() {
             >
               <option value="hora">Última hora</option>
               <option value="dia">Hoy</option>
+              <option value="ayer">Ayer</option>
               <option value="semana">Esta semana</option>
+              <option value="semanaAnterior">Semana anterior</option>
               <option value="mes">Este mes</option>
+              <option value="mesAnterior">Mes anterior</option>
               <option value="ano">Este año</option>
               <option value="personalizado">Personalizado</option>
             </select>
