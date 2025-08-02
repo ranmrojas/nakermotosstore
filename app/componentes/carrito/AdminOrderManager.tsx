@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { getProductImageUrl } from '@/app/services/productService';
 import ProductModal from './ProductModal';
 import { useAdminAuth } from '../../../hooks/useAdminAuth';
+import { notificarEstadoPedido } from '../../../lib/smsNotificationService';
 
 interface Producto {
   id: number;
@@ -102,11 +103,25 @@ function AdminOrderCard({ pedido, onStatusChange }: AdminOrderCardProps) {
         if (!response.ok) {
           console.error('Error al cambiar el estado del pedido');
         }
+        
+        // Enviar SMS de notificación cuando se acepta el pedido
+        if (nuevoEstado === 'Aceptado' && pedido.telefono) {
+          try {
+            await notificarEstadoPedido(
+              pedido.id.toString(),
+              pedido.telefono,
+              pedido.cliente,
+              'confirmado'
+            );
+          } catch (smsError) {
+            console.error('Error al enviar SMS de confirmación:', smsError);
+          }
+        }
       } catch (error) {
         console.error('Error al cambiar el estado del pedido:', error);
       }
     }
-  }, [onStatusChange, pedido.id, user]);
+  }, [onStatusChange, pedido.id, user, pedido.telefono, pedido.cliente]);
 
   // Cambio automático de estado después de 15 minutos cuando está enviado
   React.useEffect(() => {

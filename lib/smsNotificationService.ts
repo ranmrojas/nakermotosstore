@@ -157,7 +157,14 @@ export const notificarEstadoPedido = async (
 ): Promise<boolean> => {
   const smsService = SmsNotificationService.getInstance();
   
-  const tipoNotificacion = estado === 'confirmado' ? 'confirmacion' : estado;
+  // Mensaje personalizado para confirmación de pedido
+  if (estado === 'confirmado') {
+    const mensaje = `Licorera Zona Frank le informa que su pedido ${pedidoId} fue recibido y ACEPTADO.\nSeguimiento en: https://licorerazonafrank.com/pedidos`;
+    
+    return await smsService.enviarMensajePersonalizado(clienteNumero, mensaje);
+  }
+  
+  const tipoNotificacion = estado;
   
   return await smsService.enviarNotificacionPedido({
     clienteNumero,
