@@ -20,6 +20,12 @@ export default function CarritoPage() {
   const [telefonoError, setTelefonoError] = useState('');
   const [showCheckout, setShowCheckout] = useState(false);
   const [showPaymentAlert, setShowPaymentAlert] = useState(false);
+  
+  // Estados para 2FA (igual que en /cuenta)
+  const [step, setStep] = useState<1 | 2>(1);
+  const [codigo, setCodigo] = useState('');
+  const [codigoError, setCodigoError] = useState('');
+  const [loading2FA, setLoading2FA] = useState(false);
 
   // Referencias para los botones de medio de pago
   const efectivoButtonRef = useRef<HTMLButtonElement>(null);
@@ -34,6 +40,18 @@ export default function CarritoPage() {
 
   // Validar número de celular colombiano
   const validarTelefono = (num: string) => /^3\d{9}$/.test(num);
+
+  // Resetear estado del modal cuando se cierre
+  useEffect(() => {
+    if (!showPhoneModal) {
+      setStep(1);
+      setTelefono('');
+      setCodigo('');
+      setTelefonoError('');
+      setCodigoError('');
+      setLoading2FA(false);
+    }
+  }, [showPhoneModal]);
 
   // Efecto para animar los botones cuando no hay medio de pago seleccionado
   useEffect(() => {
@@ -391,84 +409,151 @@ export default function CarritoPage() {
         onClose={() => setShowCheckout(false)}
       />
 
-      {/* Modal para ingresar número de celular */}
+      {/* Modal para ingresar número de celular (idéntico al de /cuenta) */}
       {showPhoneModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white dark:bg-neutral-900 rounded-lg shadow-lg p-6 w-full max-w-xs relative animate-fade-in">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Ingrese su número de celular</h3>
-            <input
-              type="tel"
-              className="w-full mb-2 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-neutral-800 dark:text-gray-100"
-              value={telefono}
-              onChange={e => {
-                setTelefono(e.target.value);
-                if (telefonoError) setTelefonoError('');
-              }}
-              placeholder="Ej: 3001234567"
-              maxLength={10}
-            />
-            {telefonoError && <div className="text-red-500 text-xs mb-2">{telefonoError}</div>}
-            <button
-              className="w-full bg-green-600 text-white font-semibold py-2 rounded hover:bg-green-700 transition-colors"
-              onClick={async () => {
-                if (!validarTelefono(telefono)) {
-                  setTelefonoError('Ingrese un número de celular colombiano válido');
-                  return;
-                }
-                
-                try {
-                  // Primero buscar si el cliente ya existe
-                  const clienteExistente = await getClienteByTelefono(telefono);
-                  
-                  if (clienteExistente) {
-                    // Cliente existe, cargar sus datos
-                    saveSession({ 
-                      id: clienteExistente.id, 
-                      telefono: clienteExistente.telefono, 
-                      nombre: clienteExistente.nombre, 
-                      direccion: clienteExistente.direccion,
-                      valordomicilio: clienteExistente.valordomicilio
-                    });
-                    
-                    // Si el cliente ya tiene nombre y dirección, ir directamente al checkout
-                    if (clienteExistente.nombre && clienteExistente.direccion) {
-                      setShowPhoneModal(false);
-                      setShowCheckout(true);
-                    } else {
-                      // Si faltan datos, ir al modal de completar información
-                      setShowPhoneModal(false);
-                      setShowCheckout(true);
+            {step === 1 && (
+              <>
+                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Ingrese su número de celular</h3>
+                <input
+                  type="tel"
+                  className="w-full mb-2 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-neutral-800 dark:text-gray-100"
+                  value={telefono}
+                  onChange={e => {
+                    setTelefono(e.target.value);
+                    if (telefonoError) setTelefonoError('');
+                  }}
+                  placeholder="Ej: 3001234567"
+                  maxLength={10}
+                />
+                {telefonoError && <div className="text-red-500 text-xs mb-2">{telefonoError}</div>}
+                <button
+                  className="w-full bg-green-600 text-white font-semibold py-2 rounded hover:bg-green-700 transition-colors"
+                  onClick={async () => {
+                    if (!validarTelefono(telefono)) {
+                      setTelefonoError('Ingrese un número de celular colombiano válido');
+                      return;
                     }
-                  } else {
-                    // Cliente no existe, crear uno nuevo
-                    const nuevoCliente = await createCliente({
-                      telefono,
-                      nombre: '',
-                      direccion: '',
-                      valordomicilio: 0
-                    });
-                    
-                    if (nuevoCliente) {
-                      saveSession({ 
-                        id: nuevoCliente.id, 
-                        telefono, 
-                        nombre: nuevoCliente.nombre, 
-                        direccion: nuevoCliente.direccion,
-                        valordomicilio: nuevoCliente.valordomicilio
+                    setLoading2FA(true);
+                    setTelefonoError('');
+                    try {
+                      // Llamar al endpoint de verificación SMS
+                      const resp = await fetch('/api/auth/send-verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ telefono: `+57${telefono}` })
                       });
-                      setShowPhoneModal(false);
-                      setShowCheckout(true);
-                    } else {
-                      setTelefonoError('Error al crear el cliente. Intente nuevamente.');
+                      const data = await resp.json();
+                      if (resp.ok && data.success) {
+                        setStep(2);
+                      } else {
+                        setTelefonoError('No se pudo enviar el código. Intente nuevamente.');
+                      }
+                    } catch {
+                      setTelefonoError('Error al enviar el código. Intente nuevamente.');
+                    } finally {
+                      setLoading2FA(false);
                     }
-                  }
-                } catch {
-                  setTelefonoError('Error al procesar el teléfono. Intente nuevamente.');
-                }
-              }}
-            >
-              Confirmar
-            </button>
+                  }}
+                  disabled={loading2FA}
+                >
+                  {loading2FA ? 'Enviando...' : 'Confirmar'}
+                </button>
+              </>
+            )}
+            {step === 2 && (
+              <>
+                <h3 className="text-md font-semibold mb-4 text-center text-gray-800 dark:text-gray-200">Ingrese el código SMS enviado a su número de celular</h3>
+                <input
+                  type="text"
+                  className="w-full mb-2 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-neutral-800 dark:text-gray-100"
+                  value={codigo}
+                  onChange={e => {
+                    setCodigo(e.target.value);
+                    if (codigoError) setCodigoError('');
+                  }}
+                  placeholder="Código de verificación"
+                  maxLength={6}
+                />
+                {codigoError && <div className="text-red-500 text-xs mb-2">{codigoError}</div>}
+                <button
+                  className="w-full bg-green-600 text-white font-semibold py-2 rounded hover:bg-green-700 transition-colors"
+                  onClick={async () => {
+                    if (!/^[0-9]{4,8}$/.test(codigo)) {
+                      setCodigoError('Ingrese un código válido');
+                      return;
+                    }
+                    setLoading2FA(true);
+                    setCodigoError('');
+                    try {
+                      // Llamar al endpoint de verificación de código
+                      const resp = await fetch('/api/auth/check-verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ telefono: `+57${telefono}`, code: codigo })
+                      });
+                      const data = await resp.json();
+                      if (resp.ok && data.success) {
+                        // Flujo original: buscar/crear cliente y guardar sesión
+                        try {
+                          const clienteExistente = await getClienteByTelefono(telefono);
+                          if (clienteExistente) {
+                            saveSession({
+                              id: clienteExistente.id,
+                              telefono: clienteExistente.telefono,
+                              nombre: clienteExistente.nombre,
+                              direccion: clienteExistente.direccion,
+                              valordomicilio: clienteExistente.valordomicilio
+                            });
+                            setShowPhoneModal(false);
+                            setShowCheckout(true);
+                          } else {
+                            const nuevoCliente = await createCliente({
+                              telefono,
+                              nombre: '',
+                              direccion: '',
+                              valordomicilio: 0
+                            });
+                            if (nuevoCliente) {
+                              saveSession({
+                                id: nuevoCliente.id,
+                                telefono,
+                                nombre: nuevoCliente.nombre,
+                                direccion: nuevoCliente.direccion,
+                                valordomicilio: nuevoCliente.valordomicilio
+                              });
+                              setShowPhoneModal(false);
+                              setShowCheckout(true);
+                            } else {
+                              setCodigoError('Error al crear el cliente. Intente nuevamente.');
+                            }
+                          }
+                        } catch {
+                          setCodigoError('Error al procesar el teléfono. Intente nuevamente.');
+                        }
+                      } else {
+                        setCodigoError('Código incorrecto o expirado. Intente nuevamente.');
+                      }
+                    } catch {
+                      setCodigoError('Error al verificar el código. Intente nuevamente.');
+                    } finally {
+                      setLoading2FA(false);
+                    }
+                  }}
+                  disabled={loading2FA}
+                >
+                  {loading2FA ? 'Verificando...' : 'Verificar'}
+                </button>
+                <button
+                  className="w-full mt-2 bg-gray-200 text-gray-700 font-semibold py-2 rounded hover:bg-gray-300 transition-colors"
+                  onClick={() => { setStep(1); setCodigo(''); setCodigoError(''); }}
+                  disabled={loading2FA}
+                >
+                  Cambiar número
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
