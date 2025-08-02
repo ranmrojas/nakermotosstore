@@ -69,29 +69,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         }
 
-        // Preparar lista de productos como texto (formato detallado con total por producto y total de unidades)
-        let productosComoTexto = '';
+        // Calcular el total de unidades para la notificación
         let totalUnidades = 0;
         if (Array.isArray(productos)) {
-          productosComoTexto = productos.map((p: { nombre: string; cantidad: number; precioUnitario?: number; sku?: string }) => {
+          productos.forEach((p: { cantidad: number }) => {
             totalUnidades += p.cantidad;
-            const linea = `- ${p.cantidad}x ${p.nombre}`;
-            let detalles = '';
-            let totalProducto = '';
-            if (typeof p.precioUnitario === 'number') {
-              totalProducto = `T: $${(p.cantidad * p.precioUnitario).toLocaleString('es-CO')}`;
-            }
-            if (totalProducto && p.sku) {
-              detalles = `${totalProducto}  sku: ${p.sku}`;
-            } else if (totalProducto) {
-              detalles = totalProducto;
-            } else if (p.sku) {
-              detalles = `sku: ${p.sku}`;
-            }
-            return detalles ? `${linea}\n  ${detalles}` : linea;
-          }).join('\n');
-        } else if (typeof productos === 'string') {
-          productosComoTexto = productos;
+          });
         }
 
         // Capitalizar medio de pago
@@ -106,36 +89,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
           const client = twilio(accountSid, authToken);
 
-          // Mensaje libre personalizado
-          const mensaje = `🛒 *NUEVO PEDIDO #${pedido.id}*
-
-👤 *Cliente:* ${cliente.nombre}
-📱 *Teléfono:* ${cliente.telefono}
-📍 *Dirección:* ${direccionCorta}
-
-📦 *Productos:*
-${productosComoTexto}
-
-📊 *Resumen:*
-• Total unidades: ${totalUnidades}
-• Subtotal: $${pedido.subtotal.toLocaleString('es-CO')}
-• Domicilio: $${pedido.domicilio.toLocaleString('es-CO')}
-• *Total: $${pedido.total.toLocaleString('es-CO')}*
-
-💳 *Medio de pago:* ${medioPagoFormateado}
-
-${pedido.nota ? `📝 *Nota:* ${pedido.nota}` : ''}
-
-⏰ *Fecha:* ${new Date().toLocaleString('es-CO')}`;
-
+          // Usar la plantilla aprobada por WhatsApp
+          const contentSid = "HX695357d002a3da8b53ca7f5437a98b26"; // ID de tu plantilla aprobada
+          
+          // Preparar variables para la plantilla según la documentación oficial de Twilio
+          // https://www.twilio.com/docs/messaging/channels/whatsapp/content-templates/use-content-templates
+          
+          // Crear las variables para la plantilla
           await client.messages.create({
             to: adminTo,
             from,
-            body: mensaje
+            contentSid: contentSid,
+            contentVariables: JSON.stringify({
+              1: pedido.id.toString(),             // Número de pedido
+              2: cliente.nombre,                   // Nombre del cliente 
+              3: cliente.telefono,                 // Teléfono del cliente
+              4: direccionCorta,                   // Dirección corta
+              5: totalUnidades.toString(),         // Total de productos
+              6: pedido.total.toLocaleString('es-CO'), // Total del pedido
+              7: medioPagoFormateado               // Método de pago
+            })
           });
-        } catch (twilioError) {
-          console.error('Error enviando notificación por WhatsApp:', twilioError);
-          // No interrumpir el flujo si falla Twilio
+        } catch (twilioError: unknown) {
+          // Convertir a un tipo con propiedad code para manejo de errores específicos
+          const error = twilioError as { code?: number, message?: string };
+          // Manejar errores específicos de plantillas de WhatsApp
+          if (error.code === 63016) {
+            console.error('Error 63016: Fuera de la ventana de mensajería de 24 horas. Usando plantilla pero puede haber un problema con el formato.');
+          } else if (error.code === 63024) {
+            console.error('Error 63024: Plantilla no aprobada o rechazada por WhatsApp. Verifica el estado de la plantilla en la consola de Twilio.');
+          } else if (error.code === 63026) {
+            console.error('Error 63026: Las variables de la plantilla no coinciden con lo esperado por WhatsApp.');
+          } else {
+            console.error('Error enviando notificación por WhatsApp:', error.message || 'Error desconocido');
+          }
+          
+          // No interrumpir el flujo principal si falla la notificación
         }
       }
 
