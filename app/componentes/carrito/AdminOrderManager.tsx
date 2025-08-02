@@ -82,6 +82,20 @@ function AdminOrderCard({ pedido, onStatusChange }: AdminOrderCardProps) {
             enviadoAt: fechaEnvio.toISOString()
           }),
         });
+        
+        // Enviar SMS de notificación cuando se envía el pedido
+        if (pedido.telefono) {
+          try {
+            await notificarEstadoPedido(
+              pedido.id.toString(),
+              pedido.telefono,
+              pedido.cliente,
+              'enviado'
+            );
+          } catch (smsError) {
+            console.error('Error al enviar SMS de envío:', smsError);
+          }
+        }
       } catch (error) {
         console.error('Error al guardar fecha de envío:', error);
       }
@@ -117,6 +131,8 @@ function AdminOrderCard({ pedido, onStatusChange }: AdminOrderCardProps) {
             console.error('Error al enviar SMS de confirmación:', smsError);
           }
         }
+        
+
       } catch (error) {
         console.error('Error al cambiar el estado del pedido:', error);
       }

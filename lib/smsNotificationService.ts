@@ -164,6 +164,13 @@ export const notificarEstadoPedido = async (
     return await smsService.enviarMensajePersonalizado(clienteNumero, mensaje);
   }
   
+  // Mensaje personalizado para pedido enviado
+  if (estado === 'enviado') {
+    const mensaje = `Su pedido ${pedidoId} ha sido enviado y se encuentra en ruta hacia su dirección. ¡Gracias por elegirnos!`;
+    
+    return await smsService.enviarMensajePersonalizado(clienteNumero, mensaje);
+  }
+  
   const tipoNotificacion = estado;
   
   return await smsService.enviarNotificacionPedido({
