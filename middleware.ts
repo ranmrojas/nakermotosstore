@@ -7,7 +7,7 @@ export function middleware(request: NextRequest) {
   const isPublicRoute = publicRoutes.some(route => request.nextUrl.pathname.startsWith(route));
 
   // Rutas de API que permiten acceso sin verificación (para preload)
-  const apiRoutes = ['/api/categorias', '/api/extract/products', '/api/usuarios'];
+  const apiRoutes = ['/api/categorias', '/api/extract/products', '/api/usuarios', '/api/sms'];
   const isApiRoute = apiRoutes.some(route => request.nextUrl.pathname.startsWith(route));
 
   // Rutas de autenticación del admin (no requieren verificación de edad)
@@ -54,7 +54,7 @@ export function middleware(request: NextRequest) {
     const redirectUrl = new URL('/ageverification', request.url);
     redirectUrl.searchParams.set('redirect', originalUrl);
     
-    console.log('Middleware - Redirigiendo a verificación de edad');
+
     return NextResponse.redirect(redirectUrl);
   }
 
