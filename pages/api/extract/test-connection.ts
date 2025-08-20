@@ -3,10 +3,10 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Tokens desde headers con valores por defecto
   const x_auth_token = req.headers['x-auth-token'] || 
-    '1750743428309-3850-1-5b0fad04b53c47ee72ca160ebaa35d0e';
+  process.env.NEXT_PUBLIC_X_AUTH_TOKEN;
   const x_auth_token_api = req.headers['x-auth-token-api'] || 
-    '1750743428309-1206-1-5b0fad04b53c47ee72ca160ebaa35d0e';
-  const x_auth_token_empresa = req.headers['x-auth-token-empresa'] || '5083';
+  process.env.NEXT_PUBLIC_X_AUTH_TOKEN_API;
+  const x_auth_token_empresa = req.headers['x-auth-token-empresa'] || '20598';
   const x_auth_token_es_online = req.headers['x-auth-token-es-online'] || '1';
   const x_gtm = req.headers['x-gtm'] || 'GMT-0500';
 

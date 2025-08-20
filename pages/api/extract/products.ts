@@ -24,13 +24,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const fecha_actual = req.query.fecha_actual || fechaHoy;
 
   // Tokens desde headers con valores por defecto actualizados
-  const x_auth_token = req.headers['x-auth-token'] || 
-    '1750743428309-3850-1-5b0fad04b53c47ee72ca160ebaa35d0e';
-  const x_auth_token_api = req.headers['x-auth-token-api'] || 
-    '1750743428309-1206-1-5b0fad04b53c47ee72ca160ebaa35d0e';
-  const x_auth_token_empresa = req.headers['x-auth-token-empresa'] || '5083';
-  const x_auth_token_es_online = req.headers['x-auth-token-es-online'] || '1';
-  const x_gtm = req.headers['x-gtm'] || 'GMT-0500';
+  const x_auth_token = req.headers['x-auth-token'] || process.env.NEXT_PUBLIC_X_AUTH_TOKEN;
+  const x_auth_token_api = req.headers['x-auth-token-api'] || process.env.NEXT_PUBLIC_X_AUTH_TOKEN_API;
+  const x_auth_token_empresa = req.headers['x-auth-token-empresa'] || process.env.NEXT_PUBLIC_X_AUTH_TOKEN_EMPRESA;
+  const x_auth_token_es_online = req.headers['x-auth-token-es-online'] || process.env.NEXT_PUBLIC_X_AUTH_TOKEN_ES_ONLINE;
+  const x_gtm = req.headers['x-gtm'] || process.env.NEXT_PUBLIC_X_GTM;
 
   // Construir la URL, permitiendo pasar la URL completa o usando los parámetros individuales
   const url = customUrl 

@@ -39,7 +39,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   return new Promise((resolve, reject) => {
     // Añadir headers de autenticación
     req.headers['x-auth-token'] = process.env.AUTH_TOKEN;
-    req.headers['x-auth-token-empresa'] = '5083';
+    req.headers['x-auth-token-empresa'] = '20598';
     req.headers['x-auth-token-api'] = process.env.AUTH_TOKEN_API;
 
     // Eliminar el prefijo /api/proxy de la URL

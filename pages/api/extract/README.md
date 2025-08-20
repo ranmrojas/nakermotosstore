@@ -21,7 +21,7 @@ Extrae productos de la API de Tienddi.co.
 **Headers requeridos:**
 - `x-auth-token`: Token de autenticación
 - `x-auth-token-api`: Token API
-- `x-auth-token-empresa`: ID de empresa (default: "5083")
+- `x-auth-token-empresa`: ID de empresa (default: "20598")
 - `x-auth-token-es-online`: Flag de online (default: "1")
 - `x-gtm`: Zona horaria (default: "GMT-0500")
 
@@ -86,9 +86,9 @@ GET /api/extract/test-urls
 ## Tokens de Autenticación
 
 Los tokens actuales para la API son:
-- `x-auth-token`: "1750743428309-3850-1-5b0fad04b53c47ee72ca160ebaa35d0e"
-- `x-auth-token-api`: "1750743428309-1206-1-5b0fad04b53c47ee72ca160ebaa35d0e"
-- `x-auth-token-empresa`: "5083"
+- `x-auth-token`: process.env.NEXT_PUBLIC_X_AUTH_TOKEN
+- `x-auth-token-api`: process.env.NEXT_PUBLIC_X_AUTH_TOKEN_API
+- `x-auth-token-empresa`: "20598"
 - `x-auth-token-es-online`: "1"
 
 Nota: Estos tokens pueden cambiar periódicamente. Si la API deja de funcionar, es posible que necesites actualizarlos.

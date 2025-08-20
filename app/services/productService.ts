@@ -66,7 +66,7 @@ export function getProductImageUrl(imageId: number | null | undefined, extension
     return '/file.svg';
   }
   
-  const EMPRESA_ID = '5083'; // ID de empresa encontrado en el análisis
+  const EMPRESA_ID = '20598'; // ID de empresa encontrado en el análisis
   return `https://tienddi.co/s3_imagenes/${EMPRESA_ID}/imagenes/${imageId}.${extension}`;
 }
 
