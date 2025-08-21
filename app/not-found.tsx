@@ -19,8 +19,8 @@ export default function NotFound() {
 
       {/* Contenido principal */}
       <div className="text-center max-w-md mx-auto">
-        <h1 className="text-6xl font-bold text-[#8b2801] mb-4">404</h1>
-        <h2 className="text-2xl font-bold text-[#611d00] mb-4">¡Ups! Página no encontrada</h2>
+        <h1 className="text-6xl font-bold text-[#182C6D] mb-4">404</h1>
+        <h2 className="text-2xl font-bold text-[#182C6D] mb-4">¡Ups! Página no encontrada</h2>
         <p className="text-gray-600 mb-8">
           La página que buscas no existe o ha sido movida. 
           Pero no te preocupes, podemos ayudarte a encontrar lo que necesitas.
@@ -30,14 +30,14 @@ export default function NotFound() {
         <div className="space-y-4">
           <Link 
             href="/productos"
-            className="block w-full bg-[#8b2801] hover:bg-[#611d00] text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg"
+            className="block w-full bg-[#182C6D] hover:bg-[#0f1a4a] text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg"
           >
             🏍️ Ver Repuestos
           </Link>
           
           <Link 
             href="/"
-            className="block w-full bg-white border-2 border-[#8b2801] text-[#8b2801] font-bold py-3 px-6 rounded-xl hover:bg-[#8b2801] hover:text-white transition-all duration-300 transform hover:scale-105 shadow-lg"
+            className="block w-full bg-white border-2 border-[#182C6D] text-[#182C6D] font-bold py-3 px-6 rounded-xl hover:bg-[#182C6D] hover:text-white transition-all duration-300 transform hover:scale-105 shadow-lg"
           >
             🏠 Volver al Inicio
           </Link>
@@ -45,13 +45,13 @@ export default function NotFound() {
 
         {/* Información de contacto */}
         <div className="mt-8 p-4 bg-gray-100 rounded-xl">
-          <h3 className="font-bold text-[#611d00] mb-2">¿Necesitas ayuda?</h3>
+                      <h3 className="font-bold text-[#182C6D] mb-2">¿Necesitas ayuda?</h3>
           <p className="text-sm text-gray-600 mb-3">
             Contáctanos y te ayudamos a encontrar lo que buscas
           </p>
           <div className="flex justify-center space-x-4">
             <a 
-              href="https://wa.me/573043668910" 
+              href="https://wa.me/573046067333" 
               target="_blank" 
               rel="noopener noreferrer"
               className="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-green-600 transition-colors"
@@ -59,8 +59,8 @@ export default function NotFound() {
               📱 WhatsApp
             </a>
             <a 
-              href="tel:+573043668910"
-              className="bg-[#8b2801] text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-[#611d00] transition-colors"
+              href="tel:+573046067333"
+              className="bg-[#182C6D] text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-[#0f1a4a] transition-colors"
             >
               📞 Llamar
             </a>

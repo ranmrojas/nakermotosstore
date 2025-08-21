@@ -5,16 +5,16 @@
   --foreground: #171717;
   
   /* Colores principales de la marca */
-  --primary-color: #440d00;
-  --secondary-color: #611d14;
-  --accent-color: #f8f6f4;
+  --primary-color: #182C6D;
+  --secondary-color: #0f1a4a;
+  --accent-color: #f0f4ff;
   
   /* Variaciones suaves para botones y elementos interactivos */
-  --primary-light: #8a1a00;
-  --primary-lighter: #b34d1a;
-  --secondary-light: #8a2a1a;
-  --accent-light: #faf8f6;
-  --accent-lighter: #fdfcfb;
+  --primary-light: #2a4a8a;
+  --primary-lighter: #4a6aa8;
+  --secondary-light: #1a2a5a;
+  --accent-light: #f8fbff;
+  --accent-lighter: #fcfdff;
 }
 
 @theme inline {

@@ -69,7 +69,7 @@ export default function Home() {
           </p>
           <Link 
             href="/productos"
-            className={`bg-[#8b2801] hover:bg-[#611d00] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl hover:shadow-[#8b2801]/30 transition-all duration-300 transform hover:scale-105 active:scale-95 transition-all duration-1000 delay-500 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}
+            className={`bg-[#182C6D] hover:bg-[#0f1a4a] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl hover:shadow-[#182C6D]/30 transition-all duration-300 transform hover:scale-105 active:scale-95 transition-all duration-1000 delay-500 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}
           >
             Ver Repuestos
           </Link>
@@ -93,11 +93,11 @@ export default function Home() {
 
       {/* Sección de Categorías */}
       <section className="py-8 px-4 bg-white">
-        <h2 className="text-2xl font-bold text-center mb-8 text-[#611d00]">Nuestros Productos</h2>
+        <h2 className="text-2xl font-bold text-center mb-8 text-[#182C6D]">Nuestros Productos</h2>
         
         {categoriasLoading ? (
           <div className="flex justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#8b2801]"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#182C6D]"></div>
           </div>
         ) : (
           <div className="w-full">
@@ -165,13 +165,13 @@ export default function Home() {
                       className="flex flex-col items-center justify-between w-18 h-18 flex-shrink-0 group cursor-pointer hover:transform hover:scale-105 transition-all duration-300"
                     >
                       {/* Contenedor del ícono ligeramente más grande */}
-                      <div className="w-13 h-13 rounded-full bg-white shadow-md flex items-center justify-center group-hover:shadow-lg group-hover:bg-gradient-to-br group-hover:from-white group-hover:to-[#f8f4f0] transition-all duration-300 border-2 border-transparent group-hover:border-[#8b2801]">
+                      <div className="w-13 h-13 rounded-full bg-white shadow-md flex items-center justify-center group-hover:shadow-lg group-hover:bg-gradient-to-br group-hover:from-white group-hover:to-[#f0f4ff] transition-all duration-300 border-2 border-transparent group-hover:border-[#182C6D]">
                         <span className="text-lg filter drop-shadow-sm">{getCategoryIcon(categoria.nombre)}</span>
                       </div>
                       {/* Contenedor del texto ligeramente más grande */}
                       <div className="w-full h-6 flex items-center justify-center px-1 mt-1">
                         <span 
-                          className="text-[10px] font-semibold text-[#611d00] text-center leading-tight w-full block group-hover:text-[#8b2801] transition-colors duration-300" 
+                          className="text-[10px] font-semibold text-[#182C6D] text-center leading-tight w-full block group-hover:text-[#0f1a4a] transition-colors duration-300" 
                           title={categoria.nombre}
                           style={{
                             display: '-webkit-box',
@@ -233,12 +233,12 @@ export default function Home() {
 
       {/* Sección de Servicios - Diseño Móvil First */}
       <section className="py-8 px-4 bg-white">
-        <h2 className="text-2xl font-bold text-center mb-6 text-[#611d00]">¿Qué ofrecemos?</h2>
+        <h2 className="text-2xl font-bold text-center mb-6 text-[#182C6D]">¿Qué ofrecemos?</h2>
         
         {/* Grid de servicios móvil-first */}
         <div className="space-y-4 max-w-md mx-auto">
           {/* Card 1 - Repuestos */}
-          <div className="bg-gradient-to-r from-[#8b2801] to-[#611d00] rounded-2xl p-4 text-white shadow-lg">
+          <div className="bg-gradient-to-r from-[#182C6D] to-[#0f1a4a] rounded-2xl p-4 text-white shadow-lg">
             <div className="flex items-center space-x-4">
               <div className="text-3xl">🔧</div>
               <div className="flex-1">
@@ -250,7 +250,7 @@ export default function Home() {
           </div>
 
           {/* Card 2 - Asesoría */}
-          <div className="bg-gradient-to-r from-[#611d00] to-[#8b2801] rounded-2xl p-4 text-white shadow-lg">
+          <div className="bg-gradient-to-r from-[#0f1a4a] to-[#182C6D] rounded-2xl p-4 text-white shadow-lg">
             <div className="flex items-center space-x-4">
               <div className="text-3xl">⚡</div>
               <div className="flex-1">
@@ -262,7 +262,7 @@ export default function Home() {
           </div>
 
           {/* Card 3 - Entrega */}
-          <div className="bg-gradient-to-r from-[#8b2801] to-[#611d00] rounded-2xl p-4 text-white shadow-lg">
+          <div className="bg-gradient-to-r from-[#182C6D] to-[#0f1a4a] rounded-2xl p-4 text-white shadow-lg">
             <div className="flex items-center space-x-4">
               <div className="text-3xl">🚚</div>
               <div className="flex-1">
@@ -274,23 +274,12 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Botones de contacto flotantes */}
-        <div className="fixed bottom-20 right-4 z-50 space-y-3">
-          {/* WhatsApp */}
-          <a 
-            href="https://wa.me/573043668910" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="block w-14 h-14 bg-green-500 rounded-full shadow-lg flex items-center justify-center text-white text-2xl hover:bg-green-600 transition-all duration-300 transform hover:scale-110"
-            aria-label="Contactar por WhatsApp"
-          >
-            📱
-          </a>
-          
+        {/* Botón de contacto flotante */}
+        <div className="fixed bottom-20 right-4 z-50">
           {/* Llamada */}
           <a 
-            href="tel:+573043668910"
-            className="block w-14 h-14 bg-[#8b2801] rounded-full shadow-lg flex items-center justify-center text-white text-2xl hover:bg-[#611d00] transition-all duration-300 transform hover:scale-110"
+            href="tel:+573046067333"
+            className="block w-14 h-14 bg-[#182C6D] rounded-full shadow-lg flex items-center justify-center text-white text-2xl hover:bg-[#0f1a4a] transition-all duration-300 transform hover:scale-110"
             aria-label="Llamar"
           >
             📞
@@ -299,20 +288,12 @@ export default function Home() {
 
         {/* Banner de contacto inferior */}
         <div className="mt-8 bg-gray-100 rounded-xl p-4 text-center">
-          <h3 className="font-bold text-lg text-[#611d00] mb-2">¿Necesitas algo específico?</h3>
+          <h3 className="font-bold text-lg text-[#182C6D] mb-2">¿Necesitas algo específico?</h3>
           <p className="text-sm text-gray-600 mb-3">Contáctanos y te ayudamos a encontrarlo</p>
-          <div className="flex justify-center space-x-3">
+          <div className="flex justify-center">
             <a 
-              href="https://wa.me/573043668910" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-green-600 transition-colors"
-            >
-              WhatsApp
-            </a>
-            <a 
-              href="tel:+573043668910"
-              className="bg-[#8b2801] text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-[#611d00] transition-colors"
+              href="tel:+573046067333"
+              className="bg-[#182C6D] text-white px-6 py-2 rounded-full text-sm font-semibold hover:bg-[#0f1a4a] transition-colors"
             >
               Llamar
             </a>
@@ -325,43 +306,43 @@ export default function Home() {
 
       {/* Información de contacto y servicios */}
       <section className="py-8 px-4 flex justify-center">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 flex flex-col items-center text-center border relative overflow-hidden" style={{ borderColor: '#440d00' }}>
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 flex flex-col items-center text-center border relative overflow-hidden" style={{ borderColor: '#182C6D' }}>
           {/* Efecto de degradado sutil en el fondo */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white to-[#f8f4f0] z-0" />
+          <div className="absolute inset-0 bg-gradient-to-br from-white to-[#f0f4ff] z-0" />
           <div className="relative z-10 w-full">
             <div className="mb-4">
-              <svg className="mx-auto" width="56" height="56" fill="none" viewBox="0 0 24 24" stroke="#440d00">
+              <svg className="mx-auto" width="56" height="56" fill="none" viewBox="0 0 24 24" stroke="#182C6D">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold mb-2" style={{ color: '#440d00' }}>Encuéntranos en Villavicencio</h1>
-            <p className="mb-4 text-base" style={{ color: '#611d14' }}>
+            <h1 className="text-2xl font-bold mb-2" style={{ color: '#182C6D' }}>Encuéntranos en Villavicencio</h1>
+            <p className="mb-4 text-base" style={{ color: '#182C6D' }}>
               Tu tienda de confianza para repuestos y accesorios de motos. Asesoría especializada y productos de calidad.
             </p>
-            <div className="rounded-lg px-4 py-2 text-sm font-semibold" style={{ background: '#611d14', color: 'white' }}>
-              📞 Llámanos: (57) 304 366 8910
+            <div className="rounded-lg px-4 py-2 text-sm font-semibold" style={{ background: '#182C6D', color: 'white' }}>
+              📞 Llámanos: (57) 304 606 7333
             </div>
           </div>
         </div>
       </section>
       
       {/* Divisor con degradado */}
-      <div className="h-12 bg-gradient-to-b from-[#f9f5f0] to-[#611d00] relative">
-        <div className="absolute inset-x-0 bottom-0 h-4 bg-[#611d00] shadow-[0_-15px_15px_-15px_rgba(0,0,0,0.2)]" />
+      <div className="h-12 bg-gradient-to-b from-[#f0f4ff] to-[#182C6D] relative">
+        <div className="absolute inset-x-0 bottom-0 h-4 bg-[#182C6D] shadow-[0_-15px_15px_-15px_rgba(0,0,0,0.2)]" />
       </div>
 
       {/* Footer simple */}
-      <footer className="bg-[#611d00] text-white py-6 px-4 text-center shadow-inner">
+      <footer className="bg-[#182C6D] text-white py-6 px-4 text-center shadow-inner">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="text-sm">
               © {new Date().getFullYear()} Naker Motos. Todos los derechos reservados.
             </div>
             <div className="flex gap-4">
-              <Link href="/productos" className="text-white hover:text-[#f0e6d6] transition-colors">Productos</Link>
-              <Link href="/contacto" className="text-white hover:text-[#f0e6d6] transition-colors">Contacto</Link>
-              <Link href="/terminos" className="text-white hover:text-[#f0e6d6] transition-colors">Términos</Link>
+              <Link href="/productos" className="text-white hover:text-[#a8b8ff] transition-colors">Productos</Link>
+              <Link href="/contacto" className="text-white hover:text-[#a8b8ff] transition-colors">Contacto</Link>
+              <Link href="/terminos" className="text-white hover:text-[#a8b8ff] transition-colors">Términos</Link>
             </div>
           </div>
         </div>

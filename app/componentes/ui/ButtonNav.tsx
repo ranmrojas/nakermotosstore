@@ -87,7 +87,7 @@ const defaultNavigation: NavItem[] = [
   },
   {
     name: 'WhatsApp',
-    href: 'https://wa.me/573043668910',
+    href: 'https://wa.me/573046067333',
     icon: WhatsAppIcon,
     iconSolid: WhatsAppIcon,
   },
