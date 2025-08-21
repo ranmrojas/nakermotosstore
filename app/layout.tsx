@@ -31,9 +31,9 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
-        <link rel="icon" href="/copa-de-vino.png" />
-        <link rel="shortcut icon" href="/copa-de-vino.png" />
-        <link rel="apple-touch-icon" href="/copa-de-vino.png" />
+        <link rel="icon" href="/1098cf4b-3ff7-4c3f-82fc-0c2c07e62a8d.jpeg" />
+        <link rel="shortcut icon" href="/1098cf4b-3ff7-4c3f-82fc-0c2c07e62a8d.jpeg" />
+        <link rel="apple-touch-icon" href="/1098cf4b-3ff7-4c3f-82fc-0c2c07e62a8d.jpeg" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Naker Motos</title>
       </head>
