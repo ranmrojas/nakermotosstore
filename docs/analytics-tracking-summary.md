@@ -4,7 +4,7 @@
 
 ### 1. **Navegación de Páginas** (Automático)
 - ✅ `page_view` - Se rastrea automáticamente cada cambio de página
-- Páginas: `/productos`, `/vape`, `/busqueda`, `/ageverification`
+- Páginas: `/productos`, `/vape`, `/busqueda`
 
 ### 2. **Verificación de Edad**
 - ✅ `age_verification_completed` - Usuario confirma ser mayor de edad

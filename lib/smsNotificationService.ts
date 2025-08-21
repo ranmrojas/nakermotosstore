@@ -159,7 +159,7 @@ export const notificarEstadoPedido = async (
   
   // Mensaje personalizado para confirmación de pedido
   if (estado === 'confirmado') {
-    const mensaje = `Licorera Zona Frank le informa que su pedido ${pedidoId} fue recibido y ACEPTADO.\nSeguimiento en: https://licorerazonafrank.com/pedidos`;
+    const mensaje = `Naker Motos le informa que su pedido ${pedidoId} fue recibido y ACEPTADO.\nSeguimiento en: https://nakerstore.com/pedidos`;
     
     return await smsService.enviarMensajePersonalizado(clienteNumero, mensaje);
   }

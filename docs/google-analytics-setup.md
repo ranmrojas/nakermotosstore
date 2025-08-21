@@ -2,7 +2,7 @@
 
 ## Descripción
 
-Este documento describe la implementación de Google Analytics 4 (GA4) en la aplicación de Licorera Zona Frank.
+Este documento describe la implementación de Google Analytics 4 (GA4) en la aplicación de Naker Motos.
 
 ## Eventos Implementados
 
@@ -69,7 +69,7 @@ analyticsEvents.productViewed('123', 'Cerveza Corona', 'Cerveza');
 analyticsEvents.whatsappClick('123', 'Cerveza Corona', 5000);
 
 // Evento de verificación
-analyticsEvents.ageVerificationCompleted();
+// Evento de verificación de edad completada (eliminado)
 ```
 
 ### Eventos automáticos

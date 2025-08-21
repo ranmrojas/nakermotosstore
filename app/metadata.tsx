@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Licorera Zona Frank - Verificación de Edad",
-  description: "Verificación de edad para acceder a Licorera Zona Frank",
+  title: "Naker Motos - Verificación de Edad",
+  description: "Verificación de edad para acceder a Naker Motos",
   icons: {
     icon: '/favicon.ico',
   },

@@ -34,7 +34,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
         <Link href="/" className="flex items-center flex-1 justify-center">
           <Image
             src="/logo.png"
-            alt="Licorera Zona Frank"
+            alt="Naker Motos"
             width={100}
             height={32}
             style={{ height: '32px', width: 'auto', objectFit: 'contain' }}

@@ -106,19 +106,6 @@ export const useAnalytics = () => {
 
 // Eventos específicos para tu aplicación
 export const analyticsEvents = {
-  // Verificación de edad
-  ageVerificationCompleted: () => trackEvent({
-    action: 'verificacion_edad_completada',
-    category: 'verificacion_usuario',
-    label: 'exitoso',
-  }),
-
-  ageVerificationRejected: () => trackEvent({
-    action: 'verificacion_edad_rechazada',
-    category: 'verificacion_usuario',
-    label: 'rechazado',
-  }),
-
   // Productos
   productViewed: (productId: string, productName: string, category: string) => trackEvent({
     action: 'vista_producto',

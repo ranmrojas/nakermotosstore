@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
   // Rutas que no necesitan verificación de edad
-  const publicRoutes = ['/ageverification'];
+  const publicRoutes: string[] = [];
   const isPublicRoute = publicRoutes.some(route => request.nextUrl.pathname.startsWith(route));
 
   // Rutas de API que permiten acceso sin verificación (para preload)
@@ -44,21 +44,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Para rutas no-admin, verificar verificación de edad
-  const isVerified = request.cookies.get('age_verified');
-
-  // Si no está verificado y no es una ruta pública, redirigir a verificación
-  if (!isVerified) {
-    // Capturar la URL original que el usuario quería visitar
-    const originalUrl = request.nextUrl.pathname + request.nextUrl.search;
-    const redirectUrl = new URL('/ageverification', request.url);
-    redirectUrl.searchParams.set('redirect', originalUrl);
-    
-
-    return NextResponse.redirect(redirectUrl);
-  }
-
-  // Si está verificado, permitir acceso
+  // Para rutas no-admin, permitir acceso directamente
   return NextResponse.next();
 }
 
@@ -70,8 +56,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - public files (logo.png, ageverification.jpg, etc)
+     * - public files (logo.png, etc)
      */
-    '/((?!_next/static|_next/image|favicon.ico|logo.png|ageverification.jpg).*)',
+    '/((?!_next/static|_next/image|favicon.ico|logo.png).*)',
   ],
 } 

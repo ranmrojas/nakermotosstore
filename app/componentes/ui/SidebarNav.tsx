@@ -257,7 +257,7 @@ export default function SidebarNav({
         
         {/* Footer con información */}
         <div className="p-4 border-t border-gray-200 text-xs text-gray-500">
-          <p>© {new Date().getFullYear()} Licorera Zona Frank</p>
+          <p>© {new Date().getFullYear()} Naker Motos</p>
         </div>
       </div>
     </>

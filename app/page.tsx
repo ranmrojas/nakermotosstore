@@ -5,19 +5,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCategorias } from '../hooks/useCategorias';
 
-// Características destacadas
-const features = [
-  {
-    icon: '🚚',
-    title: 'Entrega Rápida',
-    text: 'Recibe tu pedido en menos de 30 minutos en tu zona.'
-  },
-  {
-    icon: '🎁',
-    title: 'Promociones Exclusivas',
-    text: 'Descuentos y ofertas especiales cada semana.'
-  }
-];
+
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -26,10 +14,10 @@ export default function Home() {
   
   // Imágenes para el carrusel
   const carouselImages = [
-    '/dashboardlanding/brian-jones-YBlcnXfv9OM-unsplash.jpg',
-    '/dashboardlanding/premium_photo-1719431363708-30223a8f5280.avif',
-    '/dashboardlanding/giancarlo-duarte-w2C731GlwKk-unsplash.jpg',
-    '/dashboardlanding/tim-russmann-iFGGTZ8--Ms-unsplash.jpg'
+    '/dashboardlanding/image1.jpg',
+    '/dashboardlanding/image2.png',
+    '/dashboardlanding/image3.png',
+    '/dashboardlanding/image4.jpg'
   ];
 
   // Efecto para el carrusel automático
@@ -71,19 +59,19 @@ export default function Home() {
             className={`text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}
             style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}
           >
-            Licorera Zona Frank
+            Naker Motos
           </h1>
           <p 
             className={`text-lg sm:text-xl text-white mb-6 max-w-lg transition-all duration-1000 delay-300 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}
             style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}
           >
-            Licores, bebidas, vapes y mucho mas... en Villavicencio-Meta
+            Motos, repuestos y accesorios... en Villavicencio-Meta
           </p>
           <Link 
-            href={currentSlide === 1 ? "/vape" : "/productos"} 
+            href="/productos"
             className={`bg-[#8b2801] hover:bg-[#611d00] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl hover:shadow-[#8b2801]/30 transition-all duration-300 transform hover:scale-105 active:scale-95 transition-all duration-1000 delay-500 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}
           >
-            {currentSlide === 1 ? "Ver Vapes" : "Ver Productos"}
+            Ver Repuestos
           </Link>
         </div>
         
@@ -105,7 +93,7 @@ export default function Home() {
 
       {/* Sección de Categorías */}
       <section className="py-8 px-4 bg-white">
-        <h2 className="text-2xl font-bold text-center mb-8 text-[#611d00]">Nuestras Categorías</h2>
+        <h2 className="text-2xl font-bold text-center mb-8 text-[#611d00]">Nuestros Productos</h2>
         
         {categoriasLoading ? (
           <div className="flex justify-center">
@@ -117,19 +105,19 @@ export default function Home() {
               {(() => {
                 const getCategoryIcon = (nombre: string) => {
                   const nombreLower = nombre.toLowerCase();
-                  if (nombreLower.includes('cerveza')) return '🍺';
-                  if (nombreLower.includes('aguardiente')) return '🍶';
-                  if (nombreLower.includes('vape') || nombreLower.includes('vapeador')) return '💨';
-                  if (nombreLower.includes('cápsula') || nombreLower.includes('capsula')) return '🔃';
-                  if (nombreLower.includes('whisky') || nombreLower.includes('whiskey')) return '🥃';
-                  if (nombreLower.includes('vino')) return '🍷';
-                  if (nombreLower.includes('gaseosa') || nombreLower.includes('refresco')) return '🥤';
-                  if (nombreLower.includes('cigarrillo') || nombreLower.includes('tabaco')) return '🚬';
-                  if (nombreLower.includes('snack') || nombreLower.includes('dulce')) return '🍿';
-                  if (nombreLower.includes('batería') || nombreLower.includes('bateria')) return '🔋';
-                  if (nombreLower.includes('desechable')) return '🎯';
-                  if (nombreLower.includes('licor')) return '🥃';
-                  return '📦';
+                  if (nombreLower.includes('moto') || nombreLower.includes('motor')) return '🏍️';
+                  if (nombreLower.includes('repuesto') || nombreLower.includes('parte')) return '🔧';
+                  if (nombreLower.includes('accesorio') || nombreLower.includes('accesorios')) return '⚙️';
+                  if (nombreLower.includes('llanta') || nombreLower.includes('neumatico')) return '🛞';
+                  if (nombreLower.includes('bateria') || nombreLower.includes('batería')) return '🔋';
+                  if (nombreLower.includes('aceite') || nombreLower.includes('lubricante')) return '🛢️';
+                  if (nombreLower.includes('freno') || nombreLower.includes('frenos')) return '🛑';
+                  if (nombreLower.includes('cadena') || nombreLower.includes('transmision')) return '⛓️';
+                  if (nombreLower.includes('filtro') || nombreLower.includes('filtros')) return '🧽';
+                  if (nombreLower.includes('casco') || nombreLower.includes('proteccion')) return '🪖';
+                  if (nombreLower.includes('ropa') || nombreLower.includes('vestimenta')) return '👕';
+                  if (nombreLower.includes('herramienta') || nombreLower.includes('herramientas')) return '🔨';
+                  return '🏍️';
                 };
 
                 // Filtrar solo categorías activas y ordenarlas
@@ -140,8 +128,8 @@ export default function Home() {
                     const nombreB = b.nombre.toLowerCase();
                     
                     const prioridades = [
-                      'cerveza', 'aguardiente', 'vape', 'vapeador', 'cápsula', 'capsula', 
-                      'whisky', 'whiskey', 'vino'
+                      'moto', 'motor', 'repuesto', 'parte', 'accesorio', 'accesorios',
+                      'llanta', 'neumatico', 'bateria', 'batería', 'aceite', 'lubricante'
                     ];
                     
                     const indexA = prioridades.findIndex(p => nombreA.includes(p));
@@ -168,8 +156,8 @@ export default function Home() {
                   activa: boolean;
                 }
                 const renderCategoria = (categoria: Categoria) => {
-                  // Mostrar "Vapes" para la categoría con ID 46
-                  const displayName = categoria.id === 46 ? "Vapes" : categoria.nombre;
+                  // Mostrar "Accesorios" para la categoría con ID 46
+                  const displayName = categoria.id === 46 ? "Accesorios" : categoria.nombre;
                   return (
                     <Link 
                       href={`/productos?id=${categoria.id}`}
@@ -243,27 +231,99 @@ export default function Home() {
         `}</style>
       </section>
 
-      {/* Características destacadas */}
+      {/* Sección de Servicios - Diseño Móvil First */}
       <section className="py-8 px-4 bg-white">
-        <h2 className="text-2xl font-bold text-center mb-6 text-[#611d00]">¿Por qué elegirnos?</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
-          {features.map((feature, idx) => (
-            <div
-              key={idx}
-              className="bg-white rounded-xl shadow-md p-5 border border-[#d4b78f] hover:shadow-xl hover:shadow-[#d4b78f]/20 transition-all duration-300"
-            >
-              <div className="text-4xl mb-3">{feature.icon}</div>
-              <h3 className="font-bold text-lg mb-2 text-[#611d00]">{feature.title}</h3>
-              <p className="text-[#8b4513] text-sm">{feature.text}</p>
+        <h2 className="text-2xl font-bold text-center mb-6 text-[#611d00]">¿Qué ofrecemos?</h2>
+        
+        {/* Grid de servicios móvil-first */}
+        <div className="space-y-4 max-w-md mx-auto">
+          {/* Card 1 - Repuestos */}
+          <div className="bg-gradient-to-r from-[#8b2801] to-[#611d00] rounded-2xl p-4 text-white shadow-lg">
+            <div className="flex items-center space-x-4">
+              <div className="text-3xl">🔧</div>
+              <div className="flex-1">
+                <h3 className="font-bold text-lg">Repuestos Originales</h3>
+                <p className="text-sm opacity-90">Honda, Yamaha, Suzuki y más</p>
+              </div>
+              <div className="text-2xl">→</div>
             </div>
-          ))}
+          </div>
+
+          {/* Card 2 - Asesoría */}
+          <div className="bg-gradient-to-r from-[#611d00] to-[#8b2801] rounded-2xl p-4 text-white shadow-lg">
+            <div className="flex items-center space-x-4">
+              <div className="text-3xl">⚡</div>
+              <div className="flex-1">
+                <h3 className="font-bold text-lg">Asesoría Técnica</h3>
+                <p className="text-sm opacity-90">Diagnóstico y recomendaciones</p>
+              </div>
+              <div className="text-2xl">→</div>
+            </div>
+          </div>
+
+          {/* Card 3 - Entrega */}
+          <div className="bg-gradient-to-r from-[#8b2801] to-[#611d00] rounded-2xl p-4 text-white shadow-lg">
+            <div className="flex items-center space-x-4">
+              <div className="text-3xl">🚚</div>
+              <div className="flex-1">
+                <h3 className="font-bold text-lg">Entrega Rápida</h3>
+                <p className="text-sm opacity-90">Mismo día en Villavicencio</p>
+              </div>
+              <div className="text-2xl">→</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Botones de contacto flotantes */}
+        <div className="fixed bottom-20 right-4 z-50 space-y-3">
+          {/* WhatsApp */}
+          <a 
+            href="https://wa.me/573043668910" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="block w-14 h-14 bg-green-500 rounded-full shadow-lg flex items-center justify-center text-white text-2xl hover:bg-green-600 transition-all duration-300 transform hover:scale-110"
+            aria-label="Contactar por WhatsApp"
+          >
+            📱
+          </a>
+          
+          {/* Llamada */}
+          <a 
+            href="tel:+573043668910"
+            className="block w-14 h-14 bg-[#8b2801] rounded-full shadow-lg flex items-center justify-center text-white text-2xl hover:bg-[#611d00] transition-all duration-300 transform hover:scale-110"
+            aria-label="Llamar"
+          >
+            📞
+          </a>
+        </div>
+
+        {/* Banner de contacto inferior */}
+        <div className="mt-8 bg-gray-100 rounded-xl p-4 text-center">
+          <h3 className="font-bold text-lg text-[#611d00] mb-2">¿Necesitas algo específico?</h3>
+          <p className="text-sm text-gray-600 mb-3">Contáctanos y te ayudamos a encontrarlo</p>
+          <div className="flex justify-center space-x-3">
+            <a 
+              href="https://wa.me/573043668910" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-green-600 transition-colors"
+            >
+              WhatsApp
+            </a>
+            <a 
+              href="tel:+573043668910"
+              className="bg-[#8b2801] text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-[#611d00] transition-colors"
+            >
+              Llamar
+            </a>
+          </div>
         </div>
       </section>
       
       {/* Divisor con degradado */}
       {/* Eliminado divisor degradado beige */}
 
-      {/* Card de advertencia - Mantenida del diseño original */}
+      {/* Información de contacto y servicios */}
       <section className="py-8 px-4 flex justify-center">
         <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 flex flex-col items-center text-center border relative overflow-hidden" style={{ borderColor: '#440d00' }}>
           {/* Efecto de degradado sutil en el fondo */}
@@ -271,16 +331,16 @@ export default function Home() {
           <div className="relative z-10 w-full">
             <div className="mb-4">
               <svg className="mx-auto" width="56" height="56" fill="none" viewBox="0 0 24 24" stroke="#440d00">
-                <circle cx="12" cy="12" r="10" stroke="#440d00" strokeWidth="2" fill="#611d14" fillOpacity="0.12" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold mb-2" style={{ color: '#440d00' }}>Solo para mayores de 18 años</h1>
+            <h1 className="text-2xl font-bold mb-2" style={{ color: '#440d00' }}>Encuéntranos en Villavicencio</h1>
             <p className="mb-4 text-base" style={{ color: '#611d14' }}>
-              El acceso y la compra de productos en esta tienda está restringido exclusivamente a personas mayores de edad.
+              Tu tienda de confianza para repuestos y accesorios de motos. Asesoría especializada y productos de calidad.
             </p>
             <div className="rounded-lg px-4 py-2 text-sm font-semibold" style={{ background: '#611d14', color: 'white' }}>
-              Prohíbase el expendio de bebidas embriagantes a menores de edad. Ley 124 de 1994
+              📞 Llámanos: (57) 304 366 8910
             </div>
           </div>
         </div>
@@ -296,7 +356,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="text-sm">
-              © {new Date().getFullYear()} Licores Zona Frank. Todos los derechos reservados.
+              © {new Date().getFullYear()} Naker Motos. Todos los derechos reservados.
             </div>
             <div className="flex gap-4">
               <Link href="/productos" className="text-white hover:text-[#f0e6d6] transition-colors">Productos</Link>

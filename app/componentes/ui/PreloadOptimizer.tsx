@@ -18,7 +18,6 @@ export default function PreloadOptimizer({
   const pathname = usePathname();
 
   useEffect(() => {
-    // Permitir preload en /ageverification para optimizar la experiencia
     const shouldStartPreload = autoStart && !isPreloadComplete && !isPreloading;
     
     if (shouldStartPreload) {

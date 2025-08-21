@@ -35,7 +35,7 @@ export default function RootLayout({
         <link rel="shortcut icon" href="/copa-de-vino.png" />
         <link rel="apple-touch-icon" href="/copa-de-vino.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Licorera Zona Frank</title>
+        <title>Naker Motos</title>
       </head>
       <body className={geist.className}>
         <ReactNotifications />
@@ -88,6 +88,5 @@ function HeaderWrapper() {
     }
   }, [pathname]);
 
-  if (pathname === "/ageverification") return null;
   return <Header onToggleSidebar={toggleSidebar} />;
 }

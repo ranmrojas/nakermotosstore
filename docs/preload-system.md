@@ -37,13 +37,8 @@ El sistema de preload silencioso está diseñado para cargar datos en segundo pl
 ```typescript
 // app/page.tsx
 const checkAgeAndPreload = async () => {
-  const isVerified = Cookies.get('age_verified');
+  // Verificación de edad eliminada - acceso directo permitido
   
-  if (!isVerified) {
-    router.push('/ageverification');
-    return;
-  }
-
   // Iniciar preload silencioso
   if (!preloadService.isCompleted() && !preloadService.isInProgress()) {
     preloadService.startSilentPreload();
