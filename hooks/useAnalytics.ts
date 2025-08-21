@@ -84,12 +84,23 @@ export const useAnalytics = () => {
 
   // Inicializar GA en el primer render
   useEffect(() => {
-    initGA();
+    // Solo ejecutar en el cliente
+    if (typeof window === 'undefined') return;
+    
+    // Delay para evitar problemas de hidratación
+    const timer = setTimeout(() => {
+      initGA();
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Rastrear cambios de página automáticamente
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.gtag) {
+    // Solo ejecutar en el cliente
+    if (typeof window === 'undefined') return;
+    
+    if (window.gtag) {
       window.gtag('config', GA_TRACKING_ID, {
         page_path: pathname,
         page_title: document.title,

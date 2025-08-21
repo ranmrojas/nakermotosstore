@@ -2,7 +2,7 @@
 
 ## Descripción General
 
-El sistema de preload silencioso está diseñado para cargar datos en segundo plano después de la verificación de edad, optimizando la experiencia del usuario al navegar entre páginas.
+El sistema de preload silencioso está diseñado para cargar datos en segundo plano, optimizando la experiencia del usuario al navegar entre páginas.
 
 ## Componentes del Sistema
 
@@ -33,13 +33,11 @@ El sistema de preload silencioso está diseñado para cargar datos en segundo pl
 
 ## Flujo de Ejecución
 
-### 1. Verificación de Edad
+### 1. Inicio Automático
 ```typescript
 // app/page.tsx
-const checkAgeAndPreload = async () => {
-  // Verificación de edad eliminada - acceso directo permitido
-  
-  // Iniciar preload silencioso
+const startPreload = async () => {
+  // Iniciar preload silencioso automáticamente
   if (!preloadService.isCompleted() && !preloadService.isInProgress()) {
     preloadService.startSilentPreload();
   }
@@ -174,9 +172,9 @@ console.log(status);
 ## Troubleshooting
 
 ### Preload no se ejecuta
-1. Verificar que la edad esté verificada
-2. Revisar logs de consola para errores
-3. Verificar conectividad de red
+1. Verificar logs de consola para errores
+2. Verificar conectividad de red
+3. Verificar que el componente PreloadOptimizer esté montado
 
 ### Datos no se cargan
 1. Verificar estado de IndexedDB

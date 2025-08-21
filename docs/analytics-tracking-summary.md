@@ -6,9 +6,9 @@
 - ✅ `page_view` - Se rastrea automáticamente cada cambio de página
 - Páginas: `/productos`, `/vape`, `/busqueda`
 
-### 2. **Verificación de Edad**
-- ✅ `age_verification_completed` - Usuario confirma ser mayor de edad
-- ✅ `age_verification_rejected` - Usuario indica ser menor de edad
+### 2. **Sistema de Preload**
+- ✅ `preload_completed` - Sistema de preload completado
+- ✅ `offline_data_used` - Datos offline utilizados
 
 ### 3. **Interacciones con Productos**
 - ✅ `product_view` - Vista básica de producto en grid
@@ -43,6 +43,7 @@
 ### 8. **Rendimiento del Sistema**
 - ✅ `preload_completed` - Sistema de preload completado
 - ✅ `offline_data_used` - Datos offline utilizados
+- ✅ `page_load_time` - Tiempo de carga de página
 
 ## 📍 **Ubicaciones de Tags Rastreados**
 

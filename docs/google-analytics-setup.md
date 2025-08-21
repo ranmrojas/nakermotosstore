@@ -6,9 +6,9 @@ Este documento describe la implementación de Google Analytics 4 (GA4) en la apl
 
 ## Eventos Implementados
 
-### 1. Verificación de Edad
-- **`age_verification_completed`**: Usuario confirma ser mayor de edad
-- **`age_verification_rejected`**: Usuario indica ser menor de edad
+### 1. Eventos del Sistema
+- **`preload_completed`**: Sistema de preload completado
+- **`offline_data_used`**: Datos offline utilizados
 
 ### 2. Interacciones con Productos
 - **`product_view`**: Usuario ve un producto específico
@@ -69,7 +69,8 @@ analyticsEvents.productViewed('123', 'Cerveza Corona', 'Cerveza');
 analyticsEvents.whatsappClick('123', 'Cerveza Corona', 5000);
 
 // Evento de verificación
-// Evento de verificación de edad completada (eliminado)
+// Evento de preload completado
+analyticsEvents.preloadCompleted();
 ```
 
 ### Eventos automáticos
@@ -81,10 +82,10 @@ El hook `useAnalytics` rastrea automáticamente:
 
 ## Configuración de Objetivos en GA4
 
-### 1. Objetivo de Verificación de Edad
+### 1. Objetivo de Preload Completado
 
 1. Ve a **Configurar** > **Eventos** > **Crear evento personalizado**
-2. Nombre: `age_verification_completed`
+2. Nombre: `preload_completed`
 3. Marca como **Conversión**
 
 ### 2. Objetivo de WhatsApp

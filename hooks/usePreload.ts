@@ -20,20 +20,33 @@ export const usePreload = (): UsePreloadReturn => {
 
   // Verificar estado inicial del preload
   useEffect(() => {
+    // Solo ejecutar en el cliente
+    if (typeof window === 'undefined') return;
+
     const checkPreloadStatus = () => {
-      const status = preloadService.getStatus();
-      setIsPreloadComplete(status.isCompleted);
-      setIsPreloading(status.isPreloading);
+      try {
+        const status = preloadService.getStatus();
+        setIsPreloadComplete(status.isCompleted);
+        setIsPreloading(status.isPreloading);
+      } catch (error) {
+        console.error('Error checking preload status:', error);
+      }
     };
 
-    checkPreloadStatus();
+    // Verificar estado inicial después de un pequeño delay
+    const initialCheck = setTimeout(() => {
+      checkPreloadStatus();
+    }, 100);
 
-    // Verificar estado cada 2 segundos
+    // Verificar estado cada 3 segundos (menos frecuente)
     const interval = setInterval(() => {
       checkPreloadStatus();
-    }, 2000);
+    }, 3000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(initialCheck);
+      clearInterval(interval);
+    };
   }, []); // Sin dependencias para evitar bucle infinito
 
   // Función para iniciar preload manualmente
