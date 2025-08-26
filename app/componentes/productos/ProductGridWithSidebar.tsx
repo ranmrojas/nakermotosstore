@@ -155,8 +155,8 @@ const ProductGridWithSidebar = forwardRef<ProductGridWithSidebarRef, ProductGrid
     // Filtrar solo categorías activas
     const categoriasActivas = categorias.filter(cat => cat.activa);
 
-    // IDs de las primeras 4 categorías en orden específico
-    const firstFourIds = [15, 33, 46, 61, 62, 63, 17,]; // Cerveza, Cigarrillos, Vapeadores Aguardiente
+    // IDs de las primeras 7 categorías en orden específico
+    const firstFourIds = [2, 17, 22, 30, 24, 16, 20]; // Aceite motor, Pastillas Y Frenos, Bandas Freno, Cascos, Llantas, Filtros Aire, Filtro Aceite
 
     // Separar las primeras 4 del resto
     const firstFour = firstFourIds
@@ -364,14 +364,14 @@ useEffect(() => {
 
   // Efecto para seleccionar una categoría por defecto si no hay ninguna seleccionada
 useEffect(() => {
-    // Solo asignar 15 si NO hay defaultCategoryId y tampoco selectedCategoryId
+    // Solo asignar 2 si NO hay defaultCategoryId y tampoco selectedCategoryId
     if (
       selectedCategoryId === null &&
       !categoriasLoading &&
       categorias.length > 0 &&
       (defaultCategoryId === null || defaultCategoryId === undefined)
     ) {
-      setSelectedCategoryId(15);
+      setSelectedCategoryId(2);
     }
   }, [categorias, categoriasLoading, selectedCategoryId, defaultCategoryId]);
 
@@ -762,15 +762,15 @@ useEffect(() => {
               {/* Título sutil con nombre de la categoría y cantidad de productos */}
               <div className="mb-2">
                 <h2 className="text-lg font-semibold text-gray-900 leading-tight">
-                  {selectedCategoryId === 15 
+                  {selectedCategoryId === 2 
                     ? 'Todos los Productos' 
                     : selectedCategory ? selectedCategory.nombre : 'Productos'
                   }
                 </h2>
                 {/* Aquí puedes pasar la cantidad real de productos si la tienes, por ahora solo ejemplo */}
                 <span className="text-xs text-gray-400 font-normal">
-                  {selectedCategoryId === 15 && (
-                    <span>Cerveza, Vapeadores, Licores y más categorías</span>
+                  {selectedCategoryId === 2 && (
+                    <span>Aceite motor, Pastillas Y Frenos, Bandas Freno, Cascos, Llantas, Filtros Aire, Filtro Aceite y más categorías</span>
                   )}
                   {/* Puedes reemplazar 0 por la cantidad real si la tienes */}
                   {/* Ejemplo: `${products.length} productos disponibles` */}

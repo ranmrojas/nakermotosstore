@@ -326,7 +326,7 @@ export default function ProductGrid({
       const categoriasConProductos: CategoriaProductos[] = [];
       
       // Orden específico: primero las categorías principales
-      const categoriasPrincipales = [15, 46, 33]; // Cerveza, Vapeadores, Licores
+      const categoriasPrincipales = [2, 17, 22, 30, 24, 16, 20]; // Aceite motor, Pastillas Y Frenos, Bandas Freno, Cascos, Llantas, Filtros Aire, Filtro Aceite
       const categoriasRestantes = categorias.filter((cat: { id: number }) => !categoriasPrincipales.includes(cat.id));
       
       // Cargar primero las categorías principales en el orden especificado
@@ -393,9 +393,9 @@ export default function ProductGrid({
     try {
       let allProducts: Producto[] = [];
       
-      // Si es la categoría 15 (Cerveza), cargar también categorías 46 y 33
-      if (catId === 15) {
-        const categoryIds = [15, 46, 33]; // Cerveza, Vapeadores, Licores
+      // Si es la categoría 2 (Aceite motor), cargar también categorías 17, 22, 30, 24, 16, 20
+      if (catId === 2) {
+        const categoryIds = [2, 17, 22, 30, 24, 16, 20]; // Aceite motor, Pastillas Y Frenos, Bandas Freno, Cascos, Llantas, Filtros Aire, Filtro Aceite
         for (const categoryId of categoryIds) {
           const data = await getProductosByCategoriaHook(categoryId);
           const availableProducts = data.filter(

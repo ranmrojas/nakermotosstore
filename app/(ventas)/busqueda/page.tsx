@@ -115,7 +115,7 @@ export default function BusquedaPage() {
     const categoriasActivas = categorias.filter(cat => cat.activa);
 
     // IDs de las primeras 4 categorías en orden específico
-    const firstFourIds = [15, 63, 17, 33]; // Cerveza, Baterías, Cigarrillos, Aguardiente
+    const firstFourIds = [2, 17, 22, 30, 24, 16, 20]; // Aceite motor, Pastillas Y Frenos, Bandas Freno, Cascos, Llantas, Filtros Aire, Filtro Aceite
 
     // Separar las primeras 4 del resto
     const firstFour = firstFourIds
@@ -205,10 +205,10 @@ export default function BusquedaPage() {
           console.log('🔄 Cargando productos por defecto...');
         }
 
-        // Categorías para productos por defecto: Cerveza, Aguardiente, Gaseosa, Gomitas, Whisky
-        const defaultCategories = [
-          { id: 15, name: 'cerveza' },      // Cerveza
-          { id: 7, name: 'aguardiente' },   // Aguardiente
+            // Categorías para productos por defecto: Aceite motor, Pastillas Y Frenos, Bandas Freno, Cascos, Llantas, Filtros Aire, Filtro Aceite
+    const defaultCategories = [
+      { id: 2, name: 'aceite motor' },      // Aceite motor
+      { id: 17, name: 'pastillas y frenos' },   // Pastillas Y Frenos
           { id: 8, name: 'gaseosa' },       // Gaseosa
           { id: 51, name: 'gomitas' },      // Gomitas
           { id: 33, name: 'whisky' }        // Whisky (usando ID 33 para evitar duplicado)
@@ -418,10 +418,10 @@ export default function BusquedaPage() {
             <div>
               <div className="flex items-center gap-1 justify-center">
                 <button className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
-                  Cerveza
+                  Aceite motor
                 </button>
                 <button className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
-                  Aguardiente
+                  Pastillas Y Frenos
                 </button>
                 <button className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
                   Gaseosa
