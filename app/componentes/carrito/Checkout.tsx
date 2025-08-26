@@ -51,9 +51,9 @@ export default function Checkout({ isOpen, onClose }: CheckoutProps) {
 
   // Coordenadas de la tienda en Villavicencio
   const STORE_LOCATION = {
-    lat: 4.126551,
-    lon: -73.632540
-  };
+  lat: 4.135742171365671,
+  lon: -73.61871169545259
+};
 
   // Rangos de distancia y costos de envío - memoizado para evitar recreaciones
   const SHIPPING_ZONES = useCallback(() => [

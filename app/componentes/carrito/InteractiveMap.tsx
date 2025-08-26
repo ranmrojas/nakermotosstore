@@ -35,9 +35,9 @@ export default function InteractiveMap({
 
   // Coordenadas de la tienda
   const STORE_LOCATION = {
-    lat: 4.126551,
-    lng: -73.632540
-  };
+  lat: 4.135742171365671,
+  lng: -73.61871169545259
+};
   
   // Función para calcular distancia entre dos puntos (Haversine formula)
   const calculateDistance = useCallback((lat1: number, lng1: number, lat2: number, lng2: number): number => {

@@ -39,7 +39,7 @@ export default function PerfilCliente() {
   // Ref para el input de dirección
   const addressInputRef = useRef<HTMLInputElement | null>(null);
 
-  const STORE_LOCATION = useMemo(() => ({ lat: 4.126551, lon: -73.632540 }), []);
+  const STORE_LOCATION = useMemo(() => ({ lat: 4.135742171365671, lon: -73.61871169545259 }), []);
   const SHIPPING_ZONES = useMemo(() => [
     { min: 0, max: 0.5, cost: 4500 },
     { min: 0.5, max: 0.750, cost: 5000 },

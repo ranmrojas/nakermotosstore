@@ -43,8 +43,8 @@ Sistema automatizado para calcular el costo de envío en Villavicencio, Meta, Co
 ### Ubicación de la tienda
 ```typescript
 const STORE_LOCATION = {
-  lat: 4.126551,
-  lon: -73.632540
+  lat: 4.135742171365671,
+  lon: -73.61871169545259
 };
 ```
 
@@ -113,8 +113,8 @@ const { shippingInfo, updateShippingInfo, updateAddress } = useShipping();
 ```json
 {
   "display_name": "Calle 40 #25-15, Villavicencio, Meta, Colombia",
-  "lat": "4.126551",
-  "lon": "-73.632540"
+  "lat": "4.135742171365671",
+  "lon": "-73.61871169545259"
 }
 ```
 

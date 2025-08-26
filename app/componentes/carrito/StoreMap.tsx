@@ -12,8 +12,8 @@ interface StoreMapProps {
 
 export default function StoreMap({ className = '' }: StoreMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const storeLat = 4.126551;
-  const storeLon = -73.632540;
+  const storeLat = 4.135742171365671;
+  const storeLon = -73.61871169545259;
   const { isLoaded, isLoading, loadGoogleMaps } = useGoogleMaps();
 
   const initializeMap = useCallback(() => {
