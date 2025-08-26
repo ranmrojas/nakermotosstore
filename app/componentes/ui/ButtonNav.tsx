@@ -59,7 +59,7 @@ interface ButtonNavProps {
   hideOnProducts?: boolean;
 }
 
-// Configuración por defecto
+
 const defaultNavigation: NavItem[] = [
   {
     name: 'Inicio',
@@ -79,12 +79,12 @@ const defaultNavigation: NavItem[] = [
     icon: MagnifyingGlassIcon,
     iconSolid: MagnifyingGlassIconSolid,
   },
-  {
-    name: 'Vape',
-    href: '/vape',
-    icon: VapeIcon,
-    iconSolid: VapeIconSolid,
-  },
+  // {
+  //   name: 'P',
+  //   href: '/vape',
+  //   icon: VapeIcon,
+  //   iconSolid: VapeIconSolid,
+  // },
   {
     name: 'WhatsApp',
     href: 'https://wa.me/573046067333',
