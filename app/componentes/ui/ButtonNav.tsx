@@ -14,27 +14,6 @@ import {
   MagnifyingGlassIcon as MagnifyingGlassIconSolid
 } from '@heroicons/react/24/solid';
 
-// Icono personalizado de nube (vape)
-const VapeIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    {/* Nube principal */}
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-    {/* Pequeñas nubes de vapor */}
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 8a2 2 0 012-2h4a2 2 0 012 2" opacity="0.6" />
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 6a1 1 0 011-1h2a1 1 0 011 1" opacity="0.4" />
-  </svg>
-);
-
-// Icono personalizado de nube (versión sólida)
-const VapeIconSolid = ({ className = "w-5 h-5" }: { className?: string }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-    {/* Nube principal */}
-    <path d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-    {/* Pequeñas nubes de vapor */}
-    <path d="M8 8a2 2 0 012-2h4a2 2 0 012 2" opacity="0.6" />
-    <path d="M6 6a1 1 0 011-1h2a1 1 0 011 1" opacity="0.4" />
-  </svg>
-);
 
 // Icono oficial de WhatsApp mejorado
 const WhatsAppIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
