@@ -166,7 +166,7 @@ export const notificarEstadoPedido = async (
   
   // Mensaje personalizado para pedido enviado
   if (estado === 'enviado') {
-    const mensaje = `Su pedido ${pedidoId} ha sido enviado y se encuentra en ruta hacia su dirección. ¡Gracias por elegirnos!`;
+    const mensaje = `Su pedido ${pedidoId} de Naker Motos ha sido enviado y se encuentra en ruta hacia su dirección. ¡Gracias por elegirnos!`;
     
     return await smsService.enviarMensajePersonalizado(clienteNumero, mensaje);
   }

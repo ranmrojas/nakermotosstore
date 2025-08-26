@@ -1,5 +1,6 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
+import LogClienteAdminModal from "../admin/LogClienteAdminModal";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAdminAuth } from '../../../hooks/useAdminAuth';
@@ -36,7 +37,8 @@ function SidebarContent() {
     { label: "Historial pedidos", href: "/admin/historial" },
     { label: "Categorías", href: "/admin/categorias", adminOnly: true },
   ];
-
+  const [showLogClienteModal, setShowLogClienteModal] = useState(false);
+  // ...existing code...
   return (
     <aside className="h-screen w-64 bg-white border-r flex flex-col justify-between fixed top-0 left-0 z-40 shadow-lg">
       <div>
@@ -72,7 +74,20 @@ function SidebarContent() {
               </Link>
             );
           })}
+          {/* Opción Log clientes solo para admin */}
+          {user?.rol === 'admin' && (
+            <button
+              className="flex items-center px-4 py-2 rounded-lg text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors mt-2"
+              onClick={() => setShowLogClienteModal(true)}
+            >
+              Log clientes
+            </button>
+          )}
         </nav>
+        {/* Modal LogClienteAdminModal */}
+        {showLogClienteModal && (
+          <LogClienteAdminModal onClose={() => setShowLogClienteModal(false)} />
+        )}
       </div>
       {/* Usuario y logout */}
       <div className="px-6 py-4 border-t flex flex-col gap-2">
