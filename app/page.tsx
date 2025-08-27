@@ -4,42 +4,11 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCategorias } from '../hooks/useCategorias';
-import { usePreload } from '../hooks/usePreload';
-
-// Componente para iniciar preload de forma inteligente
-function SmartPreload() {
-  const { startPreload, isPreloadComplete, isPreloading } = usePreload();
-  const [shouldStartPreload, setShouldStartPreload] = useState(false);
-
-  useEffect(() => {
-    // Detectar si es un dispositivo móvil
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
-    // Para móviles, esperar más tiempo antes de iniciar el preload
-    const delay = isMobile ? 5000 : 2000;
-    
-    const timer = setTimeout(() => {
-      setShouldStartPreload(true);
-    }, delay);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (shouldStartPreload && !isPreloadComplete && !isPreloading) {
-      console.log('🚀 Iniciando preload inteligente desde página principal...');
-      startPreload().catch(error => {
-        console.error('Error en preload inteligente:', error);
-      });
-    }
-  }, [shouldStartPreload, isPreloadComplete, isPreloading, startPreload]);
-
-  return null; // Este componente no renderiza nada
-}
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
   const { categorias, loading: categoriasLoading } = useCategorias();
   
   // Imágenes para el carrusel
@@ -50,24 +19,216 @@ export default function Home() {
     '/dashboardlanding/image4.jpg'
   ];
 
-  // Efecto para el carrusel automático
+  // Detectar iOS una sola vez al montar
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [carouselImages.length]);
-
-  // Efecto para la animación de entrada
-  useEffect(() => {
-    setIsVisible(true);
+    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    setIsIOS(iOS);
+    
+    if (iOS) {
+      // En iOS, mostrar inmediatamente sin animaciones
+      setIsVisible(true);
+    } else {
+      // En otros dispositivos, usar animación
+      const timer = setTimeout(() => {
+        setIsVisible(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
+  // Efecto para el carrusel automático - solo en desktop
+  useEffect(() => {
+    if (!isIOS) {
+      const interval = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [carouselImages.length, isIOS]);
+
+  // Si es iOS, renderizar versión completamente estática
+  if (isIOS) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col">
+        {/* Hero Section estático para iOS */}
+        <section className="relative w-full h-[40vh] sm:h-[50vh] md:h-[60vh] overflow-hidden shadow-xl">
+          <div className="absolute inset-0">
+            <div className="absolute inset-0 bg-black/30 z-10" />
+            <Image
+              src="/dashboardlanding/image1.jpg"
+              alt="Naker Motos"
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+          
+          {/* Contenido estático */}
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center px-4">
+            <h1 
+              className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4"
+              style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}
+            >
+              Naker Motos
+            </h1>
+            <p 
+              className="text-lg sm:text-xl text-white mb-6 max-w-lg"
+              style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}
+            >
+              Motos, repuestos y accesorios... en Villavicencio-Meta
+            </p>
+            <Link 
+              href="/productos"
+              className="bg-[#182C6D] hover:bg-[#0f1a4a] text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transition-colors"
+            >
+              Ver Repuestos
+            </Link>
+          </div>
+        </section>
+
+        {/* Sección de Categorías simplificada */}
+        <section className="py-8 px-4 bg-white">
+          <h2 className="text-2xl font-bold text-center mb-8 text-[#182C6D]">Nuestros Productos</h2>
+          
+          {categoriasLoading ? (
+            <div className="flex justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#182C6D]"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
+              {categorias
+                .filter(cat => cat.activa)
+                .slice(0, 6)
+                .map((categoria) => (
+                  <Link 
+                    href={`/productos?id=${categoria.id}`}
+                    key={categoria.id}
+                    className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-2">
+                      <span className="text-xl">🏍️</span>
+                    </div>
+                    <span className="text-sm font-semibold text-[#182C6D] text-center">
+                      {categoria.id === 46 ? "Accesorios" : categoria.nombre}
+                    </span>
+                  </Link>
+                ))}
+            </div>
+          )}
+        </section>
+
+        {/* Sección de Servicios simplificada */}
+        <section className="py-8 px-4 bg-white">
+          <h2 className="text-2xl font-bold text-center mb-6 text-[#182C6D]">¿Qué ofrecemos?</h2>
+          
+          <div className="space-y-4 max-w-md mx-auto">
+            <div className="bg-gradient-to-r from-[#182C6D] to-[#0f1a4a] rounded-2xl p-4 text-white shadow-lg">
+              <div className="flex items-center space-x-4">
+                <div className="text-3xl">🔧</div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-lg">Repuestos Originales</h3>
+                  <p className="text-sm opacity-90">Honda, Yamaha, Suzuki y más</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-[#0f1a4a] to-[#182C6D] rounded-2xl p-4 text-white shadow-lg">
+              <div className="flex items-center space-x-4">
+                <div className="text-3xl">⚡</div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-lg">Asesoría Técnica</h3>
+                  <p className="text-sm opacity-90">Diagnóstico y recomendaciones</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-[#182C6D] to-[#0f1a4a] rounded-2xl p-4 text-white shadow-lg">
+              <div className="flex items-center space-x-4">
+                <div className="text-3xl">🚚</div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-lg">Entrega Rápida</h3>
+                  <p className="text-sm opacity-90">Mismo día en Villavicencio</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Banner de contacto */}
+          <div className="mt-8 bg-gray-100 rounded-xl p-4 text-center">
+            <h3 className="font-bold text-lg text-[#182C6D] mb-2">¿Necesitas algo específico?</h3>
+            <p className="text-sm text-gray-600 mb-3">Contáctanos y te ayudamos a encontrarlo</p>
+            <div className="flex justify-center">
+              <a 
+                href="tel:+573046067333"
+                className="bg-[#182C6D] text-white px-6 py-2 rounded-full text-sm font-semibold hover:bg-[#0f1a4a] transition-colors"
+              >
+                Llamar
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* Información de contacto */}
+        <section className="py-8 px-4 flex justify-center">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 flex flex-col items-center text-center border" style={{ borderColor: '#182C6D' }}>
+            <div className="mb-4">
+              <svg className="mx-auto" width="56" height="56" fill="none" viewBox="0 0 24 24" stroke="#182C6D">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold mb-2" style={{ color: '#182C6D' }}>Encuéntranos en Villavicencio</h1>
+            <p className="mb-4 text-base" style={{ color: '#182C6D' }}>
+              Tu tienda de confianza para repuestos y accesorios de motos.
+            </p>
+            <div className="rounded-lg px-4 py-2 text-sm font-semibold" style={{ background: '#182C6D', color: 'white' }}>
+              📞 Llámanos: (57) 304 606 7333
+            </div>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="bg-[#182C6D] text-white py-6 px-4 text-center">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="text-sm">
+                © {new Date().getFullYear()} Naker Motos. Todos los derechos reservados.
+              </div>
+              <div className="flex gap-4">
+                <Link href="/productos" className="text-white hover:text-[#a8b8ff] transition-colors">Productos</Link>
+                <Link href="/contacto" className="text-white hover:text-[#a8b8ff] transition-colors">Contacto</Link>
+              </div>
+            </div>
+          </div>
+        </footer>
+
+        {/* Botones flotantes */}
+        <a
+          href="https://wa.me/573046067333"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fixed bottom-2 right-2 z-40 flex items-center justify-center bg-green-500 text-white rounded-full p-3 shadow-lg"
+          aria-label="Contactar por WhatsApp"
+        >
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+          </svg>
+        </a>
+
+        <a 
+          href="tel:+573046067333"
+          className="fixed bottom-20 right-4 z-50 block w-14 h-14 bg-[#182C6D] rounded-full shadow-lg flex items-center justify-center text-white text-2xl"
+          aria-label="Llamar"
+        >
+          📞
+        </a>
+      </div>
+    );
+  }
+
+  // Versión normal para otros dispositivos
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* Componente de preload inteligente */}
-      <SmartPreload />
-      
       {/* Hero Section con Carrusel */}
       <section className="relative w-full h-[40vh] sm:h-[50vh] md:h-[60vh] overflow-hidden shadow-xl">
         {carouselImages.map((img, index) => (

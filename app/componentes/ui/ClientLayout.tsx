@@ -22,6 +22,14 @@ interface ClientLayoutProps {
 }
 
 export default function ClientLayout({ children }: ClientLayoutProps) {
+  const [isIOS, setIsIOS] = useState(false);
+
+  // Detectar iOS al montar
+  useEffect(() => {
+    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    setIsIOS(iOS);
+  }, []);
+
   // Inicializar Google Analytics
   useAnalytics();
 
@@ -30,10 +38,19 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
       <ReactNotifications />
       <CartProvider>
         <ClientSessionProvider>
-          <PreloadOptimizer autoStart={false}>
-            <HeaderWrapper />
-            {children}
-          </PreloadOptimizer>
+          {isIOS ? (
+            // En iOS, no usar PreloadOptimizer
+            <>
+              <HeaderWrapper />
+              {children}
+            </>
+          ) : (
+            // En otros dispositivos, usar PreloadOptimizer
+            <PreloadOptimizer autoStart={false}>
+              <HeaderWrapper />
+              {children}
+            </PreloadOptimizer>
+          )}
           
           {/* Botón flotante de WhatsApp */}
           <a
