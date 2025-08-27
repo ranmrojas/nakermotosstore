@@ -40,20 +40,26 @@ class PreloadService {
         console.log('🚀 Iniciando preload silencioso de datos...');
       }
 
-      // 1. Inicializar IndexedDB
-      await indexedDBService.init();
+      // Detectar si es un dispositivo móvil para ajustar la estrategia
+      const isMobile = typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      // 1. Inicializar IndexedDB con timeout
+      await this.withTimeout(indexedDBService.init(), 10000, 'IndexedDB init');
 
       // 2. Obtener categorías (esto activará el hook useCategorias)
-      await this.preloadCategorias();
+      await this.withTimeout(this.preloadCategorias(), 15000, 'Categorías preload');
 
-      // 3. Preload de productos principales
-      await this.preloadProductosPrincipales();
+      // Para móviles, hacer preload más conservador
+      if (!isMobile) {
+        // 3. Preload de productos principales (solo en desktop)
+        await this.withTimeout(this.preloadProductosPrincipales(), 20000, 'Productos principales');
 
-      // 4. Preload de productos de vape
-      await this.preloadProductosVape();
+        // 4. Preload de productos de vape (solo en desktop)
+        await this.withTimeout(this.preloadProductosVape(), 15000, 'Productos vape');
 
-      // 5. Preload de productos de búsqueda
-      await this.preloadProductosBusqueda();
+        // 5. Preload de productos de búsqueda (solo en desktop)
+        await this.withTimeout(this.preloadProductosBusqueda(), 15000, 'Productos búsqueda');
+      }
 
       this.preloadCompleted = true;
       
@@ -76,9 +82,20 @@ class PreloadService {
 
     } catch (error) {
       console.error('❌ Error en preload silencioso:', error);
+      // Marcar como completado para evitar reintentos infinitos
+      this.preloadCompleted = true;
     } finally {
       this.isPreloading = false;
     }
+  }
+
+  // Función helper para manejar timeouts
+  private async withTimeout<T>(promise: Promise<T>, timeoutMs: number, operation: string): Promise<T> {
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error(`${operation} timeout after ${timeoutMs}ms`)), timeoutMs);
+    });
+
+    return Promise.race([promise, timeoutPromise]);
   }
 
   // Preload de categorías
@@ -106,6 +123,7 @@ class PreloadService {
       }
     } catch (error) {
       console.error('Error preload categorías:', error);
+      // No relanzar el error para evitar que falle todo el preload
     }
   }
 
@@ -129,6 +147,7 @@ class PreloadService {
       }
     } catch (error) {
       console.error('Error preload productos principales:', error);
+      // No relanzar el error
     }
   }
 
@@ -149,6 +168,7 @@ class PreloadService {
       }
     } catch (error) {
       console.error('Error preload productos vape:', error);
+      // No relanzar el error
     }
   }
 
@@ -171,6 +191,7 @@ class PreloadService {
       }
     } catch (error) {
       console.error('Error preload productos búsqueda:', error);
+      // No relanzar el error
     }
   }
 

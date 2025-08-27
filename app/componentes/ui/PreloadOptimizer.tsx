@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePreload } from '../../../hooks/usePreload';
 import { preloadService } from '../../../lib/preloadService';
 import { usePathname } from 'next/navigation';
@@ -12,23 +12,42 @@ interface PreloadOptimizerProps {
 
 export default function PreloadOptimizer({ 
   children, 
-  autoStart = true 
+  autoStart = false 
 }: PreloadOptimizerProps) {
   const { isPreloadComplete, isPreloading, startPreload } = usePreload();
   const pathname = usePathname();
+  const [isPageReady, setIsPageReady] = useState(false);
 
   useEffect(() => {
-    const shouldStartPreload = autoStart && !isPreloadComplete && !isPreloading;
+    // Detectar si es un dispositivo móvil
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    // Para móviles, esperar más tiempo antes de iniciar el preload
+    const delay = isMobile ? 3000 : 1000;
+    
+    const timer = setTimeout(() => {
+      setIsPageReady(true);
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const shouldStartPreload = autoStart && 
+                              isPageReady && 
+                              !isPreloadComplete && 
+                              !isPreloading;
     
     if (shouldStartPreload) {
       console.log('🚀 PreloadOptimizer: Iniciando preload automático...');
       
-      // Iniciar preload en segundo plano
+      // Iniciar preload en segundo plano con manejo de errores mejorado
       startPreload().catch(error => {
         console.error('Error en preload automático:', error);
+        // No reintentar automáticamente para evitar bucles infinitos
       });
     }
-  }, [autoStart, isPreloadComplete, isPreloading, startPreload, pathname]);
+  }, [autoStart, isPreloadComplete, isPreloading, startPreload, pathname, isPageReady]);
 
   // Este componente no renderiza nada visible, solo optimiza el preload
   return <>{children}</>;

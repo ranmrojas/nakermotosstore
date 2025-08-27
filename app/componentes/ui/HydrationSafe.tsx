@@ -9,13 +9,25 @@ interface HydrationSafeProps {
 
 export default function HydrationSafe({ children, fallback = null }: HydrationSafeProps) {
   const [isHydrated, setIsHydrated] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsHydrated(true);
+    // Marcar que estamos en el cliente
+    setIsClient(true);
+    
+    // Para dispositivos móviles, esperar un poco más antes de marcar como hidratado
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const delay = isMobile ? 100 : 0;
+    
+    const timer = setTimeout(() => {
+      setIsHydrated(true);
+    }, delay);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Durante SSR o antes de la hidratación, mostrar fallback
-  if (!isHydrated) {
+  if (!isClient || !isHydrated) {
     return <>{fallback}</>;
   }
 

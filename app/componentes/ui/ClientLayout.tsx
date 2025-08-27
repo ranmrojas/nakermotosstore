@@ -30,7 +30,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
       <ReactNotifications />
       <CartProvider>
         <ClientSessionProvider>
-          <PreloadOptimizer autoStart={true}>
+          <PreloadOptimizer autoStart={false}>
             <HeaderWrapper />
             {children}
           </PreloadOptimizer>

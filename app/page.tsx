@@ -4,8 +4,38 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCategorias } from '../hooks/useCategorias';
+import { usePreload } from '../hooks/usePreload';
 
+// Componente para iniciar preload de forma inteligente
+function SmartPreload() {
+  const { startPreload, isPreloadComplete, isPreloading } = usePreload();
+  const [shouldStartPreload, setShouldStartPreload] = useState(false);
 
+  useEffect(() => {
+    // Detectar si es un dispositivo móvil
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    // Para móviles, esperar más tiempo antes de iniciar el preload
+    const delay = isMobile ? 5000 : 2000;
+    
+    const timer = setTimeout(() => {
+      setShouldStartPreload(true);
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (shouldStartPreload && !isPreloadComplete && !isPreloading) {
+      console.log('🚀 Iniciando preload inteligente desde página principal...');
+      startPreload().catch(error => {
+        console.error('Error en preload inteligente:', error);
+      });
+    }
+  }, [shouldStartPreload, isPreloadComplete, isPreloading, startPreload]);
+
+  return null; // Este componente no renderiza nada
+}
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -35,6 +65,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
+      {/* Componente de preload inteligente */}
+      <SmartPreload />
+      
       {/* Hero Section con Carrusel */}
       <section className="relative w-full h-[40vh] sm:h-[50vh] md:h-[60vh] overflow-hidden shadow-xl">
         {carouselImages.map((img, index) => (

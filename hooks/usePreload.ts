@@ -17,11 +17,17 @@ export const usePreload = (): UsePreloadReturn => {
   const [isPreloadComplete, setIsPreloadComplete] = useState(false);
   const [isPreloading, setIsPreloading] = useState(false);
   const [preloadProgress, setPreloadProgress] = useState(0);
+  const [isClient, setIsClient] = useState(false);
+
+  // Verificar que estamos en el cliente
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Verificar estado inicial del preload
   useEffect(() => {
     // Solo ejecutar en el cliente
-    if (typeof window === 'undefined') return;
+    if (!isClient) return;
 
     const checkPreloadStatus = () => {
       try {
@@ -33,25 +39,28 @@ export const usePreload = (): UsePreloadReturn => {
       }
     };
 
-    // Verificar estado inicial después de un pequeño delay
+    // Verificar estado inicial después de un delay más largo para móviles
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const initialDelay = isMobile ? 2000 : 500;
+    
     const initialCheck = setTimeout(() => {
       checkPreloadStatus();
-    }, 100);
+    }, initialDelay);
 
-    // Verificar estado cada 3 segundos (menos frecuente)
+    // Verificar estado cada 5 segundos (menos frecuente para móviles)
     const interval = setInterval(() => {
       checkPreloadStatus();
-    }, 3000);
+    }, 5000);
 
     return () => {
       clearTimeout(initialCheck);
       clearInterval(interval);
     };
-  }, []); // Sin dependencias para evitar bucle infinito
+  }, [isClient]); // Dependencia en isClient
 
   // Función para iniciar preload manualmente
   const startPreload = async (): Promise<void> => {
-    if (isPreloadComplete || isPreloading) {
+    if (!isClient || isPreloadComplete || isPreloading) {
       return;
     }
 
@@ -59,16 +68,17 @@ export const usePreload = (): UsePreloadReturn => {
     setPreloadProgress(0);
 
     try {
-      // Simular progreso
+      // Simular progreso más lento para móviles
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       const progressInterval = setInterval(() => {
         setPreloadProgress(prev => {
           if (prev >= 90) {
             clearInterval(progressInterval);
             return 90;
           }
-          return prev + 10;
+          return prev + (isMobile ? 5 : 10);
         });
-      }, 500);
+      }, isMobile ? 1000 : 500);
 
       await preloadService.startSilentPreload();
       
