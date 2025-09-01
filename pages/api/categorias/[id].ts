@@ -33,22 +33,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      res.status(200).json({
-        success: true,
-        data: categoria
-      });
+             res.status(200).json({
+         success: true,
+         data: categoria
+       });
 
-    } catch (error) {
-      console.error('Error al obtener categoría:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Error interno del servidor'
-      });
-    }
+          } catch {
+        res.status(500).json({
+          success: false,
+          error: 'Error interno del servidor'
+        });
+      }
   }
   else if (req.method === 'PUT') {
     try {
-      const { nombre, descripcion, activa, categoriaPadreId } = req.body;
+      const { id: nuevoId, nombre, descripcion, activa, categoriaPadreId } = req.body;
 
       // Verificar que la categoría existe
       const categoriaExistente = await prisma.categoria.findUnique({
@@ -84,8 +83,50 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
 
+      // Validar nuevo ID si se proporciona
+      if (nuevoId !== undefined && nuevoId !== null) {
+        if (!Number.isInteger(Number(nuevoId)) || Number(nuevoId) <= 0) {
+          return res.status(400).json({
+            success: false,
+            error: 'El nuevo ID debe ser un número entero positivo'
+          });
+        }
+
+        // Verificar si ya existe una categoría con el nuevo ID
+        if (Number(nuevoId) !== categoriaId) {
+          const categoriaConNuevoId = await prisma.categoria.findUnique({
+            where: { id: Number(nuevoId) }
+          });
+
+          if (categoriaConNuevoId) {
+            return res.status(409).json({
+              success: false,
+              error: `Ya existe una categoría con el ID ${nuevoId}`
+            });
+          }
+        }
+      }
+
+      // Verificar si el nuevo nombre ya existe (excluyendo la categoría actual)
+      if (nombre && nombre.trim() !== categoriaExistente.nombre) {
+        const categoriaConMismoNombre = await prisma.categoria.findUnique({
+          where: { nombre: nombre.trim() }
+        });
+
+        if (categoriaConMismoNombre) {
+          return res.status(409).json({
+            success: false,
+            error: 'Ya existe una categoría con ese nombre'
+          });
+        }
+      }
+
       // Preparar datos para actualización
       const datosActualizacion: Prisma.CategoriaUpdateInput = {};
+      
+      if (nuevoId !== undefined && nuevoId !== null) {
+        datosActualizacion.id = Number(nuevoId);
+      }
       
       if (nombre !== undefined) {
         datosActualizacion.nombre = nombre.trim();
@@ -139,19 +180,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       });
 
-      res.status(200).json({
-        success: true,
-        data: categoriaActualizada,
-        message: 'Categoría actualizada exitosamente'
-      });
+             res.status(200).json({
+         success: true,
+         data: categoriaActualizada,
+         message: 'Categoría actualizada exitosamente'
+       });
 
-    } catch (error) {
-      console.error('Error al actualizar categoría:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Error interno del servidor'
-      });
-    }
+          } catch {
+        res.status(500).json({
+          success: false,
+          error: 'Error interno del servidor'
+        });
+      }
   }
   else if (req.method === 'DELETE') {
     try {
@@ -182,18 +222,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         where: { id: categoriaId }
       });
 
-      res.status(200).json({
-        success: true,
-        message: 'Categoría eliminada exitosamente'
-      });
+             res.status(200).json({
+         success: true,
+         message: 'Categoría eliminada exitosamente'
+       });
 
-    } catch (error) {
-      console.error('Error al eliminar categoría:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Error interno del servidor'
-      });
-    }
+          } catch {
+        res.status(500).json({
+          success: false,
+          error: 'Error interno del servidor'
+        });
+      }
   }
   else {
     res.setHeader('Allow', ['GET', 'PUT', 'DELETE']);

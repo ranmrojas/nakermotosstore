@@ -25,6 +25,7 @@ interface Categoria {
 }
 
 interface CategoriaFormData {
+  id?: number;
   nombre: string;
   descripcion: string;
   activa: boolean;
@@ -73,6 +74,7 @@ export default function CategoriesManagement() {
   // Limpiar formulario
   const clearForm = () => {
     setFormData({
+      id: undefined,
       nombre: '',
       descripcion: '',
       activa: true,
@@ -91,6 +93,7 @@ export default function CategoriesManagement() {
   // Abrir formulario para editar categoría
   const handleEdit = (categoria: Categoria) => {
     setFormData({
+      id: categoria.id,
       nombre: categoria.nombre,
       descripcion: categoria.descripcion || '',
       activa: categoria.activa,
@@ -120,6 +123,13 @@ export default function CategoriesManagement() {
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
+    // Validar ID si se proporciona
+    if (formData.id !== undefined && formData.id !== null) {
+      if (!Number.isInteger(formData.id) || formData.id <= 0) {
+        errors.id = 'El ID debe ser un número entero positivo';
+      }
+    }
+
     if (!formData.nombre.trim()) {
       errors.nombre = 'El nombre es requerido';
     } else if (formData.nombre.trim().length < 2) {
@@ -139,6 +149,8 @@ export default function CategoriesManagement() {
     if (!validateForm()) return;
 
     setOperationLoading(true);
+    setFormErrors({}); // Limpiar errores anteriores
+    
     try {
       const url = editingCategoria 
         ? `/api/categorias/${editingCategoria.id}`
@@ -151,13 +163,44 @@ export default function CategoriesManagement() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          id: formData.id || undefined
+        }),
       });
 
       const result = await response.json();
 
+      if (!response.ok) {
+        // Manejar errores HTTP específicos
+        if (response.status === 400) {
+          // Error de validación del servidor
+          if (result.error) {
+            // Mapear errores específicos a campos del formulario
+            if (result.error.includes('ID')) {
+              setFormErrors({ id: result.error });
+            } else if (result.error.includes('nombre')) {
+              setFormErrors({ nombre: result.error });
+            } else if (result.error.includes('categoría padre')) {
+              setFormErrors({ categoriaPadreId: result.error });
+            } else {
+              setFormErrors({ general: result.error });
+            }
+          } else {
+            setFormErrors({ general: 'Error de validación en el servidor' });
+          }
+        } else if (response.status === 409) {
+          // Conflicto (ID duplicado, nombre duplicado)
+          setFormErrors({ general: result.error || 'Conflicto: Ya existe una categoría con esos datos' });
+        } else {
+          setFormErrors({ general: result.error || 'Error del servidor' });
+        }
+        return;
+      }
+
       if (!result.success) {
-        throw new Error(result.error || 'Error al guardar la categoría');
+        setFormErrors({ general: result.error || 'Error al guardar la categoría' });
+        return;
       }
 
       setSuccessMessage(
@@ -171,8 +214,17 @@ export default function CategoriesManagement() {
       
       handleCloseForm();
     } catch (error) {
-      console.error('Error al guardar categoría:', error);
-      setFormErrors({ general: error instanceof Error ? error.message : 'Error desconocido' });
+      // Solo loggear en desarrollo, no mostrar en consola del usuario
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error al guardar categoría:', error);
+      }
+      
+      // Manejar errores de red
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        setFormErrors({ general: 'Error de conexión. Verifica tu conexión a internet.' });
+      } else {
+        setFormErrors({ general: 'Error inesperado. Intenta nuevamente.' });
+      }
     } finally {
       setOperationLoading(false);
     }
@@ -181,6 +233,8 @@ export default function CategoriesManagement() {
   // Eliminar categoría
   const handleDelete = async (id: number) => {
     setOperationLoading(true);
+    setFormErrors({}); // Limpiar errores anteriores
+    
     try {
       const response = await fetch(`/api/categorias/${id}`, {
         method: 'DELETE',
@@ -188,8 +242,14 @@ export default function CategoriesManagement() {
 
       const result = await response.json();
 
+      if (!response.ok) {
+        setFormErrors({ general: result.error || 'Error al eliminar la categoría' });
+        return;
+      }
+
       if (!result.success) {
-        throw new Error(result.error || 'Error al eliminar la categoría');
+        setFormErrors({ general: result.error || 'Error al eliminar la categoría' });
+        return;
       }
 
       setSuccessMessage('Categoría eliminada exitosamente');
@@ -199,8 +259,16 @@ export default function CategoriesManagement() {
       
       setShowDeleteConfirm(null);
     } catch (error) {
-      console.error('Error al eliminar categoría:', error);
-      setFormErrors({ general: error instanceof Error ? error.message : 'Error desconocido' });
+      // Solo loggear en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error al eliminar categoría:', error);
+      }
+      
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        setFormErrors({ general: 'Error de conexión. Verifica tu conexión a internet.' });
+      } else {
+        setFormErrors({ general: 'Error inesperado. Intenta nuevamente.' });
+      }
     } finally {
       setOperationLoading(false);
     }
@@ -209,6 +277,8 @@ export default function CategoriesManagement() {
   // Cambiar estado activo/inactivo
   const handleToggleActive = async (categoria: Categoria) => {
     setOperationLoading(true);
+    setFormErrors({}); // Limpiar errores anteriores
+    
     try {
       const response = await fetch(`/api/categorias/${categoria.id}`, {
         method: 'PUT',
@@ -223,8 +293,14 @@ export default function CategoriesManagement() {
 
       const result = await response.json();
 
+      if (!response.ok) {
+        setFormErrors({ general: result.error || 'Error al cambiar el estado' });
+        return;
+      }
+
       if (!result.success) {
-        throw new Error(result.error || 'Error al cambiar el estado');
+        setFormErrors({ general: result.error || 'Error al cambiar el estado' });
+        return;
       }
 
       setSuccessMessage(`Categoría ${!categoria.activa ? 'activada' : 'desactivada'} exitosamente`);
@@ -232,8 +308,16 @@ export default function CategoriesManagement() {
       // Sincronizar con IndexedDB
       await forceSync();
     } catch (error) {
-      console.error('Error al cambiar estado:', error);
-      setFormErrors({ general: error instanceof Error ? error.message : 'Error desconocido' });
+      // Solo loggear en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error al cambiar estado:', error);
+      }
+      
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        setFormErrors({ general: 'Error de conexión. Verifica tu conexión a internet.' });
+      } else {
+        setFormErrors({ general: 'Error inesperado. Intenta nuevamente.' });
+      }
     } finally {
       setOperationLoading(false);
     }
@@ -287,76 +371,134 @@ export default function CategoriesManagement() {
     );
   }
 
-  return (
-    <div className="space-y-4 p-4 max-w-full">
-      {/* Header con estadísticas */}
-      <div className="bg-white rounded-xl shadow-lg p-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <button
-              onClick={forceSync}
-              disabled={syncing}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center space-x-2 text-sm"
-            >
-              <ArrowPathIcon className="h-4 w-4" />
-              <span>{syncing ? 'Sincronizando...' : 'Sincronizar'}</span>
-            </button>
-            <button
-              onClick={handleCreate}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center justify-center space-x-2 text-sm"
-            >
-              <PlusIcon className="h-4 w-4" />
-              <span>Nueva Categoría</span>
-            </button>
-          </div>
-        </div>
+     return (
+     <div className="space-y-4 p-4 max-w-full">
+       {/* Header con botones y filtros */}
+       <div className="bg-white rounded-xl shadow-lg p-4">
+         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 gap-3">
+           {/* Botones de acción */}
+           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+             <button
+               onClick={forceSync}
+               disabled={syncing}
+               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center space-x-2 text-sm"
+             >
+               <ArrowPathIcon className="h-4 w-4" />
+               <span>{syncing ? 'Sincronizando...' : 'Sincronizar'}</span>
+             </button>
+             <button
+               onClick={handleCreate}
+               className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center justify-center space-x-2 text-sm"
+             >
+               <PlusIcon className="h-4 w-4" />
+               <span>Nueva Categoría</span>
+             </button>
+           </div>
 
-        {/* Estadísticas */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-          <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-            <div className="text-xl sm:text-2xl font-bold text-green-600">{stats.categoriasActivas}</div>
-            <div className="text-xs sm:text-sm text-green-600">Activas</div>
-          </div>
-          <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-            <div className="text-xl sm:text-2xl font-bold text-red-600">{stats.totalCategorias - stats.categoriasActivas}</div>
-            <div className="text-xs sm:text-sm text-red-600">Inactivas</div>
-          </div>
-          <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-            <div className="text-xl sm:text-2xl font-bold text-yellow-600">{stats.totalSubcategorias}</div>
-            <div className="text-xs sm:text-sm text-yellow-600">Subcategorías</div>
-          </div>
-          <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
-            <div className="text-lg sm:text-xl font-bold text-purple-600">
-              {stats.lastSync ? new Date(stats.lastSync).toLocaleDateString() : 'Nunca'}
-            </div>
-            <div className="text-xs sm:text-sm text-purple-600">Última Sincronización</div>
-          </div>
-        </div>
+           {/* Filtros y búsqueda */}
+           <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+             {/* Buscador */}
+             <div className="flex-1 sm:w-64 lg:w-80">
+               <input
+                 type="text"
+                 placeholder="Buscar categorías..."
+                 value={searchTerm}
+                 onChange={(e) => setSearchTerm(e.target.value)}
+                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500 text-sm"
+               />
+             </div>
+             
+             {/* Filtro */}
+             <div className="w-full sm:w-40">
+               <select
+                 value={filterActivas === null ? 'all' : filterActivas.toString()}
+                 onChange={(e) => setFilterActivas(e.target.value === 'all' ? null : e.target.value === 'true')}
+                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-sm"
+               >
+                 <option value="all">Todas</option>
+                 <option value="true">Solo Activas</option>
+                 <option value="false">Solo Inactivas</option>
+               </select>
+             </div>
+           </div>
+         </div>
 
-        {/* Filtros y búsqueda */}
-        <div className="flex flex-col gap-3">
-          <div className="w-full">
-            <input
-              type="text"
-              placeholder="Buscar categorías por ID, nombre o descripción..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500 text-base"
-            />
-          </div>
-          <div className="w-full">
-            <select
-              value={filterActivas === null ? 'all' : filterActivas.toString()}
-              onChange={(e) => setFilterActivas(e.target.value === 'all' ? null : e.target.value === 'true')}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-base"
-            >
-              <option value="all">Todas las categorías</option>
-              <option value="true">Solo Activas</option>
-              <option value="false">Solo Inactivas</option>
-            </select>
-          </div>
-        </div>
-      </div>
+         {/* Estadísticas */}
+         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+           <button
+             onClick={() => setFilterActivas(true)}
+             className={`p-3 rounded-lg border transition-all duration-200 hover:scale-105 cursor-pointer ${
+               filterActivas === true 
+                 ? 'bg-green-100 border-green-300 shadow-md' 
+                 : 'bg-green-50 border-green-200 hover:bg-green-100'
+             }`}
+           >
+             <div className="text-xl sm:text-2xl font-bold text-green-600">{stats.categoriasActivas}</div>
+             <div className="text-xs sm:text-sm text-green-600">Activas</div>
+           </button>
+           
+           <button
+             onClick={() => setFilterActivas(false)}
+             className={`p-3 rounded-lg border transition-all duration-200 hover:scale-105 cursor-pointer ${
+               filterActivas === false 
+                 ? 'bg-red-100 border-red-300 shadow-md' 
+                 : 'bg-red-50 border-red-200 hover:bg-red-100'
+             }`}
+           >
+             <div className="text-xl sm:text-2xl font-bold text-red-600">{stats.totalCategorias - stats.categoriasActivas}</div>
+             <div className="text-xs sm:text-sm text-red-600">Inactivas</div>
+           </button>
+           
+           <button
+             onClick={() => setFilterActivas(null)}
+             className={`p-3 rounded-lg border transition-all duration-200 hover:scale-105 cursor-pointer ${
+               filterActivas === null 
+                 ? 'bg-yellow-100 border-yellow-300 shadow-md' 
+                 : 'bg-yellow-50 border-yellow-200 hover:bg-yellow-100'
+             }`}
+           >
+             <div className="text-xl sm:text-2xl font-bold text-yellow-600">{stats.totalSubcategorias}</div>
+             <div className="text-xs sm:text-sm text-yellow-600">Subcategorías</div>
+           </button>
+           
+           <button
+             onClick={() => {
+               setFilterActivas(null);
+               setSearchTerm('');
+             }}
+             className={`p-3 rounded-lg border transition-all duration-200 hover:scale-105 cursor-pointer ${
+               filterActivas === null && !searchTerm
+                 ? 'bg-purple-100 border-purple-300 shadow-md' 
+                 : 'bg-purple-50 border-purple-200 hover:bg-purple-100'
+             }`}
+           >
+             <div className="text-lg sm:text-xl font-bold text-purple-600">
+               {stats.lastSync ? new Date(stats.lastSync).toLocaleDateString() : 'Nunca'}
+             </div>
+             <div className="text-xs sm:text-sm text-purple-600">Última Sincronización</div>
+           </button>
+         </div>
+
+         {/* Indicador de filtro activo */}
+         {filterActivas !== null && (
+           <div className="flex items-center gap-2 mb-2">
+             <span className="text-sm text-gray-600">Filtro activo:</span>
+             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+               filterActivas 
+                 ? 'bg-green-100 text-green-800' 
+                 : 'bg-red-100 text-red-800'
+             }`}>
+               {filterActivas ? 'Solo Activas' : 'Solo Inactivas'}
+             </span>
+             <button
+               onClick={() => setFilterActivas(null)}
+               className="text-gray-400 hover:text-gray-600 text-sm underline"
+             >
+               Limpiar filtro
+             </button>
+           </div>
+         )}
+       </div>
 
       {/* Mensaje de éxito */}
       {successMessage && (
@@ -376,6 +518,28 @@ export default function CategoriesManagement() {
 
       {/* Lista de categorías */}
       <div className="bg-white rounded-xl shadow-lg overflow-hidden mx-4">
+        {/* Contador de resultados */}
+        <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              Mostrando <span className="font-medium text-gray-900">{filteredCategorias.length}</span> de <span className="font-medium text-gray-900">{categorias.length}</span> categorías
+              {filterActivas !== null && (
+                <span className="ml-2 text-xs text-gray-500">
+                  (filtradas por {filterActivas ? 'activas' : 'inactivas'})
+                </span>
+              )}
+            </div>
+            {filterActivas !== null && (
+              <button
+                onClick={() => setFilterActivas(null)}
+                className="text-blue-600 hover:text-blue-800 text-sm underline"
+              >
+                Ver todas
+              </button>
+            )}
+          </div>
+        </div>
+        
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -533,6 +697,33 @@ export default function CategoriesManagement() {
               </h3>
               
               <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-4">
+                {/* ID */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    ID {editingCategoria ? '(Editable)' : '(Opcional)'}
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.id || ''}
+                    onChange={(e) => setFormData({ ...formData, id: e.target.value ? parseInt(e.target.value) : undefined })}
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-base ${
+                      formErrors.id ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder={editingCategoria ? 'Nuevo ID' : 'ID personalizado (opcional)'}
+                    min="1"
+                    step="1"
+                  />
+                  {formErrors.id && (
+                    <p className="mt-1 text-sm text-red-600">{formErrors.id}</p>
+                  )}
+                  <p className="mt-1 text-xs text-gray-500">
+                    {editingCategoria 
+                      ? 'Cambiar el ID puede afectar las referencias existentes' 
+                      : 'Dejar vacío para asignación automática'
+                    }
+                  </p>
+                </div>
+
                 {/* Nombre */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

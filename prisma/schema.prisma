@@ -16,7 +16,7 @@ datasource db {
 }
 
 model Categoria {
-  id          Int         @id @default(autoincrement())
+  id          Int         @id
   nombre      String      @unique
   descripcion String?
   activa      Boolean     @default(true)  // Controla si la categoría se muestra o no

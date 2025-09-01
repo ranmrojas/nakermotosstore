@@ -49,23 +49,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ]
       });
 
-      res.status(200).json({
-        success: true,
-        data: categorias,
-        total: categorias.length
-      });
+             res.status(200).json({
+         success: true,
+         data: categorias,
+         total: categorias.length
+       });
 
-    } catch (error) {
-      console.error('Error al obtener categorías:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Error interno del servidor'
-      });
-    }
+          } catch {
+        res.status(500).json({
+          success: false,
+          error: 'Error interno del servidor'
+        });
+      }
   } 
   else if (req.method === 'POST') {
     try {
-      const { nombre, descripcion, activa, categoriaPadreId } = req.body;
+      const { id, nombre, descripcion, activa, categoriaPadreId } = req.body;
 
       // Validaciones
       if (!nombre || nombre.trim() === '') {
@@ -75,13 +74,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
+      // Validar ID personalizado
+      if (id !== undefined && id !== null) {
+        if (!Number.isInteger(Number(id)) || Number(id) <= 0) {
+          return res.status(400).json({
+            success: false,
+            error: 'El ID debe ser un número entero positivo'
+          });
+        }
+
+        // Verificar si ya existe una categoría con ese ID
+        const categoriaConId = await prisma.categoria.findUnique({
+          where: { id: Number(id) }
+        });
+
+        if (categoriaConId) {
+          return res.status(409).json({
+            success: false,
+            error: `Ya existe una categoría con el ID ${id}`
+          });
+        }
+      }
+
       // Verificar si ya existe una categoría con el mismo nombre
       const categoriaExistente = await prisma.categoria.findUnique({
         where: { nombre: nombre.trim() }
       });
 
       if (categoriaExistente) {
-        return res.status(400).json({
+        return res.status(409).json({
           success: false,
           error: 'Ya existe una categoría con ese nombre'
         });
@@ -101,32 +122,59 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
 
-      const nuevaCategoria = await prisma.categoria.create({
-        data: {
-          nombre: nombre.trim(),
-          descripcion: descripcion?.trim() || null,
-          activa: activa !== undefined ? activa : true,
-          categoriaPadreId: categoriaPadreId ? parseInt(categoriaPadreId) : null
-        },
-        include: {
-          categoriaPadre: true,
-          subcategorias: true
-        }
-      });
+      // Crear la categoría con o sin ID personalizado
+      let nuevaCategoria;
+      
+      if (id !== undefined && id !== null) {
+        // Crear con ID personalizado
+        nuevaCategoria = await prisma.categoria.create({
+          data: {
+            id: Number(id),
+            nombre: nombre.trim(),
+            descripcion: descripcion?.trim() || null,
+            activa: activa !== undefined ? activa : true,
+            categoriaPadreId: categoriaPadreId ? parseInt(categoriaPadreId) : null
+          },
+          include: {
+            categoriaPadre: true,
+            subcategorias: true
+          }
+        });
+      } else {
+        // Generar ID automáticamente (buscar el siguiente disponible)
+        const ultimaCategoria = await prisma.categoria.findFirst({
+          orderBy: { id: 'desc' }
+        });
+        
+        const siguienteId = ultimaCategoria ? ultimaCategoria.id + 1 : 1;
+        
+        nuevaCategoria = await prisma.categoria.create({
+          data: {
+            id: siguienteId,
+            nombre: nombre.trim(),
+            descripcion: descripcion?.trim() || null,
+            activa: activa !== undefined ? activa : true,
+            categoriaPadreId: categoriaPadreId ? parseInt(categoriaPadreId) : null
+          },
+          include: {
+            categoriaPadre: true,
+            subcategorias: true
+          }
+        });
+      }
 
-      res.status(201).json({
-        success: true,
-        data: nuevaCategoria,
-        message: 'Categoría creada exitosamente'
-      });
+             res.status(201).json({
+         success: true,
+         data: nuevaCategoria,
+         message: 'Categoría creada exitosamente'
+       });
 
-    } catch (error) {
-      console.error('Error al crear categoría:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Error interno del servidor'
-      });
-    }
+          } catch {
+        res.status(500).json({
+          success: false,
+          error: 'Error interno del servidor'
+        });
+      }
   }
   else {
     res.setHeader('Allow', ['GET', 'POST']);
