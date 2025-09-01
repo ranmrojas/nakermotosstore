@@ -45,7 +45,7 @@ export default function Home() {
             <div className="absolute inset-0 bg-black/30 z-10" />
             <Image
               src={img}
-              alt={`Licores destacados ${index + 1}`}
+              alt={`Productos destacados ${index + 1}`}
               fill
               className="object-cover"
               priority={index === 0}

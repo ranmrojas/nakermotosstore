@@ -22,7 +22,7 @@ Este es un proyecto [Next.js](https://nextjs.org) que implementa un sistema comp
 - **Gestión de imágenes**: Fallbacks automáticos y optimización
 - **Interfaz responsive**: Diseño adaptativo para móviles y desktop
 - **Búsqueda avanzada**: Filtros por nombre, marca, SKU, precio y categoría
-- **Tags de categorías**: Acceso rápido a categorías específicas (Licores, Vapeadores, Gaseosa, Cerveza)
+- **Tags de categorías**: Acceso rápido a categorías específicas motos
 - **Deselección inteligente**: Los tags se deseleccionan automáticamente al escribir en el buscador o al hacer clic en un tag ya seleccionado
 - **Scroll manual optimizado**: Navegación fluida en resultados de búsqueda y sidebar
 - **Página especializada de vapeadores**: Vista dedicada para productos de vape con filtros específicos (Desechables, Baterías, Cápsulas)
