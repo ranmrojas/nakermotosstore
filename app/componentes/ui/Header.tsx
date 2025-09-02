@@ -29,9 +29,9 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
   const shouldShowSessionContent = isHydrated && session && session.nombre;
 
   return (
-    <header className="w-full bg-white border-b border-gray-200 flex items-center justify-center pt-2 sticky top-0 z-40 relative" style={{ minHeight: '40px', height: '40px' }}>
-      <div className="flex items-center w-full max-w-xs mx-auto px-2 justify-between">
-        <Link href="/" className="flex items-center flex-1 justify-center">
+         <header className="w-full bg-white border-b border-gray-200 flex items-center justify-start pt-2 sticky top-0 z-40 relative" style={{ minHeight: '40px', height: '40px' }}>
+       <div className="flex items-center w-full px-2 justify-between">
+         <Link href="/" className="flex items-center justify-start">
           <Image
             src="/logo.png"
             alt="Naker Motos"
@@ -42,8 +42,8 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
           />
         </Link>
         
-        {/* Botones de acción */}
-        <div className="flex items-center gap-2">
+        {/* Botones de acción - lado derecho */}
+        <div className="flex items-center gap-2 ml-auto">
           {/* Botón hamburguesa solo en /productos */}
           {showHamburger && (
             <button
@@ -52,7 +52,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
               aria-label="Abrir menú de categorías"
             >
               <Bars3Icon className="w-6 h-6 text-gray-700" />
-              <span className="text-[10px] text-gray-700 mt-0.5 leading-none">Categorías</span>
+                             <span className="text-[10px] text-gray-700 leading-none mt-1 mb-0.5">Categorías</span>
             </button>
           )}
           
@@ -117,14 +117,14 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
             </Link>
           )}
           
-          {/* Icono de menú hamburguesa fijo a la derecha */}
+          {/* Icono de menú hamburguesa */}
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="flex flex-col items-center p-1 rounded focus:outline-none focus:ring-2 focus:ring-amber-500 hover:bg-gray-50 transition-colors absolute right-2 -mt-1"
+            className="flex flex-col items-center p-1 rounded focus:outline-none focus:ring-2 focus:ring-amber-500 hover:bg-gray-50 transition-colors"
             aria-label="Abrir menú principal"
           >
             <Bars3Icon className="w-6 h-6 text-gray-700" />
-            <span className="text-[10px] text-gray-700 leading-none mt-0.5">Menú</span>
+                         <span className="text-[10px] text-gray-700 leading-none mt-1 mb-0.5">Menú</span>
           </button>
           
           {/* Sidebar Navigation */}
