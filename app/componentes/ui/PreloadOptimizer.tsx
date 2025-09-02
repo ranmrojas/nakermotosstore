@@ -18,12 +18,13 @@ export default function PreloadOptimizer({
   const pathname = usePathname();
 
   useEffect(() => {
+    if (pathname === '/') {
+      return;
+    }
+
     const shouldStartPreload = autoStart && !isPreloadComplete && !isPreloading;
     
     if (shouldStartPreload) {
-      console.log('🚀 PreloadOptimizer: Iniciando preload automático...');
-      
-      // Iniciar preload en segundo plano
       startPreload().catch(error => {
         console.error('Error en preload automático:', error);
       });

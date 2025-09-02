@@ -49,8 +49,7 @@ class PreloadService {
       // 3. Preload de productos principales
       await this.preloadProductosPrincipales();
 
-      // 4. Preload de productos de vape
-      await this.preloadProductosVape();
+        await this.preloadProductosVape();
 
       // 5. Preload de productos de búsqueda
       await this.preloadProductosBusqueda();
@@ -109,19 +108,16 @@ class PreloadService {
     }
   }
 
-  // Preload de productos principales (para /productos)
   private async preloadProductosPrincipales(): Promise<void> {
     try {
-      // Categorías principales que se usan en /productos
       const categoriasPrincipales = [
-        { id: 15, nombre: 'Cerveza' },
-        { id: 7, nombre: 'Aguardiente' },
-        { id: 8, nombre: 'Gaseosa' },
-        { id: 33, nombre: 'Whisky' },
-        { id: 51, nombre: 'Gomitas' }
+        { id: 2, nombre: 'Aceite Motor' },
+        { id: 17, nombre: 'Pastillas Y Frenos' },
+        { id: 22, nombre: 'Bandas Freno' },
+        { id: 30, nombre: 'Cascos' },
+        { id: 24, nombre: 'Llantas' }
       ];
 
-      // Usar sincronización inteligente para estas categorías
       await productosSyncService.syncProductosInteligente(categoriasPrincipales);
       
       if (this.config.silent) {
@@ -132,36 +128,31 @@ class PreloadService {
     }
   }
 
-  // Preload de productos de vape (para /vape)
   private async preloadProductosVape(): Promise<void> {
     try {
-      // Categorías específicas de vape
       const categoriasVape = [
-        { id: 61, nombre: 'Desechables' },
-        { id: 62, nombre: 'Cápsulas' },
-        { id: 63, nombre: 'Baterías' }
+        { id: 16, nombre: 'Filtros Aire' },
+        { id: 20, nombre: 'Filtro Aceite' }
       ];
 
       await productosSyncService.syncProductosInteligente(categoriasVape);
       
       if (this.config.silent) {
-        console.log('💨 Preload: Productos de vape sincronizados');
+        console.log('📦 Preload: Productos vape sincronizados');
       }
     } catch (error) {
       console.error('Error preload productos vape:', error);
     }
   }
 
-  // Preload de productos de búsqueda (para /busqueda)
   private async preloadProductosBusqueda(): Promise<void> {
     try {
-      // Categorías para la página de búsqueda
       const categoriasBusqueda = [
-        { id: 15, nombre: 'Cerveza' },
-        { id: 7, nombre: 'Aguardiente' },
-        { id: 8, nombre: 'Gaseosa' },
-        { id: 51, nombre: 'Gomitas' },
-        { id: 33, nombre: 'Whisky' }
+        { id: 2, nombre: 'Aceite Motor' },
+        { id: 17, nombre: 'Pastillas Y Frenos' },
+        { id: 22, nombre: 'Bandas Freno' },
+        { id: 30, nombre: 'Cascos' },
+        { id: 24, nombre: 'Llantas' }
       ];
 
       await productosSyncService.syncProductosInteligente(categoriasBusqueda);
