@@ -9,7 +9,7 @@ export default function NotFound() {
       {/* Logo */}
       <div className="mb-8">
         <Image
-          src="/1098cf4b-3ff7-4c3f-82fc-0c2c07e62a8d.jpeg"
+          src="/favicon.png"
           alt="Naker Motos"
           width={120}
           height={120}
