@@ -599,31 +599,30 @@ export default function ProductGrid({
                           </div>
                         )}
                       </div>
-                      <div className="flex-1 w-full flex flex-col justify-between items-center p-2 pb-1" onClick={e => e.stopPropagation()}>
-                        <h3 className="text-xs font-medium text-center text-gray-900 line-clamp-2 w-full mb-1 min-h-[2.2em]">
+                      <div className="flex-1 w-full flex flex-col justify-between items-center p-2 pb-1">
+                        <h3 className="text-xs font-medium text-center text-gray-900 line-clamp-2 w-full mb-1 min-h-[2.2em] cursor-pointer">
                           {product.nombre}
                         </h3>
                         {product.nota && (
-                          <div className="w-full text-center text-gray-500 text-[10px] line-clamp-2 mb-1 italic">
+                          <div className="w-full text-center text-gray-500 text-[10px] line-clamp-2 mb-1 italic cursor-pointer">
                             {product.nota}
                           </div>
                         )}
                         <div className="flex items-center justify-between w-full mt-auto mb-1">
                           <div className="flex flex-col mb-0 pb-0">
                             <span
-                              className={`${tieneOferta(product) ? 'text-green-600 text-base font-bold' : 'text-gray-800 font-bold text-sm'}`}
-                              onClick={e => e.stopPropagation()}
+                              className={`${tieneOferta(product) ? 'text-green-600 text-base font-bold' : 'text-gray-800 font-bold text-sm'} cursor-pointer`}
                             >
                               ${(getPrecioCorrecto(product))?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                             </span>
                             {tieneOferta(product) && (
-                              <span className="text-red-400 text-xs line-through font-medium" style={{ fontSize: '0.8rem', marginTop: '-2px' }} onClick={e => e.stopPropagation()}>
+                              <span className="text-red-400 text-xs line-through font-medium cursor-pointer" style={{ fontSize: '0.8rem', marginTop: '-2px' }}>
                                 ${getPrecioBase(product)?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                               </span>
                             )}
                           </div>
                           {product.sku && (
-                            <div className="text-gray-400 text-xs leading-none" onClick={e => e.stopPropagation()}>
+                            <div className="text-gray-400 text-xs leading-none cursor-pointer">
                               sku: {product.sku}
                             </div>
                           )}
@@ -834,35 +833,34 @@ export default function ProductGrid({
                     <span className="absolute top-2 right-8 z-20 text-xs text-amber-600 bg-white/90 px-2 py-0.5 rounded shadow">¡Copiado!</span>
                   )}
                 </div>
-                    <div className="flex-1 w-full flex flex-col justify-between items-center p-2 pb-1" onClick={e => e.stopPropagation()}>
-                  <h3 className="text-xs font-medium text-center text-gray-900 line-clamp-2 w-full mb-1 min-h-[2.2em]">
-                    {product.nombre}
-                  </h3>
-                  {product.nota && (
-                        <div className="w-full text-center text-gray-500 text-[10px] line-clamp-2 mb-1 italic">
-                      {product.nota}
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between w-full mt-auto mb-1">
-                    <div className="flex flex-col mb-0 pb-0">
-                      <span
-                        className={`${tieneOferta(product) ? 'text-green-600 text-base font-bold' : 'text-gray-800 font-bold text-sm'}`}
-                            onClick={e => e.stopPropagation()}
-                      >
-                        ${(getPrecioCorrecto(product))?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                      </span>
-                      {tieneOferta(product) && (
-                            <span className="text-red-400 text-xs line-through font-medium" style={{ fontSize: '0.8rem', marginTop: '-2px' }} onClick={e => e.stopPropagation()}>
-                          ${getPrecioBase(product)?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                        </span>
+                                        <div className="flex-1 w-full flex flex-col justify-between items-center p-2 pb-1">
+                      <h3 className="text-xs font-medium text-center text-gray-900 line-clamp-2 w-full mb-1 min-h-[2.2em] cursor-pointer">
+                        {product.nombre}
+                      </h3>
+                      {product.nota && (
+                        <div className="w-full text-center text-gray-500 text-[10px] line-clamp-2 mb-1 italic cursor-pointer">
+                          {product.nota}
+                        </div>
                       )}
-                    </div>
-                    {product.sku && (
-                          <div className="text-gray-400 text-xs leading-none" onClick={e => e.stopPropagation()}>
-                        sku: {product.sku}
+                      <div className="flex items-center justify-between w-full mt-auto mb-1">
+                        <div className="flex flex-col mb-0 pb-0">
+                          <span
+                            className={`${tieneOferta(product) ? 'text-green-600 text-base font-bold' : 'text-gray-800 font-bold text-sm'} cursor-pointer`}
+                          >
+                            ${(getPrecioCorrecto(product))?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                          </span>
+                          {tieneOferta(product) && (
+                                <span className="text-red-400 text-xs line-through font-medium cursor-pointer" style={{ fontSize: '0.8rem', marginTop: '-2px' }}>
+                              ${getPrecioBase(product)?.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                            </span>
+                          )}
+                        </div>
+                        {product.sku && (
+                              <div className="text-gray-400 text-xs leading-none cursor-pointer">
+                            sku: {product.sku}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
                       {showAddToCart && (product.existencias_real ?? 0) > 0 ? (
                         getItemQuantity(product.id_producto) === 0 ? (
                     <button
