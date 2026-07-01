@@ -1,14 +1,14 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCategorias } from '../hooks/useCategorias';
 
 const CAROUSEL_IMAGES = [
   '/dashboardlanding/image1.jpg',
-  '/dashboardlanding/image2.png',
-  '/dashboardlanding/image3.png',
+  '/dashboardlanding/image2.jpg',
+  '/dashboardlanding/image3.jpg',
   '/dashboardlanding/image4.jpg',
 ] as const;
 
@@ -17,12 +17,6 @@ export default function Home() {
   const [isVisible, setIsVisible] = useState(false);
   const { categorias, loading: categoriasLoading, error: categoriasError } = useCategorias();
 
-  const slidesToRender = useMemo(() => {
-    const total = CAROUSEL_IMAGES.length;
-    const nextSlide = (currentSlide + 1) % total;
-    return new Set([currentSlide, nextSlide]);
-  }, [currentSlide]);
-
   // Efecto para el carrusel automático
   useEffect(() => {
     const interval = setInterval(() => {
@@ -30,6 +24,13 @@ export default function Home() {
     }, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  // Precargar la siguiente diapositiva sin montarla en el DOM (ahorra memoria en iOS)
+  useEffect(() => {
+    const nextIndex = (currentSlide + 1) % CAROUSEL_IMAGES.length;
+    const preload = new window.Image();
+    preload.src = CAROUSEL_IMAGES[nextIndex];
+  }, [currentSlide]);
 
   // Efecto para la animación de entrada
   useEffect(() => {
@@ -40,30 +41,19 @@ export default function Home() {
     <div className="min-h-screen bg-white flex flex-col">
       {/* Hero Section con Carrusel */}
       <section className="relative w-full h-[40vh] sm:h-[50vh] md:h-[60vh] overflow-hidden shadow-xl">
-        {CAROUSEL_IMAGES.map((img, index) => {
-          if (!slidesToRender.has(index)) {
-            return null;
-          }
-
-          return (
-            <div
-              key={index}
-              className={`absolute inset-0 transition-opacity duration-1000 ${index === currentSlide ? 'opacity-100' : 'opacity-0'}`}
-              aria-hidden={index !== currentSlide}
-            >
-              <div className="absolute inset-0 bg-black/30 z-10" />
-              <Image
-                src={img}
-                alt={`Productos destacados ${index + 1}`}
-                fill
-                className="object-cover"
-                sizes="100vw"
-                priority={index === 0}
-                loading={index === 0 ? 'eager' : 'lazy'}
-              />
-            </div>
-          );
-        })}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-black/30 z-10" />
+          <Image
+            key={currentSlide}
+            src={CAROUSEL_IMAGES[currentSlide]}
+            alt={`Productos destacados ${currentSlide + 1}`}
+            fill
+            className="object-cover transition-opacity duration-700"
+            sizes="(max-width: 768px) 100vw, 1080px"
+            quality={55}
+            priority={currentSlide === 0}
+          />
+        </div>
         
         {/* Contenido sobre el carrusel */}
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center px-4">

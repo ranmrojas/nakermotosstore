@@ -3,7 +3,11 @@ import { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   // Configuración para permitir imágenes de dominios externos
   images: {
-    domains: ['tienddi.co'], // Agregamos el dominio de la tienda para las imágenes
+    domains: ['tienddi.co'],
+    formats: ['image/webp'],
+    // Limitar tamaños máximos para reducir memoria en iOS Safari
+    deviceSizes: [640, 750, 828, 1080],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
  
   async rewrites() {
