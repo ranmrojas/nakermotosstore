@@ -1,32 +1,35 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useCategorias } from '../hooks/useCategorias';
 
-
+const CAROUSEL_IMAGES = [
+  '/dashboardlanding/image1.jpg',
+  '/dashboardlanding/image2.png',
+  '/dashboardlanding/image3.png',
+  '/dashboardlanding/image4.jpg',
+] as const;
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
-  const { categorias, loading: categoriasLoading } = useCategorias();
-  
-  // Imágenes para el carrusel
-  const carouselImages = [
-    '/dashboardlanding/image1.jpg',
-    '/dashboardlanding/image2.png',
-    '/dashboardlanding/image3.png',
-    '/dashboardlanding/image4.jpg'
-  ];
+  const { categorias, loading: categoriasLoading, error: categoriasError } = useCategorias();
+
+  const slidesToRender = useMemo(() => {
+    const total = CAROUSEL_IMAGES.length;
+    const nextSlide = (currentSlide + 1) % total;
+    return new Set([currentSlide, nextSlide]);
+  }, [currentSlide]);
 
   // Efecto para el carrusel automático
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
+      setCurrentSlide((prev) => (prev + 1) % CAROUSEL_IMAGES.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [carouselImages.length]);
+  }, []);
 
   // Efecto para la animación de entrada
   useEffect(() => {
@@ -37,21 +40,30 @@ export default function Home() {
     <div className="min-h-screen bg-white flex flex-col">
       {/* Hero Section con Carrusel */}
       <section className="relative w-full h-[40vh] sm:h-[50vh] md:h-[60vh] overflow-hidden shadow-xl">
-        {carouselImages.map((img, index) => (
-          <div 
-            key={index} 
-            className={`absolute inset-0 transition-opacity duration-1000 ${index === currentSlide ? 'opacity-100' : 'opacity-0'}`}
-          >
-            <div className="absolute inset-0 bg-black/30 z-10" />
-            <Image
-              src={img}
-              alt={`Productos destacados ${index + 1}`}
-              fill
-              className="object-cover"
-              priority={index === 0}
-            />
-          </div>
-        ))}
+        {CAROUSEL_IMAGES.map((img, index) => {
+          if (!slidesToRender.has(index)) {
+            return null;
+          }
+
+          return (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-opacity duration-1000 ${index === currentSlide ? 'opacity-100' : 'opacity-0'}`}
+              aria-hidden={index !== currentSlide}
+            >
+              <div className="absolute inset-0 bg-black/30 z-10" />
+              <Image
+                src={img}
+                alt={`Productos destacados ${index + 1}`}
+                fill
+                className="object-cover"
+                sizes="100vw"
+                priority={index === 0}
+                loading={index === 0 ? 'eager' : 'lazy'}
+              />
+            </div>
+          );
+        })}
         
         {/* Contenido sobre el carrusel */}
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center px-4">
@@ -77,7 +89,7 @@ export default function Home() {
         
         {/* Indicadores del carrusel */}
         <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-30">
-          {carouselImages.map((_, index) => (
+          {CAROUSEL_IMAGES.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
@@ -98,6 +110,13 @@ export default function Home() {
         {categoriasLoading ? (
           <div className="flex justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#182C6D]"></div>
+          </div>
+        ) : categoriasError ? (
+          <div className="text-center text-sm text-gray-600 px-4">
+            <p>No pudimos cargar las categorías en este momento.</p>
+            <Link href="/productos" className="inline-block mt-3 text-[#182C6D] font-semibold underline">
+              Ver catálogo de productos
+            </Link>
           </div>
         ) : (
           <div className="w-full">

@@ -7,18 +7,17 @@ interface HydrationSafeProps {
   fallback?: React.ReactNode;
 }
 
-export default function HydrationSafe({ children, fallback = null }: HydrationSafeProps) {
+export default function HydrationSafe({ children, fallback }: HydrationSafeProps) {
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
     setIsHydrated(true);
   }, []);
 
-  // Durante SSR o antes de la hidratación, mostrar fallback
-  if (!isHydrated) {
+  // Mantener el contenido visible durante la hidratación para evitar pantalla en blanco en móviles.
+  if (!isHydrated && fallback !== undefined) {
     return <>{fallback}</>;
   }
 
-  // Después de la hidratación, mostrar el contenido real
   return <>{children}</>;
 }
